@@ -1,0 +1,13 @@
+# Single source of truth for the study's knobs.
+#
+# Nothing in src/ may hardcode a value that belongs here — a magic number scattered
+# in a script is a reproducibility hole. Keys are added as tasks need them, not in
+# advance.
+
+[run]
+# Changing this changes every fold assignment and every stochastic method.
+# Record it alongside any published result.
+seed = 20260815
+
+[cv]
+n_folds = 5
