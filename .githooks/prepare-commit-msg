@@ -1,0 +1,20 @@
+#!/bin/sh
+# Append "Closes #N" using the issue number in the branch name, so it never has to
+# be typed twice. Branch convention: <type>/<issue>-<slug>, e.g. research/12-run-benchmark
+#
+# Skips merges, amends, and squashes — those inherit a message that is already correct.
+
+msg_file=$1
+source=$2
+
+case "$source" in
+  merge|squash|commit) exit 0 ;;
+esac
+
+branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+issue=$(printf '%s' "$branch" | sed -n 's|^[a-z]*/\([0-9][0-9]*\)-.*|\1|p')
+
+[ -z "$issue" ] && exit 0
+grep -qiE "^(closes|fixes|resolves) #$issue\b" "$msg_file" && exit 0
+
+printf '\nCloses #%s\n' "$issue" >> "$msg_file"

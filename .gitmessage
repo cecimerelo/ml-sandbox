@@ -1,0 +1,9 @@
+# <type>: <subject>       <- imperative, under ~72 chars, no trailing period
+#
+# feat | research | fix | chore | docs   (match the branch type)
+
+
+# Why — the diff shows what changed, so use this for the reasoning that is not
+# already in the linked issue. Delete if the subject says it all.
+
+# The issue reference is appended automatically from the branch name.
