@@ -28,3 +28,9 @@ testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 100
+
+[tool.ruff.lint]
+# E,F are ruff's defaults. I keeps imports ordered, UP keeps syntax current with the
+# pinned Python, B catches the bugbear class of mistakes. Enabled while the codebase
+# is small so it never turns into a large reformatting diff.
+select = ["E", "F", "I", "UP", "B"]
