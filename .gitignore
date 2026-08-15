@@ -8,3 +8,12 @@ _bmad/
 
 # Copyrighted reference material — kept locally, not in git history
 ISLRv2_corrected_June_2023.pdf
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Study data and artifacts — regenerated from config, never committed
+data/
+artifacts/
