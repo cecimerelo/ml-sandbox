@@ -1,0 +1,10 @@
+# BMad tooling — reinstallable, not part of the thesis deliverable
+.claude/
+_bmad/
+.bmad-loop/
+
+# OS
+.DS_Store
+
+# Copyrighted reference material — kept locally, not in git history
+ISLRv2_corrected_June_2023.pdf
