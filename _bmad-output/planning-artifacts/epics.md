@@ -55,10 +55,9 @@ This document provides the complete epic and story breakdown for the TFM explain
 
 **FR-6 Benchmark Transparency Page**
 - FR-6.1: A dedicated Benchmark page exposes the data behind the recommender.
-- FR-6.2: Shows a dataset × method performance heatmap and a heuristic-vs-empirical agreement indicator.
+- FR-6.2: Shows a dataset × method performance heatmap, a heuristic-vs-empirical agreement indicator, and per-row error reporting.
 - FR-6.3: Dataset provenance is visible (OpenML-CC18 for classification, UCI for regression).
 - FR-6.4: The benchmark evaluation is a formal secondary research objective, including Random (lower bound) and AMLBID (upper bound) baselines. **In scope as Epic 1** — it produces the trained model FR-2.1's Layer 2 depends on, so it is a prerequisite, not an offline appendix.
-- FR-6.5: Per-row "Report an error" capture.
 
 **FR-7 Backend & Data Policy**
 - FR-7.1: A backend handles in-memory dataset processing, training and inference, benchmark model serving, and anonymized session storage.
@@ -155,7 +154,7 @@ Extracted from the DESIGN.md + EXPERIENCE.md spine pair. These are first-class i
 | FR-3 | Epic 3 | EDA layer |
 | FR-4 | Epic 4 | Model results and per-method visualizations |
 | FR-5 | Epic 5 | Comparison mode, ranking, feedback prompt |
-| FR-6.1, 6.2, 6.3, 6.5 | Epic 6 | Benchmark page, heatmap, provenance, error reporting |
+| FR-6.1, 6.2, 6.3 | Epic 6 | Benchmark page, heatmap, provenance, error reporting |
 | FR-6.4 | Epic 1 | Benchmark study, baselines, and research metrics |
 | FR-7.1, 7.3 | Epic 2 | Backend and session-record storage established; later epics extend the record |
 | FR-7.2 | Epic 3 | In-memory-only processing becomes real once datasets exist |
@@ -218,7 +217,7 @@ A person selects alternative methods, runs them against their own data, and sees
 
 A person inspects the benchmark data the recommender is built on, judges it for themselves, and reports errors in it.
 
-**FRs covered:** FR-6.1, FR-6.2, FR-6.3, FR-6.5
+**FRs covered:** FR-6.1, FR-6.2, FR-6.3
 
 **Depends only on Epic 1** — buildable at any point after the benchmark exists.
 
