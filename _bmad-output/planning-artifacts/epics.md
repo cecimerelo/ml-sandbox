@@ -83,6 +83,7 @@ This document provides the complete epic and story breakdown for the TFM explain
 
 > **No Architecture document.** The following are the technical decisions the stories depend on but that remain **unsettled** — each must be resolved by the architecture phase before the affected stories can be estimated or implemented.
 
+- **[DECIDED 2026-08-15] Benchmark study language — Python-first**, with a narrow optional R step reserved for BART. Chosen because the author is stronger in Python, AMLBID runs natively, and the OpenML Python client is the most mature. Fold assignments are generated once and persisted (`dataset_id, row_index, fold_id`) so any language that participates evaluates on identical splits. Full reasoning in GitHub issue #7.
 - **[OPEN] Frontend framework** — React / Vue / Streamlit. Note: Streamlit cannot deliver a substantial portion of the specified interaction model (per-panel toggles, disabled-with-reason chips, in-place stale dimming, keyboard grid navigation). Choosing it would require amending the UX contract.
 - **[OPEN] Backend framework** — FastAPI / Flask.
 - **[OPEN] Chart rendering strategy** — client-side (D3/Recharts/Plotly) vs. server-rendered images. This is load-bearing: server-rendered images would invalidate the "View as table" toggle, all hover/tooltip specifications, and the per-panel interaction rules.
