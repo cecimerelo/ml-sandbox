@@ -1,6 +1,6 @@
 {
   "source": "pmlb",
-  "revision": "master",
+  "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
   "seed": 20260815,
   "max_per_family": 2,
   "per_stratum": 10,
@@ -30,7 +30,7 @@
     {
       "name": "201_pol",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 15000,
       "predictors": 48,
       "task": "regression",
@@ -42,7 +42,7 @@
     {
       "name": "210_cloud",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 108,
       "predictors": 5,
       "task": "regression",
@@ -54,7 +54,7 @@
     {
       "name": "215_2dplanes",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 40768,
       "predictors": 10,
       "task": "regression",
@@ -66,7 +66,7 @@
     {
       "name": "218_house_8L",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 22784,
       "predictors": 8,
       "task": "regression",
@@ -78,7 +78,7 @@
     {
       "name": "227_cpu_small",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 8192,
       "predictors": 12,
       "task": "regression",
@@ -90,7 +90,7 @@
     {
       "name": "294_satellite_image",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 6435,
       "predictors": 36,
       "task": "regression",
@@ -102,7 +102,7 @@
     {
       "name": "344_mv",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 40768,
       "predictors": 10,
       "task": "regression",
@@ -114,7 +114,7 @@
     {
       "name": "529_pollen",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 3848,
       "predictors": 4,
       "task": "regression",
@@ -126,7 +126,7 @@
     {
       "name": "537_houses",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 20640,
       "predictors": 8,
       "task": "regression",
@@ -138,7 +138,7 @@
     {
       "name": "564_fried",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 40768,
       "predictors": 10,
       "task": "regression",
@@ -150,7 +150,7 @@
     {
       "name": "574_house_16H",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 22784,
       "predictors": 16,
       "task": "regression",
@@ -162,7 +162,7 @@
     {
       "name": "579_fri_c0_250_5",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 250,
       "predictors": 5,
       "task": "regression",
@@ -174,7 +174,7 @@
     {
       "name": "582_fri_c1_500_25",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 500,
       "predictors": 25,
       "task": "regression",
@@ -186,7 +186,7 @@
     {
       "name": "584_fri_c4_500_25",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 500,
       "predictors": 25,
       "task": "regression",
@@ -198,7 +198,7 @@
     {
       "name": "601_fri_c1_250_5",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 250,
       "predictors": 5,
       "task": "regression",
@@ -210,7 +210,7 @@
     {
       "name": "602_fri_c3_250_10",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 250,
       "predictors": 10,
       "task": "regression",
@@ -222,7 +222,7 @@
     {
       "name": "611_fri_c3_100_5",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 100,
       "predictors": 5,
       "task": "regression",
@@ -234,7 +234,7 @@
     {
       "name": "621_fri_c0_100_10",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 100,
       "predictors": 10,
       "task": "regression",
@@ -246,7 +246,7 @@
     {
       "name": "626_fri_c2_500_50",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 500,
       "predictors": 50,
       "task": "regression",
@@ -258,7 +258,7 @@
     {
       "name": "633_fri_c0_500_25",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 500,
       "predictors": 25,
       "task": "regression",
@@ -270,7 +270,7 @@
     {
       "name": "634_fri_c2_100_10",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 100,
       "predictors": 10,
       "task": "regression",
@@ -282,7 +282,7 @@
     {
       "name": "635_fri_c0_250_10",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 250,
       "predictors": 10,
       "task": "regression",
@@ -294,7 +294,7 @@
     {
       "name": "646_fri_c3_500_10",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 500,
       "predictors": 10,
       "task": "regression",
@@ -306,7 +306,7 @@
     {
       "name": "650_fri_c0_500_50",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 500,
       "predictors": 50,
       "task": "regression",
@@ -318,7 +318,7 @@
     {
       "name": "666_rmftsa_ladata",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 508,
       "predictors": 10,
       "task": "regression",
@@ -330,7 +330,7 @@
     {
       "name": "690_visualizing_galaxy",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 323,
       "predictors": 4,
       "task": "regression",
@@ -342,7 +342,7 @@
     {
       "name": "706_sleuth_case1202",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 93,
       "predictors": 6,
       "task": "regression",
@@ -354,7 +354,7 @@
     {
       "name": "GAMETES_Heterogeneity_20atts_1600_Het_0.4_0.2_75_EDM_2_001",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 1600,
       "predictors": 20,
       "task": "classification",
@@ -366,7 +366,7 @@
     {
       "name": "adult",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 48842,
       "predictors": 14,
       "task": "classification",
@@ -378,7 +378,7 @@
     {
       "name": "allhypo",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 3770,
       "predictors": 29,
       "task": "classification",
@@ -390,7 +390,7 @@
     {
       "name": "allrep",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 3772,
       "predictors": 29,
       "task": "classification",
@@ -402,7 +402,7 @@
     {
       "name": "biomed",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 209,
       "predictors": 8,
       "task": "classification",
@@ -414,7 +414,7 @@
     {
       "name": "cars",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 392,
       "predictors": 8,
       "task": "classification",
@@ -426,7 +426,7 @@
     {
       "name": "confidence",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 72,
       "predictors": 3,
       "task": "classification",
@@ -438,7 +438,7 @@
     {
       "name": "congressional_voting_records",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 435,
       "predictors": 16,
       "task": "classification",
@@ -450,7 +450,7 @@
     {
       "name": "connect_4",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 67557,
       "predictors": 42,
       "task": "classification",
@@ -462,7 +462,7 @@
     {
       "name": "dna",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 3186,
       "predictors": 180,
       "task": "classification",
@@ -474,7 +474,7 @@
     {
       "name": "hepatitis",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 155,
       "predictors": 19,
       "task": "classification",
@@ -486,7 +486,7 @@
     {
       "name": "krkopt",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 28056,
       "predictors": 6,
       "task": "classification",
@@ -498,7 +498,7 @@
     {
       "name": "labor",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 57,
       "predictors": 16,
       "task": "classification",
@@ -510,7 +510,7 @@
     {
       "name": "letter",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 20000,
       "predictors": 16,
       "task": "classification",
@@ -522,7 +522,7 @@
     {
       "name": "lupus",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 87,
       "predictors": 3,
       "task": "classification",
@@ -534,7 +534,7 @@
     {
       "name": "magic",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 19020,
       "predictors": 10,
       "task": "classification",
@@ -546,7 +546,7 @@
     {
       "name": "molecular_biology_promoters",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 106,
       "predictors": 57,
       "task": "classification",
@@ -558,7 +558,7 @@
     {
       "name": "monk3",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 554,
       "predictors": 6,
       "task": "classification",
@@ -570,7 +570,7 @@
     {
       "name": "nursery",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 12958,
       "predictors": 8,
       "task": "classification",
@@ -582,7 +582,7 @@
     {
       "name": "page_blocks",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 5473,
       "predictors": 10,
       "task": "classification",
@@ -594,7 +594,7 @@
     {
       "name": "pendigits",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 10992,
       "predictors": 16,
       "task": "classification",
@@ -606,7 +606,7 @@
     {
       "name": "penguins",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 344,
       "predictors": 7,
       "task": "classification",
@@ -618,7 +618,7 @@
     {
       "name": "prnn_crabs",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 200,
       "predictors": 7,
       "task": "classification",
@@ -630,7 +630,7 @@
     {
       "name": "profb",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 672,
       "predictors": 9,
       "task": "classification",
@@ -642,7 +642,7 @@
     {
       "name": "satimage",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 6435,
       "predictors": 36,
       "task": "classification",
@@ -654,7 +654,7 @@
     {
       "name": "segmentation",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 2310,
       "predictors": 19,
       "task": "classification",
@@ -666,7 +666,7 @@
     {
       "name": "shuttle",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 58000,
       "predictors": 9,
       "task": "classification",
@@ -678,7 +678,7 @@
     {
       "name": "tic_tac_toe",
       "source": "pmlb",
-      "revision": "master",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 958,
       "predictors": 9,
       "task": "classification",

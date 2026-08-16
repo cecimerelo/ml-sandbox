@@ -29,12 +29,15 @@ SUMMARY_URL = (
 )
 """The collection's index. Pinning `master` is provisional — see `PINNED_REVISION`."""
 
-PINNED_REVISION = "master"
-"""Freeze this to a commit SHA before the study's final run.
+PINNED_REVISION = "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68"
+"""PMLB at 2025-02-25 ("First principles datasets", #181).
 
-`master` moves, so two runs months apart could draw on different collections and the
-study would stop being reproducible. Pinning is the whole reproducibility advantage PMLB
-has over OpenML's dataset versioning, and leaving it on a branch throws that away.
+A commit SHA, not a branch. `master` moves, so two runs months apart could draw on
+different collections and the study would quietly stop being reproducible. Pinning is the
+whole reproducibility advantage PMLB has over OpenML's dataset versioning.
+
+Changing this invalidates the manifest: re-run `scripts/build_collection.py --fetch`, and
+expect the selection to differ if datasets were added or withdrawn.
 """
 
 
@@ -105,7 +108,9 @@ def load_dataset(name: str, config: Config) -> pd.DataFrame:
     likes and resolves against whatever revision it shipped with, both of which undercut
     the pinning this module exists to guarantee.
     """
-    store: Path = config.paths.datasets / "pmlb"
+    # Scoped by revision: without it, changing PINNED_REVISION would silently reuse files
+    # fetched under the old one, mixing two versions of the collection with no signal.
+    store: Path = config.paths.datasets / "pmlb" / PINNED_REVISION
     store.mkdir(parents=True, exist_ok=True)
     local = store / f"{name}.tsv.gz"
 
