@@ -229,3 +229,67 @@ collection."*
 permit redistribution. The client already records the `licence` field for this reason;
 anything that cannot be redistributed is referenced by id rather than mirrored, and the
 gap is stated.
+
+---
+
+## D-011 — Scope cut to fit the submission deadline
+
+**Date:** 2026-08-16 · **Status:** accepted · **Affects:** all epics
+
+**Context.** Submission is due before October: roughly six weeks at about 20 hours a
+week, or ~120 hours total, and that must also cover writing the thesis. The planned
+scope — six epics, ~29 chart types, 17 components, the full benchmark study with two
+baselines — does not fit. The supervisor expects both a written thesis and a working
+tool.
+
+The failure mode being avoided is not an incomplete application. It is arriving in
+September with half-built code **and** an unwritten thesis, which is the worst possible
+combination at submission.
+
+**Decision.** Budget allocated as ~40h thesis, ~35h Epic 1, ~35h a minimal tool, ~10h
+contingency.
+
+**In scope for the tool:** form → recommendation with a plain-language explanation →
+CSV upload → train the recommended method → three or four plots. The full journey,
+narrow.
+
+**Deferred to future work:** comparison mode (Epic 5), the benchmark page (Epic 6), the
+remaining chart types, the 17-component library, the full accessibility layer, and the
+measurement instrumentation of D-009.
+
+**Consequences.** The UX contract is not wasted. `DESIGN.md` and `EXPERIENCE.md` become
+the design chapter and the future-work specification — *"the full system was specified
+and a justified subset implemented"* is a stronger thesis position than an unspecified
+half-built application.
+
+Two cost controls attached to Epic 1:
+
+- **AMLBID gets a four-hour time-box** (#14). It is a 2022 package that may not install.
+  If it does not, that becomes a documented limitation rather than a week lost.
+- **Subsampling reduced to 2 sizes × 2 seeds** (100 and 400 rows), down from 3 × 3. Still
+  covers the band and supports D-006's argument at less than half the compute.
+
+Writing starts in week 2, not week 4. Each benchmark result is written up the day it
+appears; reconstructing August's work in September costs double.
+
+---
+
+## D-012 — The recommender ships on heuristics alone; Layer 2 is an upgrade
+
+**Date:** 2026-08-16 · **Status:** accepted · **Affects:** [#2](https://github.com/cecimerelo/ml-sandbox/issues/2), [#15](https://github.com/cecimerelo/ml-sandbox/issues/15), [#17](https://github.com/cecimerelo/ml-sandbox/issues/17)
+
+**Context.** FR-2.1 specifies a hybrid engine, and its Layer 2 depends on Epic 1
+finishing. Under D-011's schedule that creates a hard dependency: if the benchmark slips,
+the tool has no trained model and there is nothing to demonstrate.
+
+**Decision.** Layer 1 (ISLR heuristics) is built first and works standalone. Layer 2 is
+plugged in **if** it arrives in time.
+
+**Consequences.** There is always something demonstrable, which matters when the
+supervisor expects a working tool. It also decouples the two halves of the project, so a
+delay in the study does not cascade into the application.
+
+If Layer 2 does not land, the thesis reports the heuristic recommender evaluated against
+the benchmark — which still answers the research question, since that question is
+precisely *whether the pedagogical heuristics hold up empirically*. The hybrid engine
+then becomes future work.
