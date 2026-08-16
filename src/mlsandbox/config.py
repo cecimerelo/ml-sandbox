@@ -14,23 +14,15 @@ from __future__ import annotations
 import random
 import tomllib
 from pathlib import Path
+from typing import Self
 
 import numpy as np
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field, model_validator
+
+from mlsandbox.base import StrictModel
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG_PATH = PROJECT_ROOT / "config" / "benchmark.toml"
-
-
-class StrictModel(BaseModel):
-    """Rejects unknown keys and stays immutable once built.
-
-    `extra="forbid"` matters more than it looks: a typo'd key would otherwise be
-    silently ignored and the default used instead, which is exactly how a run
-    produces plausible-looking wrong results.
-    """
-
-    model_config = ConfigDict(extra="forbid", frozen=True)
 
 
 class RunConfig(StrictModel):
@@ -41,9 +33,27 @@ class CVConfig(StrictModel):
     n_folds: int = Field(ge=2)
 
 
+class PathsConfig(StrictModel):
+    datasets: Path
+    """Where the study's datasets live once fetched.
+
+    Not a cache in the disposable sense: these are the exact data the results are computed
+    on, and re-fetching them depends on an external service still serving the same bytes.
+    """
+
+    @model_validator(mode="after")
+    def resolve_against_project_root(self) -> Self:
+        # Paths in the TOML are relative so the config stays portable; everything
+        # downstream wants them absolute.
+        if not self.datasets.is_absolute():
+            return self.model_copy(update={"datasets": PROJECT_ROOT / self.datasets})
+        return self
+
+
 class Config(StrictModel):
     run: RunConfig
     cv: CVConfig
+    paths: PathsConfig
 
 
 def load_config(path: Path | None = None) -> Config:

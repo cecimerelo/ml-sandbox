@@ -55,8 +55,9 @@ is affected.
 ## Commit messages
 
 A lean template is wired up via `commit.template`, and a `prepare-commit-msg` hook
-appends `Closes #N` using the issue number in the branch name — so the reference is
-never typed twice.
+appends `Refs #N` from the issue number in the branch name, so the reference is
+never typed twice. Commits *reference* the issue; the PR is what closes it, so
+partial work never closes an issue by accident.
 
 Keep commit bodies for reasoning that is **not** already in the linked issue. The
 issue holds the requirements and the acceptance criteria; the commit holds why this

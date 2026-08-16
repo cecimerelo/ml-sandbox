@@ -131,6 +131,22 @@ ISLR's bias-variance claim as a controlled experiment.
 Accepted risk: a subsample of a large clean dataset is not the same as data that is
 genuinely small, which tends to be noisier because measuring is expensive. Hence D-007.
 
+**Evidence added 2026-08-16.** The gap is not incidental to the collection — CC18
+*excludes small datasets by construction*. Its generator
+([`openml/benchmark-suites`](https://github.com/openml/benchmark-suites/blob/master/OpenML%20Benchmark%20generator.ipynb))
+labels them literally:
+
+```python
+data_status.update({k: 'Too small' for k in datalist.index[datalist.NumberOfInstances<500]})
+```
+
+So the argument is stronger than an observation about minimums: the band the recommender
+most needs to validate is outside the suite *by its authors' own design criterion*, and
+must therefore be covered another way.
+
+The same source shows CC18 caps features at 5000, where NFR-2 caps at 500 — the product's
+own scope is the stricter filter, which is what D-004 relies on.
+
 ---
 
 ## D-007 — Real small datasets from general OpenML, as a pinned ID list

@@ -8,6 +8,10 @@ dependencies = [
     "numpy>=2.1",
     "scikit-learn>=1.5",
     "pydantic>=2.9",
+    "pydantic-settings>=2.15.0",
+    "pmlb>=1.0.1.post3",
+    "requests>=2.34.2",
+    "pandas>=3.0.5",
 ]
 
 [project.optional-dependencies]
@@ -25,6 +29,8 @@ packages = ["src/mlsandbox"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# scripts/ is importable so tests can assert the manifest documents every field it writes
+pythonpath = ["."]
 
 [tool.ruff]
 line-length = 100
