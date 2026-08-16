@@ -33,10 +33,82 @@ MAX_PER_FAMILY = 2
 keeps some within-family variation without letting one kind of data dominate a band."""
 
 
+FIELD_DOCS = {
+    "source": "Where the datasets come from (D-013).",
+    "revision": (
+        "The exact commit of the source. Pinned, not a branch: a branch moves, and two "
+        "runs months apart would draw on different collections."
+    ),
+    "seed": "Seed for the stratified sample. The same seed reproduces the same selection.",
+    "max_per_family": (
+        "Cap per dataset family. PMLB carries large families from one source (fri_c*, "
+        "analcatdata_*); without a cap one kind of data would dominate a band."
+    ),
+    "per_stratum": (
+        "Datasets kept per size-band x task-type cell. Six cells, so roughly six times "
+        "this number survive."
+    ),
+    "counts.considered": "Every dataset in the source at this revision.",
+    "counts.eligible": "Passed the selection rules, before sampling.",
+    "counts.kept": "Survived the stratified sample. These are what the study runs on.",
+    "counts.excluded": "Everything not kept, each with a reason. Nothing disappears silently.",
+    "missingness_rates": (
+        "Fractions of predictor cells blanked at evaluation time (D-015). The source "
+        "ships pre-cleaned data, so the recommender's missing-value heuristic would "
+        "otherwise go untested."
+    ),
+    "coverage": (
+        "How many kept datasets exercise each characteristic the recommender reasons "
+        "about. Zeros are shown rather than omitted: an invisible empty band is a claim "
+        "the study cannot support."
+    ),
+    "datasets": "The collection the study runs on.",
+    "datasets[].name": "Identifier within the source.",
+    "datasets[].rows": "Observations.",
+    "datasets[].predictors": "Feature columns, excluding the target.",
+    "datasets[].task": (
+        "classification or regression, as the source states it. Carried explicitly "
+        "because it cannot be derived from `classes`: the source does not zero that "
+        "field for regression, and inferring from it files every regression dataset as "
+        "classification."
+    ),
+    "datasets[].classes": (
+        "Distinct target values. Only meaningful for classification — regression "
+        "datasets also carry a value here."
+    ),
+    "datasets[].categorical_predictors": "Feature columns that are categorical.",
+    "datasets[].missing_values": (
+        "null means the source does not report it, which is not the same as zero. PMLB "
+        "publishes no such column because its data is pre-cleaned; hence the injected "
+        "rates above."
+    ),
+    "datasets[].imbalance": (
+        "How far class proportions sit from equal: 0 is a perfect split, 0.94 is the "
+        "most skewed present. Only meaningful for classification, though the source "
+        "populates it for regression too."
+    ),
+    "excluded": (
+        "Every dataset considered and not kept, with why. A collection whose gaps cannot "
+        "be explained invites the suspicion that datasets were chosen to flatter the "
+        "heuristics."
+    ),
+    "excluded[].name": "Identifier of the excluded dataset.",
+    "excluded[].reason": (
+        "Why this dataset is absent: out of the product's scope, synthetic, deprecated "
+        "by the source, or eligible but not sampled."
+    ),
+    "fetch_failures": (
+        "Datasets that could not be downloaded or whose shape disagreed with the index. "
+        "Recorded rather than raised, so one bad entry does not cost the whole run."
+    ),
+}
+
+
 def build(datasets: list[Dataset], *, seed: int) -> dict:
     screening = screen(datasets, max_per_family=MAX_PER_FAMILY)
     sampled = stratified_sample(screening.kept, per_stratum=PER_STRATUM, seed=seed)
     return {
+        "_fields": FIELD_DOCS,
         "source": "pmlb",
         "revision": PINNED_REVISION,
         "seed": seed,

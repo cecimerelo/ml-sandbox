@@ -29,6 +29,8 @@ packages = ["src/mlsandbox"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# scripts/ is importable so tests can assert the manifest documents every field it writes
+pythonpath = ["."]
 
 [tool.ruff]
 line-length = 100

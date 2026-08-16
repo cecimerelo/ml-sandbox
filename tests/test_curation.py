@@ -224,3 +224,45 @@ def test_rejects_datasets_above_the_compute_ceiling():
     reason = screen_one(make("huge", rows=MAX_ROWS + 1))
     assert reason is not None
     assert "compute ceiling" in reason
+
+
+def test_class_imbalance_is_none_for_regression():
+    # PMLB reports a non-zero imbalance for 59 of its regression datasets, where the
+    # notion does not apply. Guarded at the source: the same field shape already caused
+    # two bugs via `classes`.
+    regression = make("reg", task="regression")
+    assert regression.class_imbalance is None
+
+
+def test_class_imbalance_passes_through_for_classification():
+    classification = make("clf", task="classification")
+    classification = classification.model_copy(update={"imbalance": 0.8})
+    assert classification.class_imbalance == 0.8
+
+
+def test_every_manifest_field_is_documented():
+    # The manifest is a thesis artifact: someone will open it without this conversation
+    # for context. Generated from the code so the descriptions cannot drift from what is
+    # actually written.
+    import json
+
+    from scripts.build_collection import FIELD_DOCS
+
+    manifest = json.loads(
+        (__import__("pathlib").Path(__file__).parents[1] / "config" / "collection.json")
+        .read_text(encoding="utf-8")
+    )
+
+    documented = set(FIELD_DOCS)
+    top_level = {k for k in manifest if not k.startswith("_")}
+    undocumented = {
+        key
+        for key in top_level
+        if key not in documented and not any(d.startswith(f"{key}.") for d in documented)
+    }
+    assert not undocumented, f"undocumented manifest fields: {sorted(undocumented)}"
+
+    dataset_keys = {f"datasets[].{k}" for k in manifest["datasets"][0]}
+    # source and revision repeat per dataset; they are documented at the top level.
+    dataset_keys -= {"datasets[].source", "datasets[].revision"}
+    assert dataset_keys <= documented, f"undocumented: {sorted(dataset_keys - documented)}"

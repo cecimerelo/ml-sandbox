@@ -40,7 +40,25 @@ class Dataset(StrictModel):
     the difference matters when claiming coverage of the missing-value case."""
 
     imbalance: float | None = None
+    """How far the class proportions sit from equal: 0 is a perfect split, and PMLB's
+    most skewed binary dataset reaches 0.94.
+
+    **Only meaningful for classification.** PMLB populates it for regression too — 59 of
+    its 271 regression datasets carry a non-zero value — where it describes nothing.
+    Read it through `class_imbalance`, which returns None off the classification path.
+    """
 
     @property
     def is_classification(self) -> bool:
         return self.task == "classification"
+
+    @property
+    def class_imbalance(self) -> float | None:
+        """Class imbalance, or None when the question does not apply.
+
+        The third field where PMLB reports a value that only means something for
+        classification — after `classes` and, through it, the multiclass count. Both
+        earlier cases became bugs that produced plausible wrong numbers, so this one is
+        guarded at the source rather than at each call site.
+        """
+        return self.imbalance if self.is_classification else None
