@@ -465,3 +465,43 @@ and match their declared dimensions.
 The application still accepts datasets outside these bounds; the limits are the study's,
 not the product's. Above 100k rows the recommender is extrapolating beyond its evidence,
 which belongs in the thesis's limitations.
+
+---
+
+## D-017 — Publish the recipe, not the data
+
+**Date:** 2026-08-16 · **Status:** accepted · **Supersedes:** D-010 · **Affects:** [#8](https://github.com/cecimerelo/ml-sandbox/issues/8)
+
+**Context.** D-010 committed to publishing a frozen mirror of the dataset snapshot, so the
+study would survive its source disappearing. It also required checking licences first,
+since not every dataset permits redistribution — and the client was built to record the
+`licence` field for exactly that.
+
+Recording provenance revealed the problem. PMLB publishes a `metadata.yaml` per dataset,
+but writes the literal string `None`, or `None yet. See our contributing guide`, where a
+field is unfilled. Once those placeholders are treated as absent rather than as values,
+**only 9 of the 55 selected datasets have a known original source**.
+
+For the other 46 the licence cannot be checked, because the origin is unknown.
+Republishing them would mean redistributing data under terms nobody has verified — not a
+risk worth carrying into a thesis for a benefit that can be had another way.
+
+**Decision.** Do not republish the data. Publish the **manifest, the pinned revision, and
+the code**.
+
+**Why this loses nothing.** The pinned revision is a commit SHA (D-013), so anyone
+re-running `scripts/build_collection.py --fetch` retrieves byte-identical datasets from
+PMLB. Reproducibility comes from the pin, not from hosting copies. What a mirror would
+have added is insurance against PMLB itself disappearing — real, but bought at the price
+of redistributing 46 datasets of unverified provenance.
+
+**Consequences.**
+
+- The licensing check D-010 required is dropped along with the republishing that made it
+  necessary.
+- The residual risk is stated rather than removed: if PMLB withdraws a dataset or rewrites
+  history, the study cannot be reassembled from the manifest alone. The local store under
+  `data/datasets/` remains the author's own working copy against that, and is not
+  published.
+- The thesis's reproducibility claim narrows honestly, from *"here is the frozen
+  collection"* to *"here is the exact recipe, pinned to a commit"*.
