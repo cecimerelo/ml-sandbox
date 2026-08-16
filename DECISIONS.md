@@ -354,3 +354,45 @@ collection permanently, which is stronger reproducibility than OpenML's dataset 
   D-011's schedule.
 - Unblocks the study immediately, which under a six-week deadline outweighs the citation
   strength of CC18.
+
+---
+
+## D-014 — Stack: React + MUI frontend, FastAPI backend
+
+**Date:** 2026-08-16 · **Status:** accepted · **Affects:** [#2](https://github.com/cecimerelo/ml-sandbox/issues/2), [#3](https://github.com/cecimerelo/ml-sandbox/issues/3), [#4](https://github.com/cecimerelo/ml-sandbox/issues/4), and the open architecture questions in the epic breakdown
+
+**Context.** The two open stack questions — frontend and backend framework — were blocking
+every application epic. Hosting turned out to be the forcing function: the 120-hour budget
+in D-011 never included deployment, and free Python hosting (Streamlit Community Cloud,
+HuggingFace Spaces) pushes toward a Python-only stack.
+
+**Decision.** **React + MUI** on the frontend, **FastAPI** on the backend, deployed as a
+single container on HuggingFace Spaces. This closes both open questions and settles the
+chart-rendering question as client-side, which keeps `EXPERIENCE.md`'s per-panel toggles,
+tooltips and interaction rules valid.
+
+**Rejected: Streamlit.** Roughly half the hours (~15–20h against ~40h) and near-zero
+deployment cost, but it cannot express the interaction model in `EXPERIENCE.md`. The
+author chose to honour the UX contract.
+
+Worth recording for the thesis, since it is the honest counter-argument: most of
+`DESIGN.md`'s value is portable regardless of framework. That document deliberately keeps
+MUI near-stock and spends its budget on the validated chart system — palette, series
+slots, facet rules, contrast and colour-vision checks — all of which apply equally to any
+plotting library. What React + MUI additionally preserves is the chrome, which was the
+deliberately standard part.
+
+**Consequences — the budget does not balance as-is.**
+
+D-011 allotted ~35h to the tool. This stack is estimated at ~40h (frontend ~25h, backend
+~10h, deployment ~4h), and estimates under deadline pressure tend to run short rather
+than long. Something must give, and deciding *what* now is cheaper than discovering it in
+September:
+
+- Fewer charts in v1 (two instead of four), or
+- No EDA section in the application, or
+- Less contingency — the option with the worst downside, since D-011's 10h buffer exists
+  precisely for the unknowns of a first deployment
+
+The failure mode being guarded against is unchanged from D-011: arriving in September with
+a half-built interface and an unwritten thesis.
