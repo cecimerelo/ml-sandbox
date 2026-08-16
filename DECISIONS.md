@@ -623,3 +623,42 @@ a timeout.
 **Time-boxed to four hours**, as AMLBID is. If the bridge does not work in that time, both
 methods are documented as absent and the study proceeds on the other nineteen. Two methods
 out of twenty-one cannot be allowed to block the schedule.
+
+---
+
+## D-021 — Balanced accuracy and R², both scale-free
+
+**Date:** 2026-08-16 · **Status:** accepted · **Affects:** [#9](https://github.com/cecimerelo/ml-sandbox/issues/9), [#10](https://github.com/cecimerelo/ml-sandbox/issues/10), [#12](https://github.com/cecimerelo/ml-sandbox/issues/12), [#16](https://github.com/cecimerelo/ml-sandbox/issues/16)
+
+**Context.** "Best method per dataset" is the ground truth the entire study rests on, and
+the metric defining it had never been chosen.
+
+**Decision.** **Balanced accuracy** for classification, **R² floored at 0** for
+regression.
+
+**Why balanced accuracy.** The collection contains real imbalance — one dataset sits at
+0.94 — and plain accuracy would rank a majority-class predictor top on exactly those
+datasets, producing a ground truth that is wrong where it matters most. Balanced accuracy
+is the mean of per-class recall: immune to imbalance, defined for multiclass, bounded
+0–1, and equal to accuracy when classes are balanced, so nothing is lost on the easy
+cases.
+
+**Why R², and why scale matters more than it appears.** Ranking happens within a dataset,
+so scale looks irrelevant — and for top-1 hit rate and Spearman it is. **Regret breaks
+this.** It is the performance gap between the recommended method and the best, averaged
+across datasets: in RMSE units that means averaging three units of house price with 0.02
+of chemical concentration, and the result means nothing. Regret requires a scale-free
+metric, which rules out RMSE and MAE.
+
+R² is the standard scale-free choice and the one ISLR uses, so it needs a sentence to
+justify rather than a paragraph.
+
+**Rejected.** *ROC-AUC*: needs probabilities, and `SVC(probability=True)` runs internal
+cross-validation, multiplying the already most expensive method; multiclass also forces an
+averaging choice. *F1-macro*: defensible, but harder to explain than the mean of per-class
+recall. *MCC*: most robust, least familiar — it would cost an explanation at the defence
+for no gain here.
+
+**Consequences.** R² is floored at 0 so a catastrophic model cannot drag an average
+through large negative values; the floor is documented rather than silent. Neither metric
+needs predicted probabilities, so the SVM cost stays as the pilot measured it.
