@@ -17,21 +17,12 @@ from pathlib import Path
 from typing import Self
 
 import numpy as np
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import Field, model_validator
+
+from mlsandbox.base import StrictModel
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG_PATH = PROJECT_ROOT / "config" / "benchmark.toml"
-
-
-class StrictModel(BaseModel):
-    """Rejects unknown keys and stays immutable once built.
-
-    `extra="forbid"` matters more than it looks: a typo'd key would otherwise be
-    silently ignored and the default used instead, which is exactly how a run
-    produces plausible-looking wrong results.
-    """
-
-    model_config = ConfigDict(extra="forbid", frozen=True)
 
 
 class RunConfig(StrictModel):

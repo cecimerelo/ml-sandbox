@@ -13,10 +13,10 @@ from __future__ import annotations
 
 import logging
 import time
-from dataclasses import dataclass
 
 import openml
 
+from mlsandbox.base import StrictModel
 from mlsandbox.config import Config
 from mlsandbox.settings import load_settings
 
@@ -27,8 +27,7 @@ RETRY_DELAYS_SECONDS = (2, 8, 30)
 timeout under load, which sometimes clears, rather than an instant hard error."""
 
 
-@dataclass(frozen=True)
-class DatasetMetadata:
+class DatasetMetadata(StrictModel):
     dataset_id: int
     name: str
     version: int
@@ -49,8 +48,7 @@ class DatasetMetadata:
         return max(self.features - 1, 0)
 
 
-@dataclass(frozen=True)
-class FetchFailure:
+class FetchFailure(StrictModel):
     dataset_id: int
     reason: str
 
