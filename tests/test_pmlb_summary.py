@@ -33,18 +33,18 @@ def test_distinguishes_task_types():
 def test_reads_the_fields_the_selection_rules_depend_on():
     (dataset,) = parse("tiny_clf\t120\t4\t2\tclassification\t1\t0.05")
     assert dataset.rows == 120
-    assert dataset.features == 4
+    assert dataset.predictors == 4
     assert dataset.classes == 2
-    assert dataset.categorical_features == 1
+    assert dataset.categorical_predictors == 1
 
 
 def test_blank_numbers_do_not_take_down_the_index():
     # PMLB leaves some fields empty rather than zero. One blank must not cost the whole
     # collection.
     (dataset,) = parse("odd\t100\t\t2\tclassification\t\t")
-    assert dataset.features == 0
+    assert dataset.predictors == 0
 
 
 def test_non_numeric_values_are_treated_as_missing():
     (dataset,) = parse("odd\t100\tNA\t2\tclassification\t0\t0.0")
-    assert dataset.features == 0
+    assert dataset.predictors == 0

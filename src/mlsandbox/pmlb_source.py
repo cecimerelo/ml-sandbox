@@ -19,8 +19,8 @@ from pathlib import Path
 import pandas as pd
 import requests
 
-from mlsandbox.base import StrictModel
 from mlsandbox.config import Config
+from mlsandbox.dataset import Dataset
 
 logger = logging.getLogger(__name__)
 
@@ -38,31 +38,11 @@ has over OpenML's dataset versioning, and leaving it on a branch throws that awa
 """
 
 
-class PmlbDataset(StrictModel):
-    """One row of PMLB's summary table, normalised to the vocabulary used elsewhere.
-
-    PMLB counts `n_features` as predictors only, unlike OpenML which includes the target.
-    Normalising here keeps the selection rules in `curation` source-agnostic.
-    """
-
-    name: str
-    rows: int
-    features: int
-    classes: int
-    task: str
-    categorical_features: int
-    imbalance: float
-
-    @property
-    def is_classification(self) -> bool:
-        return self.task == "classification"
-
-
 def _summary_url(revision: str = PINNED_REVISION) -> str:
     return SUMMARY_URL.replace("/master/", f"/{revision}/")
 
 
-def parse_summary(text: str) -> list[PmlbDataset]:
+def parse_summary(text: str) -> list[Dataset]:
     """Parse PMLB's summary table from its raw text.
 
     Kept separate from fetching so the parse can be exercised on a string, with no disk
@@ -71,7 +51,7 @@ def parse_summary(text: str) -> list[PmlbDataset]:
     return [_parse_row(row) for row in csv.DictReader(io.StringIO(text), delimiter="\t")]
 
 
-def fetch_summary(config: Config, *, revision: str = PINNED_REVISION) -> list[PmlbDataset]:
+def fetch_summary(config: Config, *, revision: str = PINNED_REVISION) -> list[Dataset]:
     """Load PMLB's summary table, from disk when it is already there.
 
     Small (~32KB), but keeping it on disk is what makes a re-run independent of the
@@ -93,7 +73,7 @@ def fetch_summary(config: Config, *, revision: str = PINNED_REVISION) -> list[Pm
     return parse_summary(text)
 
 
-def _parse_row(row: dict[str, str]) -> PmlbDataset:
+def _parse_row(row: dict[str, str], revision: str = PINNED_REVISION) -> Dataset:
     def number(key: str) -> float:
         raw = row.get(key) or 0
         try:
@@ -101,13 +81,19 @@ def _parse_row(row: dict[str, str]) -> PmlbDataset:
         except ValueError:
             return 0.0
 
-    return PmlbDataset(
+    return Dataset(
         name=row["dataset"],
+        source="pmlb",
+        revision=revision,
         rows=int(number("n_instances")),
-        features=int(number("n_features")),
-        classes=int(number("n_classes")),
+        # PMLB's n_features already excludes the target, unlike OpenML's.
+        predictors=int(number("n_features")),
         task=row.get("task", ""),
-        categorical_features=int(number("n_categorical_features")),
+        classes=int(number("n_classes")),
+        categorical_predictors=int(number("n_categorical_features")),
+        # PMLB reports no missing-value count: its datasets are pre-cleaned. None rather
+        # than 0, because "not reported" and "none present" are different claims.
+        missing_values=None,
         imbalance=number("imbalance"),
     )
 

@@ -14,49 +14,49 @@ from mlsandbox.curation import (
     screen,
     screen_one,
 )
-from mlsandbox.openml_client import DatasetMetadata
+from mlsandbox.dataset import Dataset
 
 
 def make(
-    dataset_id: int = 1,
     name: str = "example",
     rows: int = 200,
-    features: int = 10,
+    predictors: int = 10,
     classes: int = 2,
-    missing_values: int = 0,
-    categorical_features: int = 0,
-) -> DatasetMetadata:
-    return DatasetMetadata(
-        dataset_id=dataset_id,
+    task: str = "classification",
+    missing_values: int | None = 0,
+    categorical_predictors: int = 0,
+) -> Dataset:
+    return Dataset(
         name=name,
-        version=1,
+        source="test",
+        revision="fixed",
         rows=rows,
-        features=features,
+        predictors=predictors,
         classes=classes,
+        task=task,
         missing_values=missing_values,
-        categorical_features=categorical_features,
-        licence="public",
+        categorical_predictors=categorical_predictors,
     )
 
 
 def test_keeps_a_small_tabular_dataset():
-    assert screen_one(make(rows=200, features=10)) is None
+    assert screen_one(make(rows=200, predictors=10)) is None
 
 
 def test_rejects_above_the_feature_cap():
-    reason = screen_one(make(features=MAX_FEATURES + 1))
+    reason = screen_one(make(predictors=MAX_FEATURES + 1))
     assert reason is not None
     assert "NFR-2" in reason
 
 
 def test_keeps_exactly_at_the_feature_cap():
-    assert screen_one(make(features=MAX_FEATURES)) is None
+    assert screen_one(make(predictors=MAX_FEATURES)) is None
 
 
 def test_rejects_image_derived_even_under_the_cap():
     # The cap would normally catch these; the explicit list keeps the intent visible and
     # catches any that would slip under it.
-    reason = screen_one(make(name="mnist_784", features=10))
+    reason = screen_one(make(name="mnist_784", predictors=10))
     assert reason is not None
     assert "image" in reason
 
@@ -98,9 +98,9 @@ def test_unrelated_datasets_do_not_collide():
 def test_only_one_member_of_a_family_survives():
     screening = screen(
         [
-            make(1, "one-hundred-plants-margin"),
-            make(2, "one-hundred-plants-shape"),
-            make(3, "one-hundred-plants-texture"),
+            make("one-hundred-plants-margin"),
+            make("one-hundred-plants-shape"),
+            make("one-hundred-plants-texture"),
         ]
     )
     assert len(screening.kept) == 1
@@ -113,18 +113,18 @@ def test_family_slot_is_not_spent_on_a_dataset_that_fails_anyway():
     # sibling.
     screening = screen(
         [
-            make(1, "plants-margin", features=MAX_FEATURES + 1),
-            make(2, "plants-shape", features=10),
+            make("plants-margin", predictors=MAX_FEATURES + 1),
+            make("plants-shape", predictors=10),
         ]
     )
-    assert [m.dataset_id for m in screening.kept] == [2]
+    assert [m.name for m in screening.kept] == ["plants-shape"]
 
 
 def test_every_candidate_is_either_kept_or_explained():
     candidates = [
-        make(1, "good", rows=100),
-        make(2, "toobig", features=MAX_FEATURES + 1),
-        make(3, "mnist_784"),
+        make("good", rows=100),
+        make("toobig", predictors=MAX_FEATURES + 1),
+        make("mnist_784"),
     ]
     screening = screen(candidates)
     assert screening.total == len(candidates)
@@ -132,24 +132,24 @@ def test_every_candidate_is_either_kept_or_explained():
 
 
 def test_order_is_stable_regardless_of_input_order():
-    a = make(5, "alpha")
-    b = make(2, "beta")
-    assert [m.dataset_id for m in screen([a, b]).kept] == [2, 5]
-    assert [m.dataset_id for m in screen([b, a]).kept] == [2, 5]
+    a = make("alpha")
+    b = make("beta")
+    assert [m.name for m in screen([a, b]).kept] == ["alpha", "beta"]
+    assert [m.name for m in screen([b, a]).kept] == ["alpha", "beta"]
 
 
 def test_coverage_reports_a_zero_for_an_uncovered_band():
     # The finding that started D-006: the curated suites contain nothing below 500 rows,
     # so the recommender's most distinctive advice would go unvalidated.
-    report = coverage([make(1, "a", rows=2000), make(2, "b", rows=50_000)])
+    report = coverage([make("a", rows=2000), make("b", rows=50_000)])
     assert report["rows < 500"] == 0
 
 
 def test_coverage_counts_characteristics_the_recommender_reasons_about():
     report = coverage(
         [
-            make(1, "a", rows=100, classes=3, missing_values=5, categorical_features=2),
-            make(2, "b", rows=1000, classes=0),
+            make("a", rows=100, classes=3, missing_values=5, categorical_predictors=2),
+            make("b", rows=1000, classes=0, task="regression"),
         ]
     )
     assert report["rows < 500"] == 1
