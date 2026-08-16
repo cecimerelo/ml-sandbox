@@ -166,7 +166,11 @@ The engine reads the user's form answers as its inputs — prediction type, data
 
 **FR-6.3** Benchmark dataset sources:
 - **OpenML-CC18** — 72 curated classification datasets (primary benchmark for classification methods)
-- **UCI repository** — regression datasets (supplementary benchmark for regression methods)
+- **OpenML-CTR23** — 35 curated regression datasets (suite ID 353; the `OpenML-CTR23` alias fails against the API, the numeric ID must be used)
+
+  > **Amended 2026-08-16 (D-002).** This originally specified the UCI repository. UCI has no uniform API, no strict versioning, and no predefined splits, so it would have required curating and justifying the collection dataset by dataset. CTR23 provides the same protocol as CC18 — predefined splits, structured provenance, a single citation — for both halves of the study.
+
+- **General OpenML, pinned by dataset ID** — small datasets (50–500 rows) covering the `< 500 rows` band, which neither curated suite contains (D-007)
 
 **FR-6.4** The benchmark evaluation serves as a formal secondary research objective: empirically testing whether the theory-based heuristics hold up against real method performance. The evaluation compares the recommender against:
 - **Random selection** — lower bound baseline

@@ -68,3 +68,16 @@ Both are enabled by repo-local config, so a fresh clone needs:
 git config commit.template .gitmessage
 git config core.hooksPath .githooks
 ```
+
+## Decisions
+
+Choices that shape the study or the product go in [`DECISIONS.md`](DECISIONS.md), one
+entry per decision with a stable `D-NNN` id.
+
+Record a decision there when it is one a reader could reasonably have made differently,
+or when it changes something the thesis will claim. Reference the id from issues,
+commits and the memoria rather than restating the reasoning.
+
+The file is append-only. To reverse a decision, mark the old entry **superseded** and
+write a new one — the history of what was considered and rejected is the part the
+memoria actually needs.
