@@ -81,15 +81,16 @@ This document provides the complete epic and story breakdown for the TFM explain
 
 ### Additional Requirements
 
-> **No Architecture document.** The following are the technical decisions the stories depend on but that remain **unsettled** — each must be resolved by the architecture phase before the affected stories can be estimated or implemented.
+> **Settled 2026-08-16 (D-013, D-014).** The stack questions below are closed. What remains open is noted inline.
 
-- **[DECIDED 2026-08-15] Benchmark study language — Python-first**, with a narrow optional R step reserved for BART. Chosen because the author is stronger in Python, AMLBID runs natively, and the OpenML Python client is the most mature. Fold assignments are generated once and persisted (`dataset_id, row_index, fold_id`) so any language that participates evaluates on identical splits. Full reasoning in GitHub issue #7.
-- **[OPEN] Frontend framework** — React / Vue / Streamlit. Note: Streamlit cannot deliver a substantial portion of the specified interaction model (per-panel toggles, disabled-with-reason chips, in-place stale dimming, keyboard grid navigation). Choosing it would require amending the UX contract.
-- **[OPEN] Backend framework** — FastAPI / Flask.
-- **[OPEN] Chart rendering strategy** — client-side (D3/Recharts/Plotly) vs. server-rendered images. This is load-bearing: server-rendered images would invalidate the "View as table" toggle, all hover/tooltip specifications, and the per-panel interaction rules.
-- **[OPEN] Session storage mechanism** for form-answer restore and the stale-input snapshot.
-- **[OPEN] Training execution host** and how sequential training streams per-method progress.
-- **[OPEN] Anonymized record store** for FR-7.3.
+- **[DECIDED] Frontend — React + MUI.** Streamlit was roughly half the hours but cannot express the interaction model in `EXPERIENCE.md`; the UX contract was chosen instead (D-014).
+- **[DECIDED] Backend — FastAPI.**
+- **[DECIDED] Chart rendering — client-side.** This keeps the per-panel toggles, tooltips and interaction rules in `EXPERIENCE.md` valid. **v1 ships two chart types, not four** (D-014).
+- **[DECIDED] Deployment — HuggingFace Spaces**, single container. Deployment was never in the 120h budget of D-011; free Python hosting closes that gap.
+- **[DECIDED] Benchmark study language — Python-first**, with a narrow optional R step for BART (D-001). Fold assignments are generated once and persisted so any participating language evaluates on identical splits.
+- **[DECIDED] Data source — PMLB**, superseding OpenML's CC18 and CTR23 after a documented, recurring API outage. CC18 returns as optional validation if the API recovers (D-013).
+- **[OPEN] Session storage** for form-answer restore and the stale-input snapshot.
+- **[OPEN] Anonymized record store** for FR-7.3 — deferred with the measurement instrumentation under D-011.
 - No starter template is specified.
 
 ### UX Design Requirements
