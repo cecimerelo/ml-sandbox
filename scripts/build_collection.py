@@ -19,7 +19,7 @@ from mlsandbox.config import PROJECT_ROOT, load_config
 from mlsandbox.curation import coverage, screen, stratified_sample
 from mlsandbox.dataset import Dataset
 from mlsandbox.missingness import RATES as MISSINGNESS_RATES
-from mlsandbox.pmlb_source import PINNED_REVISION, fetch_summary
+from mlsandbox.pmlb_source import PINNED_REVISION, fetch_summary, load_dataset
 
 MANIFEST_PATH = PROJECT_ROOT / "config" / "collection.json"
 
@@ -83,9 +83,42 @@ def report(manifest: dict) -> None:
         print(f"  {reason[:52]:52} {count:>4}")
 
 
+def fetch_all(manifest: dict, config) -> tuple[int, list[dict]]:
+    """Download every selected dataset, recording rather than raising on failure.
+
+    A dataset that cannot be retrieved is a documented exclusion, not a hole in the
+    collection — and one bad name must not cost the other fifty-four downloads.
+    """
+    fetched, failures = 0, []
+    for entry in manifest["datasets"]:
+        name = entry["name"]
+        try:
+            frame = load_dataset(name, config)
+        except Exception as error:  # noqa: BLE001 — every failure is recorded, not raised
+            failures.append({"name": name, "reason": f"{type(error).__name__}: {error}"})
+            continue
+
+        expected = (entry["rows"], entry["predictors"] + 1)
+        if frame.shape != expected:
+            failures.append(
+                {
+                    "name": name,
+                    "reason": f"shape {frame.shape} does not match the index {expected}",
+                }
+            )
+            continue
+        fetched += 1
+    return fetched, failures
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="report without writing")
+    parser.add_argument(
+        "--fetch",
+        action="store_true",
+        help="download every selected dataset and record any that fail",
+    )
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -99,6 +132,13 @@ def main() -> int:
             "\nWARNING: revision is 'master', which moves. Pin a commit SHA before the "
             "final run or the study stops being reproducible."
         )
+
+    if args.fetch:
+        fetched, failures = fetch_all(manifest, config)
+        print(f"\nfetched {fetched}/{len(manifest['datasets'])}")
+        for failure in failures:
+            print(f"  FAILED {failure['name']}: {failure['reason']}")
+        manifest["fetch_failures"] = failures
 
     if not args.check:
         Path(MANIFEST_PATH).write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
