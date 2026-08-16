@@ -389,10 +389,16 @@ D-011 allotted ~35h to the tool. This stack is estimated at ~40h (frontend ~25h,
 than long. Something must give, and deciding *what* now is cheaper than discovering it in
 September:
 
-- Fewer charts in v1 (two instead of four), or
-- No EDA section in the application, or
-- Less contingency — the option with the worst downside, since D-011's 10h buffer exists
-  precisely for the unknowns of a first deployment
+**Resolved the same day: v1 ships two charts instead of four.** Each chart type costs
+2–3h once its states and non-visual equivalent are included, so two charts closes the gap.
+It is also the cut that costs the thesis least — the chart system is demonstrated as
+convincingly by two well-built plots as by four, and the remaining types are already
+specified in `DESIGN.md` as future work.
+
+Rejected as the source of the hours: the EDA section (removes one of the three layers the
+PRD promises), the contingency buffer (it exists precisely for the unknowns of a first
+deployment), and Epic 1 (the research contribution, and the only part that cannot become
+future work).
 
 The failure mode being guarded against is unchanged from D-011: arriving in September with
 a half-built interface and an unwritten thesis.
