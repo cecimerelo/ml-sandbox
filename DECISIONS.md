@@ -194,3 +194,38 @@ the FR-5.5 prompt, never pre-filled.
 The selector path used is logged as a covariate, because the selector promotes 3
 alternatives and hides the rest — any diversity measure partly reflects that default and
 must be reported as such.
+
+---
+
+## D-010 — Publish a frozen mirror of the dataset snapshot
+
+**Date:** 2026-08-16 · **Status:** accepted · **Affects:** [#8](https://github.com/cecimerelo/ml-sandbox/issues/8)
+
+**Context.** OpenML's API went down for a full working session during curation, with its
+status page reporting normal throughout. That is recoverable — the study only needs
+OpenML once, since D-008 caches everything to disk and re-runs are self-contained.
+
+The unrecovered risk is durability. A local cache dies with the laptop, and OpenML can
+withdraw or re-version a dataset. Either would leave the thesis citing a collection that
+can no longer be assembled.
+
+**Decision.** OpenML remains the **source of record** — the citation, the provenance, the
+"curated suite" argument. Separately, publish the **exact snapshot used** as a frozen,
+revision-pinned mirror, so the study can be reproduced regardless of OpenML's state.
+
+**Rejected.** *Switching sources to HuggingFace because of the outage.* An outage passes;
+a methodological choice stays in the thesis forever. There is also no official OpenML
+mirror on HuggingFace — `openml/credit-g` and similar return 401, meaning they do not
+exist, while a known public dataset returns 200 from the same unauthenticated endpoint.
+`inria-soda/tabular-benchmark` is a genuine curated alternative with a citable paper, but
+adopting it would forfeit the predefined splits of D-003 and, by its own construction,
+excludes the small datasets that motivated D-006.
+
+**Consequences.** Reproducibility improves beyond the original plan: the thesis moves
+from *"download these ids and trust they are unchanged"* to *"here is the exact frozen
+collection."*
+
+**Licensing must be checked before publishing.** Datasets carry licences and not all
+permit redistribution. The client already records the `licence` field for this reason;
+anything that cannot be redistributed is referenced by id rather than mirrored, and the
+gap is stated.
