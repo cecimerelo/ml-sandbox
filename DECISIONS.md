@@ -722,3 +722,40 @@ methods carrying 98% of the measured cost.
 **Consequences.** A deviation from the exact algorithm in the textbook, and the thesis
 must state it: the histogram variant approximates the same procedure by binning features,
 and is the implementation in general use today.
+
+---
+
+## D-024 — The registry is declarative metadata plus a builder derived from it
+
+**Date:** 2026-08-16 · **Status:** accepted · **Affects:** [#9](https://github.com/cecimerelo/ml-sandbox/issues/9), [#10](https://github.com/cecimerelo/ml-sandbox/issues/10), [#5](https://github.com/cecimerelo/ml-sandbox/issues/5)
+
+**Context.** Methods differ in what they need around them: KNN, SVM, Ridge, Lasso, MLP
+and LDA require feature scaling, trees do not; nine of the twenty-one need imputation
+(D-022); three need internal cross-validation (D-019). Where that knowledge lives decides
+whether a whole class of silent error is possible.
+
+Measured on `adult`, whose features span 0–1 (`sex`) to 12,285–1,490,400 (`fnlwgt`):
+**KNN scores 0.6266 unscaled and 0.7468 scaled**, while a decision tree is unmoved
+(0.7501 vs 0.7497). Getting this wrong would not produce an error — it would produce a
+benchmark concluding that trees beat everything, when what was actually compared was
+well-configured methods against badly-configured ones.
+
+**Decision.** The registry holds **declarative metadata** — task compatibility, scaling
+requirement, native `NaN` support, tuning strategy — **and builds each method's pipeline
+from that metadata**.
+
+**Rejected.** *Metadata only*, with the harness assembling pipelines: leaves it possible
+to fit a scaler outside the training fold, which does not raise, it just inflates the
+score, and duplicates the assembly logic between study and application. *Pipelines only*:
+makes leakage structurally impossible but yields Python objects a React frontend cannot
+read, so compatibility information would have to be maintained separately — the same
+duplication by another route.
+
+**Consequences.**
+
+- Leakage is **structurally impossible**: nothing assembles a pipeline by hand, and
+  scikit-learn guarantees everything inside a `Pipeline` is fitted per training fold.
+- The metadata exports to JSON, so the application uses the same table for FR-8.3's
+  disabled-with-reason. What the study validates is exactly what the tool offers.
+- One source of truth. Metadata and pipeline cannot contradict each other, because one is
+  generated from the other.
