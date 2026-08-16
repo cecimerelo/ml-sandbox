@@ -662,3 +662,63 @@ for no gain here.
 **Consequences.** R² is floored at 0 so a catastrophic model cannot drag an average
 through large negative values; the floor is documented rather than silent. Neither metric
 needs predicted probabilities, so the SVM cost stays as the pilot measured it.
+
+---
+
+## D-022 — Missing values are handled the way each method actually handles them
+
+**Date:** 2026-08-16 · **Status:** accepted · **Affects:** [#9](https://github.com/cecimerelo/ml-sandbox/issues/9), [#10](https://github.com/cecimerelo/ml-sandbox/issues/10), [#12](https://github.com/cecimerelo/ml-sandbox/issues/12)
+
+**Context.** D-015 injects missing values to validate the recommender's heuristic that
+tree-based methods cope with gaps where others need imputation. The obstacle looked fatal:
+if every method has to impute before training, they all receive complete data and the
+heuristic cannot be tested at all.
+
+That obstacle was based on a stale belief about scikit-learn. Measured against 1.9:
+
+| Native `NaN` (7) | Requires imputation (9) |
+|---|---|
+| DecisionTree (clf, reg), RandomForest (clf, reg), ExtraTrees, HistGradientBoosting, Bagging | GradientBoosting, LinearRegression, LogisticRegression, RidgeCV, LDA, GaussianNB, KNN, SVC, MLP |
+
+The split is almost exactly the claim under test — tree-based methods against the rest —
+with enough on both sides to conclude something.
+
+**Decision.** Each method declares whether it handles `NaN` natively. Those that do
+receive the data untouched; those that do not get an imputer **inside their pipeline**,
+fitted per training fold.
+
+**Rejected.** *Uniform imputation for everyone*: fair between methods, but it hands every
+one of them complete data and makes D-015 measure nothing. *Imputation for all, measuring
+degradation instead*: a real question, but a different one — "who degrades least after
+imputation" rather than "who copes with gaps" — and it would have required rewriting the
+heuristic the study exists to test.
+
+**Consequences.** This is also what a user actually experiences: someone with gaps who
+picks Random Forest imputes nothing, while the same person picking SVM must. The
+comparison at 5% and 25% missingness therefore reflects the real choice.
+
+Imputation sits inside the pipeline. Computing a mean over the full dataset leaks test-set
+information into training — the failure mode flagged on #10, which does not error, it just
+inflates the score.
+
+---
+
+## D-023 — Boosting is the histogram implementation
+
+**Date:** 2026-08-16 · **Status:** accepted · **Affects:** [#9](https://github.com/cecimerelo/ml-sandbox/issues/9)
+
+**Context.** scikit-learn ships two boosting implementations. `GradientBoosting` is the
+classic algorithm ISLR describes; `HistGradientBoosting` is the histogram-based variant.
+They differ in two ways that matter here: the histogram version is substantially faster,
+and it handles `NaN` natively where the classic one does not.
+
+**Decision.** Use `HistGradientBoosting` as the study's boosting method.
+
+**Why.** It lands boosting in the native-missing-values group, which is where ISLR's
+reasoning would put a tree ensemble — under D-022 the classic implementation would
+paradoxically be a tree method that cannot cope with gaps. It also removes one of the four
+methods carrying 98% of the measured cost.
+
+**Consequences.** A deviation from the exact algorithm in the textbook, and the thesis
+must state it: the histogram variant approximates the same procedure by binning features,
+and is the implementation in general use today.
