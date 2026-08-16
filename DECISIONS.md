@@ -402,3 +402,66 @@ future work).
 
 The failure mode being guarded against is unchanged from D-011: arriving in September with
 a half-built interface and an unwritten thesis.
+
+---
+
+## D-015 — Missing values are injected, because PMLB has none
+
+**Date:** 2026-08-16 · **Status:** accepted · **Affects:** [#8](https://github.com/cecimerelo/ml-sandbox/issues/8), [#12](https://github.com/cecimerelo/ml-sandbox/issues/12)
+
+**Context.** PMLB's datasets are pre-cleaned: its summary table has no missing-value
+column because there are none. But the recommender asks about missing values (FR-1.2,
+FR-1.3), the heuristics act on the answer — trees and ensembles cope natively, linear
+methods need imputation first — and "handles missing values" is a column of the method
+characteristics table (FR-2.2).
+
+Without action, that heuristic would ship untested. Structurally the same gap as the
+sub-500-row one: the tool asserting something the study cannot support.
+
+**Decision.** Inject missingness at known rates — **5% and 25% of predictor cells** —
+rather than documenting the limitation. Roughly 3–4 hours against a limitations
+paragraph, and the author chose coverage.
+
+**How, and why it matters.**
+
+- **The target is never blanked, in either task type.** Removing outcomes changes what is
+  being predicted rather than how hard it is to predict, and silently shrinks the
+  effective sample.
+- **MCAR** — every predictor cell equally likely. The weakest, most neutral assumption.
+  Real gaps are often MAR or MNAR, where the pattern itself carries signal; MCAR is
+  therefore a floor, and must be stated as one. Methods that fail here will not cope with
+  the harder kinds.
+- Positions are drawn **without replacement**, so the achieved rate is exact rather than
+  approximate.
+- Seeded, so a rate comparison is reproducible.
+
+**Consequences.** Each dataset yields three variants (0%, 5%, 25%), so 55 datasets become
+165 evaluations. Only *n* changes across the comparison, making the missing-value
+sensitivity attributable to missingness alone.
+
+The thesis must state that only MCAR was tested.
+
+---
+
+## D-016 — The collection is bounded by rows at both ends
+
+**Date:** 2026-08-16 · **Status:** accepted · **Revises:** D-005 · **Affects:** [#8](https://github.com/cecimerelo/ml-sandbox/issues/8)
+
+**Context.** D-005 imposed no row ceiling on the benchmark, decided when the largest
+candidate had 96k rows. PMLB reaches **1,025,010**. It also descends to **8 rows**, where
+five-fold cross-validation leaves under two rows per fold and the score reports the split
+rather than the method.
+
+**Decision.** Floor at **50 rows**, ceiling at **100,000**.
+
+D-005's reasoning stands where it applies — the tiered timeouts of FR-8.4 bound the worst
+case *per method* — but nothing bounded it *per dataset*, and one million-row dataset
+would have consumed more compute than the entire small band.
+
+**Consequences.** The final collection is **55 datasets, 523,531 rows**, spanning 57 to
+67,557 rows, with roughly 20 per size band and balanced across task types. All 55 download
+and match their declared dimensions.
+
+The application still accepts datasets outside these bounds; the limits are the study's,
+not the product's. Above 100k rows the recommender is extrapolating beyond its evidence,
+which belongs in the thesis's limitations.
