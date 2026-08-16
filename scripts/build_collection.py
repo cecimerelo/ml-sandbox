@@ -16,10 +16,15 @@ import logging
 from pathlib import Path
 
 from mlsandbox.config import PROJECT_ROOT, load_config
-from mlsandbox.curation import coverage, screen, stratified_sample
+from mlsandbox.curation import Excluded, coverage, screen, stratified_sample
 from mlsandbox.dataset import Dataset
 from mlsandbox.missingness import RATES as MISSINGNESS_RATES
-from mlsandbox.pmlb_source import PINNED_REVISION, fetch_summary, load_dataset
+from mlsandbox.pmlb_source import (
+    PINNED_REVISION,
+    fetch_provenance,
+    fetch_summary,
+    load_dataset,
+)
 
 MANIFEST_PATH = PROJECT_ROOT / "config" / "collection.json"
 
@@ -92,6 +97,15 @@ FIELD_DOCS = {
         "be explained invites the suspicion that datasets were chosen to flatter the "
         "heuristics."
     ),
+    "datasets[].provenance": (
+        "Where the dataset came from before PMLB: original source URLs, the publication "
+        "it accompanied, and PMLB's description. Required before republishing anything "
+        "under D-010, since licences vary by original source."
+    ),
+    "datasets[].keywords": (
+        "PMLB's own tags. `synthetic` and `simulation` exclude a dataset: the tag is "
+        "authoritative where guessing from names is not."
+    ),
     "excluded[].name": "Identifier of the excluded dataset.",
     "excluded[].reason": (
         "Why this dataset is absent: out of the product's scope, synthetic, deprecated "
@@ -104,9 +118,33 @@ FIELD_DOCS = {
 }
 
 
-def build(datasets: list[Dataset], *, seed: int) -> dict:
+def build(datasets: list[Dataset], *, seed: int, config) -> dict:
     screening = screen(datasets, max_per_family=MAX_PER_FAMILY)
-    sampled = stratified_sample(screening.kept, per_stratum=PER_STRATUM, seed=seed)
+
+    # PMLB tags synthetic datasets in their metadata. That tag is authoritative where
+    # guessing from names is not: `529_pollen` is synthetic and matches no name pattern.
+    eligible, tagged_synthetic, provenance = [], [], {}
+    for dataset in screening.kept:
+        record = fetch_provenance(dataset.name, config)
+        if record is None:
+            eligible.append(dataset)
+            continue
+        provenance[dataset.name] = record
+        if record.is_synthetic:
+            tagged_synthetic.append(
+                Excluded(
+                    name=dataset.name,
+                    reason=(
+                        "synthetic: tagged "
+                        f"{sorted(set(record.keywords) & {'synthetic', 'simulation'})} "
+                        "by the source"
+                    ),
+                )
+            )
+        else:
+            eligible.append(dataset)
+
+    sampled = stratified_sample(eligible, per_stratum=PER_STRATUM, seed=seed)
     return {
         "_fields": FIELD_DOCS,
         "source": "pmlb",
@@ -116,18 +154,32 @@ def build(datasets: list[Dataset], *, seed: int) -> dict:
         "per_stratum": PER_STRATUM,
         "counts": {
             "considered": screening.total,
-            "eligible": len(screening.kept),
+            "eligible": len(eligible),
             "kept": len(sampled.kept),
-            "excluded": len(screening.excluded) + len(sampled.excluded),
+            "excluded": len(screening.excluded) + len(tagged_synthetic) + len(sampled.excluded),
         },
         # PMLB ships pre-cleaned data, so the base collection cannot exercise the
         # recommender's missing-value heuristic. These rates are injected at evaluation
         # time to cover it as a controlled experiment (D-015).
         "missingness_rates": list(MISSINGNESS_RATES),
         "coverage": coverage(sampled.kept),
-        "datasets": [d.model_dump(mode="json") for d in sampled.kept],
+        "datasets": [
+            {
+                **d.model_dump(mode="json"),
+                "provenance": (
+                    provenance[d.name].model_dump(
+                        mode="json", exclude={"name", "keywords"}
+                    )
+                    if d.name in provenance
+                    else None
+                ),
+                "keywords": provenance[d.name].keywords if d.name in provenance else [],
+            }
+            for d in sampled.kept
+        ],
         "excluded": [
-            e.model_dump(mode="json") for e in screening.excluded + sampled.excluded
+            e.model_dump(mode="json")
+            for e in screening.excluded + tagged_synthetic + sampled.excluded
         ],
     }
 
@@ -196,7 +248,7 @@ def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     config = load_config()
 
-    manifest = build(fetch_summary(config), seed=config.run.seed)
+    manifest = build(fetch_summary(config), seed=config.run.seed, config=config)
     report(manifest)
 
     if manifest["revision"] == "master":

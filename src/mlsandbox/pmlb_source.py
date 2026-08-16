@@ -18,7 +18,9 @@ from pathlib import Path
 
 import pandas as pd
 import requests
+import yaml
 
+from mlsandbox.base import StrictModel
 from mlsandbox.config import Config
 from mlsandbox.dataset import Dataset
 
@@ -127,3 +129,76 @@ def load_dataset(name: str, config: Config) -> pd.DataFrame:
         local.write_bytes(response.content)
 
     return pd.read_csv(local, sep="\t", compression="gzip")
+
+
+class DatasetProvenance(StrictModel):
+    """Where a dataset came from before PMLB, and what PMLB says about it.
+
+    Fetched per dataset from its `metadata.yaml`. Two things matter here beyond
+    documentation: `keywords` carries PMLB's own `synthetic` tag, which is a far better
+    signal than guessing from names, and `sources` is what makes redistribution under
+    D-010 checkable rather than assumed.
+    """
+
+    name: str
+    description: str = ""
+    sources: list[str] = []
+    publication: str = ""
+    keywords: list[str] = []
+
+    @property
+    def is_synthetic(self) -> bool:
+        return "synthetic" in self.keywords or "simulation" in self.keywords
+
+
+def fetch_provenance(name: str, config: Config) -> DatasetProvenance | None:
+    """Load one dataset's metadata, from disk when already fetched.
+
+    Returns None when unavailable: absent metadata is worth recording, not worth losing
+    the run over.
+    """
+    store = config.paths.datasets / "pmlb" / PINNED_REVISION / "metadata"
+    store.mkdir(parents=True, exist_ok=True)
+    local = store / f"{name}.yaml"
+
+    if not local.exists():
+        url = (
+            f"https://raw.githubusercontent.com/EpistasisLab/pmlb/{PINNED_REVISION}"
+            f"/datasets/{name}/metadata.yaml"
+        )
+        response = requests.get(url, timeout=60)
+        if response.status_code != 200:
+            return None
+        local.write_text(response.text, encoding="utf-8")
+
+    raw = yaml.safe_load(local.read_text(encoding="utf-8")) or {}
+    return DatasetProvenance(
+        name=name,
+        description=_clean(raw.get("description"), limit=400),
+        sources=_urls(raw.get("source")),
+        publication=_clean(raw.get("publication"), limit=200),
+        keywords=[k for k in (str(x) for x in raw.get("keywords") or []) if _is_real(k)],
+    )
+
+
+PLACEHOLDERS = ("none", "none yet", "n/a", "unknown", "")
+"""PMLB writes the literal string `None`, or `None yet. See our contributing guide...`,
+where a field is unfilled. Storing those as values would make a dataset look like it has
+provenance when it has none — and D-010 depends on knowing which datasets can have their
+licence checked."""
+
+
+def _is_real(value: str) -> bool:
+    return value.strip().lower().rstrip(".") not in PLACEHOLDERS
+
+
+def _clean(value: object, *, limit: int) -> str:
+    text = " ".join(str(value or "").split())
+    if not _is_real(text) or text.lower().startswith("none yet"):
+        return ""
+    return text[:limit]
+
+
+def _urls(value: object) -> list[str]:
+    """Extract real URLs. PMLB separates them by whitespace, newlines, or both."""
+    return [token for token in str(value or "").split() if token.startswith("http")]

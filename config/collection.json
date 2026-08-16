@@ -21,6 +21,8 @@
     "datasets[].missing_values": "null means the source does not report it, which is not the same as zero. PMLB publishes no such column because its data is pre-cleaned; hence the injected rates above.",
     "datasets[].imbalance": "How far class proportions sit from equal: 0 is a perfect split, 0.94 is the most skewed present. Only meaningful for classification, though the source populates it for regression too.",
     "excluded": "Every dataset considered and not kept, with why. A collection whose gaps cannot be explained invites the suspicion that datasets were chosen to flatter the heuristics.",
+    "datasets[].provenance": "Where the dataset came from before PMLB: original source URLs, the publication it accompanied, and PMLB's description. Required before republishing anything under D-010, since licences vary by original source.",
+    "datasets[].keywords": "PMLB's own tags. `synthetic` and `simulation` exclude a dataset: the tag is authoritative where guessing from names is not.",
     "excluded[].name": "Identifier of the excluded dataset.",
     "excluded[].reason": "Why this dataset is absent: out of the product's scope, synthetic, deprecated by the source, or eligible but not sampled.",
     "fetch_failures": "Datasets that could not be downloaded or whose shape disagreed with the index. Recorded rather than raised, so one bad entry does not cost the whole run."
@@ -32,7 +34,7 @@
   "per_stratum": 10,
   "counts": {
     "considered": 450,
-    "eligible": 237,
+    "eligible": 234,
     "kept": 55,
     "excluded": 395
   },
@@ -46,11 +48,11 @@
     "rows > 10k": 15,
     "classification": 28,
     "regression": 27,
-    "multiclass": 15,
-    "binary": 13,
+    "multiclass": 12,
+    "binary": 16,
     "has missing values": 0,
     "missing-value data unavailable": 55,
-    "has categorical features": 23
+    "has categorical features": 22
   },
   "datasets": [
     {
@@ -63,7 +65,13 @@
       "classes": 11,
       "categorical_predictors": 22,
       "missing_values": null,
-      "imbalance": 0.3746815528888889
+      "imbalance": 0.3746815528888889,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "210_cloud",
@@ -75,7 +83,13 @@
       "classes": 94,
       "categorical_predictors": 1,
       "missing_values": null,
-      "imbalance": 0.0013791170700768
+      "imbalance": 0.0013791170700768,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "215_2dplanes",
@@ -87,7 +101,13 @@
       "classes": 40368,
       "categorical_predictors": 9,
       "missing_values": null,
-      "imbalance": 2.419008481400585e-07
+      "imbalance": 2.419008481400585e-07,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "218_house_8L",
@@ -99,7 +119,13 @@
       "classes": 2045,
       "categorical_predictors": 0,
       "missing_values": null,
-      "imbalance": 0.0193534322439784
+      "imbalance": 0.0193534322439784,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "227_cpu_small",
@@ -111,19 +137,13 @@
       "classes": 56,
       "categorical_predictors": 0,
       "missing_values": null,
-      "imbalance": 0.0205723459070379
-    },
-    {
-      "name": "294_satellite_image",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 6435,
-      "predictors": 36,
-      "task": "regression",
-      "classes": 6,
-      "categorical_predictors": 0,
-      "missing_values": null,
-      "imbalance": 0.0276087321122286
+      "imbalance": 0.0205723459070379,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "344_mv",
@@ -135,19 +155,13 @@
       "classes": 39029,
       "categorical_predictors": 1,
       "missing_values": null,
-      "imbalance": 0.0006300827654696
-    },
-    {
-      "name": "529_pollen",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 3848,
-      "predictors": 4,
-      "task": "regression",
-      "classes": 3784,
-      "categorical_predictors": 0,
-      "missing_values": null,
-      "imbalance": 4.250269277695601e-06
+      "imbalance": 0.0006300827654696,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "537_houses",
@@ -159,7 +173,13 @@
       "classes": 3842,
       "categorical_predictors": 0,
       "missing_values": null,
-      "imbalance": 0.0025041112046606
+      "imbalance": 0.0025041112046606,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "564_fried",
@@ -171,7 +191,13 @@
       "classes": 17396,
       "categorical_predictors": 0,
       "missing_values": null,
-      "imbalance": 2.1925705209313144e-05
+      "imbalance": 2.1925705209313144e-05,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "574_house_16H",
@@ -183,7 +209,13 @@
       "classes": 2045,
       "categorical_predictors": 0,
       "missing_values": null,
-      "imbalance": 0.0193534322439784
+      "imbalance": 0.0193534322439784,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "579_fri_c0_250_5",
@@ -195,10 +227,16 @@
       "classes": 250,
       "categorical_predictors": 0,
       "missing_values": null,
-      "imbalance": 0.0
+      "imbalance": 0.0,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
-      "name": "582_fri_c1_500_25",
+      "name": "581_fri_c3_500_25",
       "source": "pmlb",
       "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 500,
@@ -207,19 +245,67 @@
       "classes": 500,
       "categorical_predictors": 0,
       "missing_values": null,
-      "imbalance": 0.0
+      "imbalance": 0.0,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
-      "name": "584_fri_c4_500_25",
+      "name": "583_fri_c1_1000_50",
       "source": "pmlb",
       "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 500,
-      "predictors": 25,
+      "rows": 1000,
+      "predictors": 50,
       "task": "regression",
-      "classes": 500,
+      "classes": 1000,
       "categorical_predictors": 0,
       "missing_values": null,
-      "imbalance": 0.0
+      "imbalance": 0.0,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
+    },
+    {
+      "name": "586_fri_c3_1000_25",
+      "source": "pmlb",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "rows": 1000,
+      "predictors": 25,
+      "task": "regression",
+      "classes": 1000,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
+    },
+    {
+      "name": "588_fri_c4_1000_100",
+      "source": "pmlb",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "rows": 1000,
+      "predictors": 100,
+      "task": "regression",
+      "classes": 1000,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "601_fri_c1_250_5",
@@ -231,7 +317,13 @@
       "classes": 250,
       "categorical_predictors": 0,
       "missing_values": null,
-      "imbalance": 0.0
+      "imbalance": 0.0,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "602_fri_c3_250_10",
@@ -243,7 +335,31 @@
       "classes": 250,
       "categorical_predictors": 0,
       "missing_values": null,
-      "imbalance": 0.0
+      "imbalance": 0.0,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
+    },
+    {
+      "name": "607_fri_c4_1000_50",
+      "source": "pmlb",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "rows": 1000,
+      "predictors": 50,
+      "task": "regression",
+      "classes": 1000,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "611_fri_c3_100_5",
@@ -255,7 +371,31 @@
       "classes": 100,
       "categorical_predictors": 0,
       "missing_values": null,
-      "imbalance": 0.0
+      "imbalance": 0.0,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
+    },
+    {
+      "name": "620_fri_c1_1000_25",
+      "source": "pmlb",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "rows": 1000,
+      "predictors": 25,
+      "task": "regression",
+      "classes": 1000,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "621_fri_c0_100_10",
@@ -267,31 +407,13 @@
       "classes": 100,
       "categorical_predictors": 0,
       "missing_values": null,
-      "imbalance": 0.0
-    },
-    {
-      "name": "626_fri_c2_500_50",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 500,
-      "predictors": 50,
-      "task": "regression",
-      "classes": 500,
-      "categorical_predictors": 0,
-      "missing_values": null,
-      "imbalance": 0.0
-    },
-    {
-      "name": "633_fri_c0_500_25",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 500,
-      "predictors": 25,
-      "task": "regression",
-      "classes": 500,
-      "categorical_predictors": 0,
-      "missing_values": null,
-      "imbalance": 0.0
+      "imbalance": 0.0,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "634_fri_c2_100_10",
@@ -303,7 +425,13 @@
       "classes": 100,
       "categorical_predictors": 0,
       "missing_values": null,
-      "imbalance": 0.0
+      "imbalance": 0.0,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "635_fri_c0_250_10",
@@ -315,7 +443,31 @@
       "classes": 250,
       "categorical_predictors": 0,
       "missing_values": null,
-      "imbalance": 0.0
+      "imbalance": 0.0,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
+    },
+    {
+      "name": "637_fri_c1_500_50",
+      "source": "pmlb",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "rows": 500,
+      "predictors": 50,
+      "task": "regression",
+      "classes": 500,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "646_fri_c3_500_10",
@@ -327,7 +479,13 @@
       "classes": 500,
       "categorical_predictors": 0,
       "missing_values": null,
-      "imbalance": 0.0
+      "imbalance": 0.0,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "650_fri_c0_500_50",
@@ -339,19 +497,13 @@
       "classes": 500,
       "categorical_predictors": 0,
       "missing_values": null,
-      "imbalance": 0.0
-    },
-    {
-      "name": "666_rmftsa_ladata",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 508,
-      "predictors": 10,
-      "task": "regression",
-      "classes": 365,
-      "categorical_predictors": 0,
-      "missing_values": null,
-      "imbalance": 0.0006565796098625
+      "imbalance": 0.0,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "690_visualizing_galaxy",
@@ -363,7 +515,13 @@
       "classes": 208,
       "categorical_predictors": 0,
       "missing_values": null,
-      "imbalance": 0.0012464748848438
+      "imbalance": 0.0012464748848438,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "706_sleuth_case1202",
@@ -375,7 +533,13 @@
       "classes": 79,
       "categorical_predictors": 1,
       "missing_values": null,
-      "imbalance": 0.0015831087631295
+      "imbalance": 0.0015831087631295,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "GAMETES_Heterogeneity_20atts_1600_Het_0.4_0.2_75_EDM_2_001",
@@ -387,7 +551,31 @@
       "classes": 2,
       "categorical_predictors": 19,
       "missing_values": null,
-      "imbalance": 0.0
+      "imbalance": 0.0,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
+    },
+    {
+      "name": "Hill_Valley_with_noise",
+      "source": "pmlb",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "rows": 1212,
+      "predictors": 100,
+      "task": "classification",
+      "classes": 2,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "adult",
@@ -399,7 +587,19 @@
       "classes": 2,
       "categorical_predictors": 4,
       "missing_values": null,
-      "imbalance": 0.2718959907996784
+      "imbalance": 0.2718959907996784,
+      "provenance": {
+        "description": "Prediction of whether a person makes over $50K a year, based on 14 other features.",
+        "sources": [
+          "https://archive.ics.uci.edu/ml/datasets/adult",
+          "https://www.openml.org/d/1590"
+        ],
+        "publication": "Ron Kohavi, \"Scaling Up the Accuracy of Naive-Bayes Classifiers: a Decision-Tree Hybrid\", Proceedings of the Second International Conference on Knowledge Discovery and Data Mining, 1996"
+      },
+      "keywords": [
+        "income",
+        "demographics"
+      ]
     },
     {
       "name": "allhypo",
@@ -411,7 +611,13 @@
       "classes": 3,
       "categorical_predictors": 4,
       "missing_values": null,
-      "imbalance": 0.7837656635873043
+      "imbalance": 0.7837656635873043,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "allrep",
@@ -423,7 +629,13 @@
       "classes": 4,
       "categorical_predictors": 4,
       "missing_values": null,
-      "imbalance": 0.9142744795514716
+      "imbalance": 0.9142744795514716,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "biomed",
@@ -435,7 +647,13 @@
       "classes": 2,
       "categorical_predictors": 1,
       "missing_values": null,
-      "imbalance": 0.079691399006433
+      "imbalance": 0.079691399006433,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "cars",
@@ -447,7 +665,13 @@
       "classes": 3,
       "categorical_predictors": 1,
       "missing_values": null,
-      "imbalance": 0.1919968242399
+      "imbalance": 0.1919968242399,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "confidence",
@@ -459,7 +683,13 @@
       "classes": 6,
       "categorical_predictors": 0,
       "missing_values": null,
-      "imbalance": 0.0
+      "imbalance": 0.0,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "congressional_voting_records",
@@ -471,7 +701,15 @@
       "classes": 2,
       "categorical_predictors": 16,
       "missing_values": null,
-      "imbalance": 0.05179548156956
+      "imbalance": 0.05179548156956,
+      "provenance": {
+        "description": "This dataset contains the voting behaviour of each of the 435 members of the 98th Congress of the U.S. House of Representatives on a items for voting. The aim is to identify the political affiliation of the representative based on voting behaviour. Note that there are multiple types of vote possible, which were aggregated to for, against, and unknown. The latter consists of present votes (similar ",
+        "sources": [],
+        "publication": "Dua D, Graff C. UCI Machine Learning Repository. University of California, Irvine, School of Information and Computer Sciences; 2019. http://archive.ics.uci.edu/ml"
+      },
+      "keywords": [
+        "politics"
+      ]
     },
     {
       "name": "connect_4",
@@ -483,19 +721,41 @@
       "classes": 3,
       "categorical_predictors": 42,
       "missing_values": null,
-      "imbalance": 0.2546625519372754
+      "imbalance": 0.2546625519372754,
+      "provenance": {
+        "description": "Database contains the set of all possible board states corresponding to a connect-4 game at 8-ply; Features correspond to spaces on a 7x6 board, with rows [1-6] and columns [a-f]; Each feature has an integral value in range [0,2]; Feature code - 0 = space is empty, 1 = taken by Player 1, 2 = taken by Player 2",
+        "sources": [
+          "https://archive.ics.uci.edu/ml/datasets/Connect-4;",
+          "https://www.openml.org/d/40668"
+        ],
+        "publication": "Dua, D. and Graff, C. (2019). UCI Machine Learning Repository [http://archive.ics.uci.edu/ml]. Irvine, CA: University of California, School of Information and Computer Science."
+      },
+      "keywords": [
+        "board game",
+        "moves"
+      ]
     },
     {
-      "name": "dna",
+      "name": "credit_approval_australia",
       "source": "pmlb",
       "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 3186,
-      "predictors": 180,
+      "rows": 690,
+      "predictors": 15,
       "task": "classification",
-      "classes": 3,
-      "categorical_predictors": 0,
+      "classes": 2,
+      "categorical_predictors": 4,
       "missing_values": null,
-      "imbalance": 0.0776847980158012
+      "imbalance": 0.0121319050619617,
+      "provenance": {
+        "description": "This dataset contains data concerning credit card applications in a large bank. Sadly, the exact meaning of the features is unknown.",
+        "sources": [
+          "https://archive.ics.uci.edu/ml/datasets/Credit+Approval"
+        ],
+        "publication": "['Dua D, Graff C. UCI Machine Learning Repository. University of California, Irvine, School of Information and Computer Sciences; 2019. http://archive.ics.uci.edu/ml', 'Quinlan JR. Simplifying decisio"
+      },
+      "keywords": [
+        "financial"
+      ]
     },
     {
       "name": "hepatitis",
@@ -507,7 +767,13 @@
       "classes": 2,
       "categorical_predictors": 10,
       "missing_values": null,
-      "imbalance": 0.3446826222684704
+      "imbalance": 0.3446826222684704,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "krkopt",
@@ -519,7 +785,13 @@
       "classes": 18,
       "categorical_predictors": 6,
       "missing_values": null,
-      "imbalance": 0.0516687671160113
+      "imbalance": 0.0516687671160113,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "labor",
@@ -531,7 +803,13 @@
       "classes": 2,
       "categorical_predictors": 13,
       "missing_values": null,
-      "imbalance": 0.0889504462911665
+      "imbalance": 0.0889504462911665,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "letter",
@@ -543,7 +821,18 @@
       "classes": 26,
       "categorical_predictors": 0,
       "missing_values": null,
-      "imbalance": 3.490919999999997e-05
+      "imbalance": 3.490919999999997e-05,
+      "provenance": {
+        "description": "Features include 16 statistics that describe intentionally warped images of typed capital letters. The images are not included.",
+        "sources": [
+          "https://archive.ics.uci.edu/ml/datasets/letter+recognition"
+        ],
+        "publication": "P. W. Frey and D. J. Slate. \"Letter Recognition Using Holland-style Adaptive Classifiers\". (Machine Learning Vol 6"
+      },
+      "keywords": [
+        "engineered features",
+        "alphabet"
+      ]
     },
     {
       "name": "lupus",
@@ -555,7 +844,18 @@
       "classes": 2,
       "categorical_predictors": 0,
       "missing_values": null,
-      "imbalance": 0.0381820583960893
+      "imbalance": 0.0381820583960893,
+      "provenance": {
+        "description": "A small dataset meant to compare the time from getting lupus to diagnosis against the time from diagnosis to death.",
+        "sources": [
+          "https://www.openml.org/d/472"
+        ],
+        "publication": "Abrahamowicz M, MacKenzie T, Esdaile JM. 'Time-dependent hazard ratio: modeling and hypothesis testing with application in lupus nephritis.' 'J Am Stat Assoc 1996;91:1432\u20139.'"
+      },
+      "keywords": [
+        "survival analysis",
+        "medical"
+      ]
     },
     {
       "name": "magic",
@@ -567,7 +867,18 @@
       "classes": 2,
       "categorical_predictors": 0,
       "missing_values": null,
-      "imbalance": 0.0880547898553849
+      "imbalance": 0.0880547898553849,
+      "provenance": {
+        "description": "particle shower measurements used to classify which type of radiation caused the particle shower.",
+        "sources": [
+          "https://archive.ics.uci.edu/ml/datasets/magic+gamma+telescope"
+        ],
+        "publication": "Bock, R.K., Chilingarian, A., Gaug, M., Hakl, F., Hengstebeck, T., Jirina, M., Klaschka, J., Kotrc, E., Savicky, P., Towers, S., Vaicilius, A., Wittek W. (2004). 'Methods for multidimensional event cl"
+      },
+      "keywords": [
+        "astrophysics",
+        "Experimental physics"
+      ]
     },
     {
       "name": "molecular_biology_promoters",
@@ -579,7 +890,19 @@
       "classes": 2,
       "categorical_predictors": 57,
       "missing_values": null,
-      "imbalance": 0.0
+      "imbalance": 0.0,
+      "provenance": {
+        "description": "Title of Database: E. coli promoter gene sequences (DNA) with associated imperfect domain theory Past Usage: (a) biological: -- Harley, C. and Reynolds, R. 1987. \"Analysis of E. Coli Promoter Sequences.\" Nucleic Acids Research, 15:2343-2361. machine learning: -- Towell, G., Shavlik, J. and Noordewier, M. 1990. \"Refinement of Approximate Domain Theories by Knowledge-Based Artificial Neural Networks",
+        "sources": [
+          "https://www.openml.org/d/164"
+        ],
+        "publication": "Harley, C. and Reynolds, R. 1987. \"Analysis of E. Coli Promoter Sequences.\" Nucleic Acids Research, 15:2343-2361. Towell, G., Shavlik, J. and Noordewier, M. 1990. \"Refinement of Approximate Domain The"
+      },
+      "keywords": [
+        "biology",
+        "genetics",
+        "molecular biology"
+      ]
     },
     {
       "name": "monk3",
@@ -591,7 +914,13 @@
       "classes": 2,
       "categorical_predictors": 4,
       "missing_values": null,
-      "imbalance": 0.0015769787173037
+      "imbalance": 0.0015769787173037,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "nursery",
@@ -603,19 +932,13 @@
       "classes": 4,
       "categorical_predictors": 7,
       "missing_values": null,
-      "imbalance": 0.0900899366400157
-    },
-    {
-      "name": "page_blocks",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 5473,
-      "predictors": 10,
-      "task": "classification",
-      "classes": 5,
-      "categorical_predictors": 0,
-      "missing_values": null,
-      "imbalance": 0.7627104291422278
+      "imbalance": 0.0900899366400157,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "pendigits",
@@ -627,7 +950,13 @@
       "classes": 10,
       "categorical_predictors": 0,
       "missing_values": null,
-      "imbalance": 0.0001780697519917
+      "imbalance": 0.0001780697519917,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "penguins",
@@ -639,7 +968,39 @@
       "classes": 3,
       "categorical_predictors": 2,
       "missing_values": null,
-      "imbalance": 0.0463764196863169
+      "imbalance": 0.0463764196863169,
+      "provenance": {
+        "description": "Data on three Palmer Archipelago (Antarctica) penguin species collected and made available by Dr. Kristen Gorman and the Palmer Station, Antarctica LTER, a member of the Long Term Ecological Research Network.",
+        "sources": [
+          "https://github.com/allisonhorst/penguins",
+          "https://github.com/allisonhorst/penguins/raw/master/data/penguins_size.csv"
+        ],
+        "publication": "Gorman KB, Williams TD, Fraser WR (2014). Ecological Sexual Dimorphism and Environmental Variability within a Community of Antarctic Penguins (Genus Pygoscelis). PLoS ONE 9(3): e90081. doi:10.1371/jou"
+      },
+      "keywords": [
+        "antarctic penguins",
+        "ecological",
+        "animal",
+        "environmental"
+      ]
+    },
+    {
+      "name": "phoneme",
+      "source": "pmlb",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "rows": 5404,
+      "predictors": 5,
+      "task": "classification",
+      "classes": 2,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.1705916225117124,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "prnn_crabs",
@@ -651,43 +1012,13 @@
       "classes": 2,
       "categorical_predictors": 0,
       "missing_values": null,
-      "imbalance": 0.0
-    },
-    {
-      "name": "profb",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 672,
-      "predictors": 9,
-      "task": "classification",
-      "classes": 2,
-      "categorical_predictors": 2,
-      "missing_values": null,
-      "imbalance": 0.1111111111111111
-    },
-    {
-      "name": "satimage",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 6435,
-      "predictors": 36,
-      "task": "classification",
-      "classes": 6,
-      "categorical_predictors": 0,
-      "missing_values": null,
-      "imbalance": 0.0276087321122286
-    },
-    {
-      "name": "segmentation",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 2310,
-      "predictors": 19,
-      "task": "classification",
-      "classes": 7,
-      "categorical_predictors": 1,
-      "missing_values": null,
-      "imbalance": 0.0
+      "imbalance": 0.0,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "shuttle",
@@ -699,7 +1030,13 @@
       "classes": 7,
       "categorical_predictors": 0,
       "missing_values": null,
-      "imbalance": 0.5852340828378914
+      "imbalance": 0.5852340828378914,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     },
     {
       "name": "tic_tac_toe",
@@ -711,7 +1048,54 @@
       "classes": 2,
       "categorical_predictors": 9,
       "missing_values": null,
-      "imbalance": 0.0941810748732789
+      "imbalance": 0.0941810748732789,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
+    },
+    {
+      "name": "wine_quality_red",
+      "source": "pmlb",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "rows": 1599,
+      "predictors": 11,
+      "task": "classification",
+      "classes": 6,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.2288041188970123,
+      "provenance": {
+        "description": "The dataset is related to the red variant of the Portuguese \"Vinho Verde\" wine. For more details, consult: http://www.vinhoverde.pt/en/ or the reference (Cortez et al., 2009). Due to privacy and logistic issues, only physicochemical (inputs) and sensory (the output) variables are available (e.g. there is no data about grape types, wine brand, wine selling price, etc.). The inputs include objective",
+        "sources": [
+          "http://archive.ics.uci.edu/ml/datasets/Wine+Quality"
+        ],
+        "publication": "P. Cortez, A. Cerdeira, F. Almeida, T. Matos and J. Reis. Modeling wine preferences by data mining from physicochemical properties. In Decision Support Systems, Elsevier, 47(4):547-553. ISSN: 0167-923"
+      },
+      "keywords": [
+        "wine",
+        "alcoholic drink"
+      ]
+    },
+    {
+      "name": "xd6",
+      "source": "pmlb",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "rows": 973,
+      "predictors": 9,
+      "task": "classification",
+      "classes": 2,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.1143315563376636,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
     }
   ],
   "excluded": [
@@ -1568,6 +1952,18 @@
       "reason": "synthetic: generated, not measured"
     },
     {
+      "name": "529_pollen",
+      "reason": "synthetic: tagged ['simulation', 'synthetic'] by the source"
+    },
+    {
+      "name": "waveform_21",
+      "reason": "synthetic: tagged ['simulation', 'synthetic'] by the source"
+    },
+    {
+      "name": "waveform_40",
+      "reason": "synthetic: tagged ['simulation', 'synthetic'] by the source"
+    },
+    {
       "name": "1027_ESL",
       "reason": "not sampled: stratum small/regression already has 10"
     },
@@ -1610,6 +2006,10 @@
     {
       "name": "230_machine_cpu",
       "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "294_satellite_image",
+      "reason": "not sampled: stratum medium/regression already has 10"
     },
     {
       "name": "4544_GeographicalOriginalofMusic",
@@ -1672,19 +2072,11 @@
       "reason": "not sampled: stratum medium/regression already has 10"
     },
     {
-      "name": "581_fri_c3_500_25",
+      "name": "582_fri_c1_500_25",
       "reason": "not sampled: stratum medium/regression already has 10"
     },
     {
-      "name": "583_fri_c1_1000_50",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
-      "name": "586_fri_c3_1000_25",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
-      "name": "588_fri_c4_1000_100",
+      "name": "584_fri_c4_500_25",
       "reason": "not sampled: stratum medium/regression already has 10"
     },
     {
@@ -1748,10 +2140,6 @@
       "reason": "not sampled: stratum medium/regression already has 10"
     },
     {
-      "name": "607_fri_c4_1000_50",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
       "name": "608_fri_c3_1000_10",
       "reason": "not sampled: stratum medium/regression already has 10"
     },
@@ -1784,10 +2172,6 @@
       "reason": "not sampled: stratum medium/regression already has 10"
     },
     {
-      "name": "620_fri_c1_1000_25",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
       "name": "622_fri_c2_1000_50",
       "reason": "not sampled: stratum medium/regression already has 10"
     },
@@ -1798,6 +2182,10 @@
     {
       "name": "624_fri_c0_100_5",
       "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "626_fri_c2_500_50",
+      "reason": "not sampled: stratum medium/regression already has 10"
     },
     {
       "name": "627_fri_c2_500_10",
@@ -1812,7 +2200,7 @@
       "reason": "not sampled: stratum medium/regression already has 10"
     },
     {
-      "name": "637_fri_c1_500_50",
+      "name": "633_fri_c0_500_25",
       "reason": "not sampled: stratum medium/regression already has 10"
     },
     {
@@ -1876,6 +2264,10 @@
       "reason": "not sampled: stratum small/regression already has 10"
     },
     {
+      "name": "666_rmftsa_ladata",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
       "name": "678_visualizing_environmental",
       "reason": "not sampled: stratum small/regression already has 10"
     },
@@ -1905,10 +2297,6 @@
     },
     {
       "name": "GAMETES_Heterogeneity_20atts_1600_Het_0.4_0.2_50_EDM_2_001",
-      "reason": "not sampled: stratum medium/classification already has 10"
-    },
-    {
-      "name": "Hill_Valley_with_noise",
       "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
@@ -2024,10 +2412,6 @@
       "reason": "not sampled: stratum small/classification already has 10"
     },
     {
-      "name": "credit_approval_australia",
-      "reason": "not sampled: stratum medium/classification already has 10"
-    },
-    {
       "name": "credit_approval_germany",
       "reason": "not sampled: stratum medium/classification already has 10"
     },
@@ -2037,6 +2421,10 @@
     },
     {
       "name": "dis",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "dna",
       "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
@@ -2180,11 +2568,11 @@
       "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
-      "name": "parity5+5",
+      "name": "page_blocks",
       "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
-      "name": "phoneme",
+      "name": "parity5+5",
       "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
@@ -2196,6 +2584,10 @@
       "reason": "not sampled: stratum small/classification already has 10"
     },
     {
+      "name": "profb",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
       "name": "ring",
       "reason": "not sampled: stratum medium/classification already has 10"
     },
@@ -2204,8 +2596,16 @@
       "reason": "not sampled: stratum small/classification already has 10"
     },
     {
+      "name": "satimage",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
       "name": "schizo",
       "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "segmentation",
+      "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
       "name": "solar_flare",
@@ -2268,28 +2668,12 @@
       "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
-      "name": "waveform_21",
-      "reason": "not sampled: stratum medium/classification already has 10"
-    },
-    {
-      "name": "waveform_40",
-      "reason": "not sampled: stratum medium/classification already has 10"
-    },
-    {
-      "name": "wine_quality_red",
-      "reason": "not sampled: stratum medium/classification already has 10"
-    },
-    {
       "name": "wine_quality_white",
       "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
       "name": "wine_recognition",
       "reason": "not sampled: stratum small/classification already has 10"
-    },
-    {
-      "name": "xd6",
-      "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
       "name": "yeast",
