@@ -22,6 +22,17 @@ MAX_FEATURES = 500
 """NFR-2. Also removes the image-derived datasets in CC18, whose pixel columns run to 785
 and beyond (D-004)."""
 
+MIN_ROWS = 50
+"""Below this, 5-fold cross-validation stops being meaningful — folds of fewer than ten
+rows produce scores dominated by which rows happened to land where. PMLB goes down to 8
+rows, which is a dataset in name only."""
+
+MAX_ROWS = 100_000
+"""Revises D-005's "no ceiling", which was decided when the largest candidate had 96k
+rows. PMLB reaches a million, and a single dataset that size would consume more of the
+compute budget than the entire small band. The tiered timeouts of FR-8.4 bound the worst
+case per method; this bounds it per dataset."""
+
 SMALL_BAND_MAX_ROWS = 500
 """FR-1.3's lowest band. Neither curated suite contains anything below this, which is why
 D-006 subsamples and D-007 pins real small datasets."""
@@ -81,6 +92,10 @@ def screen_one(meta: Dataset, *, require_small: bool = False) -> str | None:
         return f"{meta.predictors} features exceeds the {MAX_FEATURES} cap (NFR-2)"
     if meta.rows == 0:
         return "no reported row count: metadata incomplete"
+    if meta.rows < MIN_ROWS:
+        return f"{meta.rows} rows is below {MIN_ROWS}: too few for meaningful folds"
+    if meta.rows > MAX_ROWS:
+        return f"{meta.rows} rows exceeds the {MAX_ROWS} compute ceiling"
     if require_small and meta.rows >= SMALL_BAND_MAX_ROWS:
         return (
             f"{meta.rows} rows is at or above {SMALL_BAND_MAX_ROWS}: "

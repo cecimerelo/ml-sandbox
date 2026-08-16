@@ -206,3 +206,21 @@ def test_stratified_sample_explains_what_it_dropped():
     assert len(sampled.kept) == 3
     assert len(sampled.excluded) == 7
     assert all("not sampled" in e.reason for e in sampled.excluded)
+
+
+def test_rejects_datasets_too_small_to_fold():
+    from mlsandbox.curation import MIN_ROWS
+
+    # PMLB goes down to 8 rows. With 5 folds that leaves fewer than two rows per fold,
+    # and the score says more about the split than the method.
+    reason = screen_one(make("tiny", rows=MIN_ROWS - 1))
+    assert reason is not None
+    assert "too few" in reason
+
+
+def test_rejects_datasets_above_the_compute_ceiling():
+    from mlsandbox.curation import MAX_ROWS
+
+    reason = screen_one(make("huge", rows=MAX_ROWS + 1))
+    assert reason is not None
+    assert "compute ceiling" in reason
