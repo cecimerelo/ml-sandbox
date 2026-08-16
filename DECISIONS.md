@@ -293,3 +293,64 @@ If Layer 2 does not land, the thesis reports the heuristic recommender evaluated
 the benchmark — which still answers the research question, since that question is
 precisely *whether the pedagogical heuristics hold up empirically*. The hybrid engine
 then becomes future work.
+
+---
+
+## D-013 — PMLB becomes the primary source; OpenML is optional validation
+
+**Date:** 2026-08-16 · **Status:** accepted · **Supersedes:** D-002, D-003, D-007 · **Affects:** [#8](https://github.com/cecimerelo/ml-sandbox/issues/8)
+
+**Context.** OpenML's API was unavailable for the whole working session — `504 Gateway
+Timeout` on every dataset endpoint, across v1 and v2, from the Python client and from
+plain HTTP, reproduced independently in a browser. The web interface kept working because
+it runs on a separate search backend.
+
+This is a documented, recurring fault rather than a one-off:
+
+- [openml/openml.org#404](https://github.com/openml/openml.org/issues/404) — *"OpenML API
+  returning 504 Gateway Timeout errors"*, opened 2026-07-27. **Still open.** A maintainer
+  reported it restored the next day, so individual outages are short — but the underlying
+  cause is unresolved and it has recurred.
+- [openml/OpenML#1292](https://github.com/openml/OpenML/issues/1292) — 503 on the task
+  endpoint, open since 2026-06-02, no activity since the day it was filed.
+- Earlier instances closed in 2023 ([#1196](https://github.com/openml/OpenML/issues/1196))
+  and 2021 ([#1115](https://github.com/openml/OpenML/issues/1115)).
+
+Outages appear to last days, not months. The problem is the recurrence: with roughly six
+weeks to submission (D-011), a dependency that breaks every few weeks can cost days that
+are not available.
+
+**Decision.** **PMLB** (Penn Machine Learning Benchmarks) becomes the primary source.
+OpenML's CC18 and CTR23 are added as **additional validation if the API recovers in time**
+— not as a blocker.
+
+**What PMLB gives.** 450 datasets served from a GitHub repository, so availability follows
+GitHub rather than a research server:
+
+| Rows | Classification | Regression |
+|---|---|---|
+| 50–500 | 75 | 71 |
+| 500–10k | 88 | 55 |
+| > 10k | 12 | 133 |
+
+Citable as Olson et al. 2017 and Romano et al. 2021. Pinning a commit SHA freezes the
+collection permanently, which is stronger reproducibility than OpenML's dataset versioning.
+
+**What it costs.**
+
+- **No predefined splits.** D-003's comparability-with-CC18 argument is forfeited; folds
+  are generated under the fold contract instead. This was the original plan, and D-003
+  already established it is methodologically sound because every metric is computed within
+  a dataset before aggregation.
+- A weaker standard-suite citation than CC18 in the AutoML literature.
+- Several PMLB datasets originate from UCI and OpenML, so provenance is second-hand.
+
+**Consequences.**
+
+- **D-007 is obsolete.** PMLB carries 146 datasets in the 50–500 row band natively, so
+  there is nothing to hand-pick.
+- **D-006's subsampling becomes optional.** It is no longer needed for band coverage; it
+  survives only as the controlled bias-variance experiment, which is a nice-to-have under
+  D-011's schedule.
+- Unblocks the study immediately, which under a six-week deadline outweighs the citation
+  strength of CC18.
