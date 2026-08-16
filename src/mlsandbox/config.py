@@ -34,14 +34,19 @@ class CVConfig(StrictModel):
 
 
 class PathsConfig(StrictModel):
-    cache: Path
+    datasets: Path
+    """Where the study's datasets live once fetched.
+
+    Not a cache in the disposable sense: these are the exact data the results are computed
+    on, and re-fetching them depends on an external service still serving the same bytes.
+    """
 
     @model_validator(mode="after")
     def resolve_against_project_root(self) -> Self:
         # Paths in the TOML are relative so the config stays portable; everything
         # downstream wants them absolute.
-        if not self.cache.is_absolute():
-            return self.model_copy(update={"cache": PROJECT_ROOT / self.cache})
+        if not self.datasets.is_absolute():
+            return self.model_copy(update={"datasets": PROJECT_ROOT / self.datasets})
         return self
 
 

@@ -64,7 +64,7 @@ def configure(config: Config) -> None:
     The key is optional: reading public datasets works without one. It is used when
     present because some endpoints rate-limit anonymous callers more aggressively.
     """
-    cache_dir = config.paths.cache / "openml"
+    cache_dir = config.paths.datasets / "openml"
     cache_dir.mkdir(parents=True, exist_ok=True)
     openml.config.set_root_cache_directory(str(cache_dir))
 

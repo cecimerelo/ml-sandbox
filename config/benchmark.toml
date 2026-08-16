@@ -13,6 +13,6 @@ seed = 20260815
 n_folds = 5
 
 [paths]
-# Relative to the project root. Gitignored: everything here is re-fetched or
-# regenerated from this config plus the seed.
-cache = "data/cache"
+# Relative to the project root. Gitignored — this is data, not source — but it is not
+# disposable: it is the snapshot the study's results are computed on. D-010 publishes it.
+datasets = "data/datasets"

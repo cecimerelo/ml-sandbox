@@ -14,7 +14,8 @@ ISLRv2_corrected_June_2023.pdf
 __pycache__/
 *.pyc
 
-# Study data and artifacts — regenerated from config, never committed
+# Study data and artifacts. Not committed (too large), but not disposable either:
+# data/datasets is the snapshot results are computed on. D-010 publishes it separately.
 data/
 artifacts/
 

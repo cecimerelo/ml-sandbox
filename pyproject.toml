@@ -9,6 +9,9 @@ dependencies = [
     "scikit-learn>=1.5",
     "pydantic>=2.9",
     "pydantic-settings>=2.15.0",
+    "pmlb>=1.0.1.post3",
+    "requests>=2.34.2",
+    "pandas>=3.0.5",
 ]
 
 [project.optional-dependencies]
