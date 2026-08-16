@@ -14,9 +14,10 @@ from __future__ import annotations
 import random
 import tomllib
 from pathlib import Path
+from typing import Self
 
 import numpy as np
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG_PATH = PROJECT_ROOT / "config" / "benchmark.toml"
@@ -41,9 +42,22 @@ class CVConfig(StrictModel):
     n_folds: int = Field(ge=2)
 
 
+class PathsConfig(StrictModel):
+    cache: Path
+
+    @model_validator(mode="after")
+    def resolve_against_project_root(self) -> Self:
+        # Paths in the TOML are relative so the config stays portable; everything
+        # downstream wants them absolute.
+        if not self.cache.is_absolute():
+            return self.model_copy(update={"cache": PROJECT_ROOT / self.cache})
+        return self
+
+
 class Config(StrictModel):
     run: RunConfig
     cv: CVConfig
+    paths: PathsConfig
 
 
 def load_config(path: Path | None = None) -> Config:

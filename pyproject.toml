@@ -8,6 +8,7 @@ dependencies = [
     "numpy>=2.1",
     "scikit-learn>=1.5",
     "pydantic>=2.9",
+    "pydantic-settings>=2.15.0",
 ]
 
 [project.optional-dependencies]

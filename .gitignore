@@ -17,3 +17,6 @@ __pycache__/
 # Study data and artifacts — regenerated from config, never committed
 data/
 artifacts/
+
+# Secrets
+.env
