@@ -2295,5 +2295,6 @@
       "name": "yeast",
       "reason": "not sampled: stratum medium/classification already has 10"
     }
-  ]
+  ],
+  "fetch_failures": []
 }
