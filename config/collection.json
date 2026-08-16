@@ -1,0 +1,2297 @@
+{
+  "source": "pmlb",
+  "revision": "master",
+  "seed": 20260815,
+  "max_per_family": 2,
+  "per_stratum": 10,
+  "counts": {
+    "considered": 450,
+    "eligible": 248,
+    "kept": 58,
+    "excluded": 392
+  },
+  "missingness_rates": [
+    0.05,
+    0.25
+  ],
+  "coverage": {
+    "rows < 500": 20,
+    "rows 500-10k": 20,
+    "rows > 10k": 18,
+    "classification": 30,
+    "regression": 28,
+    "multiclass": 19,
+    "binary": 11,
+    "has missing values": 0,
+    "missing-value data unavailable": 58,
+    "has categorical features": 21
+  },
+  "datasets": [
+    {
+      "name": "1595_poker",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 1025010,
+      "predictors": 10,
+      "task": "regression",
+      "classes": 10,
+      "categorical_predictors": 5,
+      "missing_values": null,
+      "imbalance": 0.3693735838721754
+    },
+    {
+      "name": "197_cpu_act",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 8192,
+      "predictors": 21,
+      "task": "regression",
+      "classes": 56,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0205723459070379
+    },
+    {
+      "name": "201_pol",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 15000,
+      "predictors": 48,
+      "task": "regression",
+      "classes": 11,
+      "categorical_predictors": 22,
+      "missing_values": null,
+      "imbalance": 0.3746815528888889
+    },
+    {
+      "name": "215_2dplanes",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 40768,
+      "predictors": 10,
+      "task": "regression",
+      "classes": 40368,
+      "categorical_predictors": 9,
+      "missing_values": null,
+      "imbalance": 2.419008481400585e-07
+    },
+    {
+      "name": "218_house_8L",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 22784,
+      "predictors": 8,
+      "task": "regression",
+      "classes": 2045,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0193534322439784
+    },
+    {
+      "name": "344_mv",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 40768,
+      "predictors": 10,
+      "task": "regression",
+      "classes": 39029,
+      "categorical_predictors": 1,
+      "missing_values": null,
+      "imbalance": 0.0006300827654696
+    },
+    {
+      "name": "537_houses",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 20640,
+      "predictors": 8,
+      "task": "regression",
+      "classes": 3842,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0025041112046606
+    },
+    {
+      "name": "547_no2",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 500,
+      "predictors": 7,
+      "task": "regression",
+      "classes": 385,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0004918749999999
+    },
+    {
+      "name": "560_bodyfat",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 252,
+      "predictors": 14,
+      "task": "regression",
+      "classes": 176,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0011273080660835
+    },
+    {
+      "name": "564_fried",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 40768,
+      "predictors": 10,
+      "task": "regression",
+      "classes": 17396,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 2.1925705209313144e-05
+    },
+    {
+      "name": "574_house_16H",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 22784,
+      "predictors": 16,
+      "task": "regression",
+      "classes": 2045,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0193534322439784
+    },
+    {
+      "name": "583_fri_c1_1000_50",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 1000,
+      "predictors": 50,
+      "task": "regression",
+      "classes": 1000,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0
+    },
+    {
+      "name": "591_fri_c1_100_10",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 100,
+      "predictors": 10,
+      "task": "regression",
+      "classes": 100,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0
+    },
+    {
+      "name": "592_fri_c4_1000_25",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 1000,
+      "predictors": 25,
+      "task": "regression",
+      "classes": 1000,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0
+    },
+    {
+      "name": "605_fri_c2_250_25",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 250,
+      "predictors": 25,
+      "task": "regression",
+      "classes": 250,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0
+    },
+    {
+      "name": "609_fri_c0_1000_5",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 1000,
+      "predictors": 5,
+      "task": "regression",
+      "classes": 1000,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0
+    },
+    {
+      "name": "613_fri_c3_250_5",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 250,
+      "predictors": 5,
+      "task": "regression",
+      "classes": 250,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0
+    },
+    {
+      "name": "618_fri_c3_1000_50",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 1000,
+      "predictors": 50,
+      "task": "regression",
+      "classes": 1000,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0
+    },
+    {
+      "name": "621_fri_c0_100_10",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 100,
+      "predictors": 10,
+      "task": "regression",
+      "classes": 100,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0
+    },
+    {
+      "name": "624_fri_c0_100_5",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 100,
+      "predictors": 5,
+      "task": "regression",
+      "classes": 100,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0
+    },
+    {
+      "name": "627_fri_c2_500_10",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 500,
+      "predictors": 10,
+      "task": "regression",
+      "classes": 500,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0
+    },
+    {
+      "name": "637_fri_c1_500_50",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 500,
+      "predictors": 50,
+      "task": "regression",
+      "classes": 500,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0
+    },
+    {
+      "name": "641_fri_c1_500_10",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 500,
+      "predictors": 10,
+      "task": "regression",
+      "classes": 500,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0
+    },
+    {
+      "name": "644_fri_c4_250_25",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 250,
+      "predictors": 25,
+      "task": "regression",
+      "classes": 250,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0
+    },
+    {
+      "name": "649_fri_c0_500_5",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 500,
+      "predictors": 5,
+      "task": "regression",
+      "classes": 500,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0
+    },
+    {
+      "name": "665_sleuth_case2002",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 147,
+      "predictors": 6,
+      "task": "regression",
+      "classes": 19,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0960196625891475
+    },
+    {
+      "name": "712_chscase_geyser1",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 222,
+      "predictors": 2,
+      "task": "regression",
+      "classes": 50,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0128435109130089
+    },
+    {
+      "name": "GAMETES_Heterogeneity_20atts_1600_Het_0.4_0.2_75_EDM_2_001",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 1600,
+      "predictors": 20,
+      "task": "classification",
+      "classes": 2,
+      "categorical_predictors": 19,
+      "missing_values": null,
+      "imbalance": 0.0
+    },
+    {
+      "name": "allhyper",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 3771,
+      "predictors": 29,
+      "task": "classification",
+      "classes": 4,
+      "categorical_predictors": 4,
+      "missing_values": null,
+      "imbalance": 0.9301422508626844
+    },
+    {
+      "name": "allrep",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 3772,
+      "predictors": 29,
+      "task": "classification",
+      "classes": 4,
+      "categorical_predictors": 4,
+      "missing_values": null,
+      "imbalance": 0.9142744795514716
+    },
+    {
+      "name": "breast_cancer_wisconsin_original",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 699,
+      "predictors": 9,
+      "task": "classification",
+      "classes": 2,
+      "categorical_predictors": 9,
+      "missing_values": null,
+      "imbalance": 0.0963751609186227
+    },
+    {
+      "name": "cloud",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 108,
+      "predictors": 7,
+      "task": "classification",
+      "classes": 4,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0050297210791037
+    },
+    {
+      "name": "collins",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 485,
+      "predictors": 23,
+      "task": "classification",
+      "classes": 13,
+      "categorical_predictors": 1,
+      "missing_values": null,
+      "imbalance": 0.0219810819428207
+    },
+    {
+      "name": "congressional_voting_records",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 435,
+      "predictors": 16,
+      "task": "classification",
+      "classes": 2,
+      "categorical_predictors": 16,
+      "missing_values": null,
+      "imbalance": 0.05179548156956
+    },
+    {
+      "name": "dis",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 3772,
+      "predictors": 29,
+      "task": "classification",
+      "classes": 2,
+      "categorical_predictors": 4,
+      "missing_values": null,
+      "imbalance": 0.9394399094067016
+    },
+    {
+      "name": "fars",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 100968,
+      "predictors": 29,
+      "task": "classification",
+      "classes": 8,
+      "categorical_predictors": 15,
+      "missing_values": null,
+      "imbalance": 0.1564935883055948
+    },
+    {
+      "name": "first_principles_bode",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 8,
+      "predictors": 1,
+      "task": "regression",
+      "classes": 8,
+      "categorical_predictors": 1,
+      "missing_values": null,
+      "imbalance": 0.0
+    },
+    {
+      "name": "hepatitis",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 155,
+      "predictors": 19,
+      "task": "classification",
+      "classes": 2,
+      "categorical_predictors": 10,
+      "missing_values": null,
+      "imbalance": 0.3446826222684704
+    },
+    {
+      "name": "horse_colic_lesion_type",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 368,
+      "predictors": 20,
+      "task": "classification",
+      "classes": 5,
+      "categorical_predictors": 12,
+      "missing_values": null,
+      "imbalance": 0.1135064685727788
+    },
+    {
+      "name": "iris",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 150,
+      "predictors": 4,
+      "task": "classification",
+      "classes": 3,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0
+    },
+    {
+      "name": "kddcup",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 494020,
+      "predictors": 41,
+      "task": "classification",
+      "classes": 23,
+      "categorical_predictors": 9,
+      "missing_values": null,
+      "imbalance": 0.3820987910470524
+    },
+    {
+      "name": "krkopt",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 28056,
+      "predictors": 6,
+      "task": "classification",
+      "classes": 18,
+      "categorical_predictors": 6,
+      "missing_values": null,
+      "imbalance": 0.0516687671160113
+    },
+    {
+      "name": "letter",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 20000,
+      "predictors": 16,
+      "task": "classification",
+      "classes": 26,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 3.490919999999997e-05
+    },
+    {
+      "name": "magic",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 19020,
+      "predictors": 10,
+      "task": "classification",
+      "classes": 2,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0880547898553849
+    },
+    {
+      "name": "mfeat_fourier",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 2000,
+      "predictors": 76,
+      "task": "classification",
+      "classes": 10,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0
+    },
+    {
+      "name": "nursery",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 12958,
+      "predictors": 8,
+      "task": "classification",
+      "classes": 4,
+      "categorical_predictors": 7,
+      "missing_values": null,
+      "imbalance": 0.0900899366400157
+    },
+    {
+      "name": "parity5",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 32,
+      "predictors": 5,
+      "task": "classification",
+      "classes": 2,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0
+    },
+    {
+      "name": "pendigits",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 10992,
+      "predictors": 16,
+      "task": "classification",
+      "classes": 10,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0001780697519917
+    },
+    {
+      "name": "poker",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 1025010,
+      "predictors": 10,
+      "task": "classification",
+      "classes": 10,
+      "categorical_predictors": 5,
+      "missing_values": null,
+      "imbalance": 0.3693735838721754
+    },
+    {
+      "name": "schizo",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 340,
+      "predictors": 14,
+      "task": "classification",
+      "classes": 3,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.1478546712802768
+    },
+    {
+      "name": "shuttle",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 58000,
+      "predictors": 9,
+      "task": "classification",
+      "classes": 7,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.5852340828378914
+    },
+    {
+      "name": "sleep",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 105908,
+      "predictors": 13,
+      "task": "classification",
+      "classes": 5,
+      "categorical_predictors": 1,
+      "missing_values": null,
+      "imbalance": 0.1484938125639567
+    },
+    {
+      "name": "spect",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 267,
+      "predictors": 22,
+      "task": "classification",
+      "classes": 2,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.3457616182019667
+    },
+    {
+      "name": "spectf",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 349,
+      "predictors": 44,
+      "task": "classification",
+      "classes": 2,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.2075598722506383
+    },
+    {
+      "name": "titanic",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 2207,
+      "predictors": 8,
+      "task": "classification",
+      "classes": 2,
+      "categorical_predictors": 4,
+      "missing_values": null,
+      "imbalance": 0.1265128522768823
+    },
+    {
+      "name": "vowel",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 990,
+      "predictors": 13,
+      "task": "classification",
+      "classes": 11,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0
+    },
+    {
+      "name": "waveform_21",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 5000,
+      "predictors": 21,
+      "task": "classification",
+      "classes": 3,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 8.043999999999987e-05
+    },
+    {
+      "name": "xd6",
+      "source": "pmlb",
+      "revision": "master",
+      "rows": 973,
+      "predictors": 9,
+      "task": "classification",
+      "classes": 2,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.1143315563376636
+    }
+  ],
+  "excluded": [
+    {
+      "name": "1191_BNG_pbc",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "1193_BNG_lowbwt",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "1196_BNG_pharynx",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "1199_BNG_echoMonths",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "1201_BNG_breastTumor",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "1203_BNG_pwLinear",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "GAMETES_Epistasis_2_Way_1000atts_0.4H_EDM_1_EDM_1_1",
+      "reason": "1000 features exceeds the 500 cap (NFR-2)"
+    },
+    {
+      "name": "_deprecated_195_auto_price",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "_deprecated_207_autoPrice",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "_deprecated_australian",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "_deprecated_auto",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "_deprecated_breast",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "_deprecated_breast_cancer_wisconsin",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "_deprecated_breast_w",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "_deprecated_buggyCrx",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "_deprecated_car",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "_deprecated_car_evaluation",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "_deprecated_cleve",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "_deprecated_cleveland",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "_deprecated_cleveland_nominal",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "_deprecated_cmc",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "_deprecated_colic",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "_deprecated_contraceptive",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "_deprecated_credit_a",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "_deprecated_credit_g",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "_deprecated_crx",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "_deprecated_diabetes",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "_deprecated_flare",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "_deprecated_german",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "_deprecated_glass",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "_deprecated_heart_c",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "_deprecated_heart_h",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "_deprecated_heart_statlog",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "_deprecated_horse_colic",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "_deprecated_house_votes_84",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "_deprecated_hungarian",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "_deprecated_pima",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "_deprecated_prnn_fglass",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "_deprecated_solar_flare_1",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "_deprecated_solar_flare_2",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "_deprecated_vote",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "_deprecated_wdbc",
+      "reason": "deprecated by the source"
+    },
+    {
+      "name": "analcatdata_authorship",
+      "reason": "family 'analcatdata' already represented (max 2)"
+    },
+    {
+      "name": "analcatdata_bankruptcy",
+      "reason": "family 'analcatdata' already represented (max 2)"
+    },
+    {
+      "name": "analcatdata_boxing1",
+      "reason": "family 'analcatdata' already represented (max 2)"
+    },
+    {
+      "name": "analcatdata_boxing2",
+      "reason": "family 'analcatdata' already represented (max 2)"
+    },
+    {
+      "name": "analcatdata_creditscore",
+      "reason": "family 'analcatdata' already represented (max 2)"
+    },
+    {
+      "name": "analcatdata_cyyoung8092",
+      "reason": "family 'analcatdata' already represented (max 2)"
+    },
+    {
+      "name": "analcatdata_cyyoung9302",
+      "reason": "family 'analcatdata' already represented (max 2)"
+    },
+    {
+      "name": "analcatdata_dmft",
+      "reason": "family 'analcatdata' already represented (max 2)"
+    },
+    {
+      "name": "analcatdata_fraud",
+      "reason": "family 'analcatdata' already represented (max 2)"
+    },
+    {
+      "name": "analcatdata_germangss",
+      "reason": "family 'analcatdata' already represented (max 2)"
+    },
+    {
+      "name": "analcatdata_happiness",
+      "reason": "family 'analcatdata' already represented (max 2)"
+    },
+    {
+      "name": "analcatdata_japansolvent",
+      "reason": "family 'analcatdata' already represented (max 2)"
+    },
+    {
+      "name": "analcatdata_lawsuit",
+      "reason": "family 'analcatdata' already represented (max 2)"
+    },
+    {
+      "name": "auto_insurance_symboling",
+      "reason": "family 'auto-insurance' already represented (max 2)"
+    },
+    {
+      "name": "feynman_III_10_19",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_III_12_43",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_III_13_18",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_III_14_14",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_III_15_12",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_III_15_14",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_III_15_27",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_III_17_37",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_III_19_51",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_III_21_20",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_III_4_32",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_III_4_33",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_III_7_38",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_III_8_54",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_III_9_52",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_II_10_9",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_II_11_20",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_II_11_27",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_II_11_28",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_II_11_3",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_II_13_17",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_II_13_23",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_II_13_34",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_II_15_4",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_II_15_5",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_II_21_32",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_II_24_17",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_II_27_16",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_II_27_18",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_II_2_42",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_II_34_11",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_II_34_2",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_II_34_29a",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_II_34_29b",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_II_34_2a",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_II_35_18",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_II_35_21",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_II_36_38",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_II_37_1",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_II_38_14",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_II_38_3",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_II_3_24",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_II_4_23",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_II_6_11",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_II_6_15a",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_II_6_15b",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_II_8_31",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_II_8_7",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_10_7",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_11_19",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_12_1",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_12_11",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_12_2",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_12_4",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_12_5",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_13_12",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_13_4",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_14_3",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_14_4",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_15_10",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_15_3t",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_15_3x",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_16_6",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_18_12",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_18_14",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_18_4",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_24_6",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_25_13",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_26_2",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_27_6",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_29_16",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_29_4",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_30_3",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_30_5",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_32_17",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_32_5",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_34_1",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_34_14",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_34_27",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_34_8",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_37_4",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_38_12",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_39_1",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_39_11",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_39_22",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_40_1",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_41_16",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_43_16",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_43_31",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_43_43",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_44_4",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_47_23",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_48_2",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_50_26",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_6_2",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_6_2a",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_6_2b",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_8_14",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_I_9_18",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_test_1",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_test_10",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_test_11",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_test_12",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_test_13",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_test_14",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_test_15",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_test_16",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_test_17",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_test_18",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_test_19",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_test_2",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_test_20",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_test_3",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_test_4",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_test_5",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_test_6",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_test_7",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_test_8",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "feynman_test_9",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "first_principles_hubble",
+      "reason": "family 'first-principles' already represented (max 2)"
+    },
+    {
+      "name": "first_principles_kepler",
+      "reason": "family 'first-principles' already represented (max 2)"
+    },
+    {
+      "name": "first_principles_leavitt",
+      "reason": "family 'first-principles' already represented (max 2)"
+    },
+    {
+      "name": "first_principles_newton",
+      "reason": "family 'first-principles' already represented (max 2)"
+    },
+    {
+      "name": "first_principles_planck",
+      "reason": "family 'first-principles' already represented (max 2)"
+    },
+    {
+      "name": "first_principles_rydberg",
+      "reason": "family 'first-principles' already represented (max 2)"
+    },
+    {
+      "name": "first_principles_schechter",
+      "reason": "family 'first-principles' already represented (max 2)"
+    },
+    {
+      "name": "heart_disease_zurich",
+      "reason": "family 'heart-disease' already represented (max 2)"
+    },
+    {
+      "name": "mfeat_karhunen",
+      "reason": "family 'mfeat' already represented (max 2)"
+    },
+    {
+      "name": "mfeat_morphological",
+      "reason": "family 'mfeat' already represented (max 2)"
+    },
+    {
+      "name": "mfeat_pixel",
+      "reason": "family 'mfeat' already represented (max 2)"
+    },
+    {
+      "name": "mfeat_zernike",
+      "reason": "family 'mfeat' already represented (max 2)"
+    },
+    {
+      "name": "mnist",
+      "reason": "784 features exceeds the 500 cap (NFR-2)"
+    },
+    {
+      "name": "strogatz_bacres1",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "strogatz_bacres2",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "strogatz_barmag1",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "strogatz_barmag2",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "strogatz_glider1",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "strogatz_glider2",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "strogatz_lv1",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "strogatz_lv2",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "strogatz_predprey1",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "strogatz_predprey2",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "strogatz_shearflow1",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "strogatz_shearflow2",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "strogatz_vdp1",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "strogatz_vdp2",
+      "reason": "synthetic: generated, not measured"
+    },
+    {
+      "name": "1027_ESL",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "1028_SWD",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "1029_LEV",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "1030_ERA",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "1089_USCrime",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "1096_FacultySalaries",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "192_vineyard",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "210_cloud",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "225_puma8NH",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "227_cpu_small",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "228_elusage",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "229_pwLinear",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "230_machine_cpu",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "294_satellite_image",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "4544_GeographicalOriginalofMusic",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "485_analcatdata_vehicle",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "503_wind",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "505_tecator",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "519_vinnie",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "522_pm10",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "523_analcatdata_neavote",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "527_analcatdata_election2000",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "529_pollen",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "542_pollution",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "556_analcatdata_apnea2",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "557_analcatdata_apnea1",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "561_cpu",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "562_cpu_small",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "573_cpu_act",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "579_fri_c0_250_5",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "581_fri_c3_500_25",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "582_fri_c1_500_25",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "584_fri_c4_500_25",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "586_fri_c3_1000_25",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "588_fri_c4_1000_100",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "589_fri_c2_1000_25",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "590_fri_c0_1000_50",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "593_fri_c1_1000_10",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "594_fri_c2_100_5",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "595_fri_c0_1000_10",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "596_fri_c2_250_5",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "597_fri_c2_500_5",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "598_fri_c0_1000_25",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "599_fri_c2_1000_5",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "601_fri_c1_250_5",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "602_fri_c3_250_10",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "603_fri_c0_250_50",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "604_fri_c4_500_10",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "606_fri_c2_1000_10",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "607_fri_c4_1000_50",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "608_fri_c3_1000_10",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "611_fri_c3_100_5",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "612_fri_c1_1000_5",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "615_fri_c4_250_10",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "616_fri_c4_500_50",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "617_fri_c3_500_5",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "620_fri_c1_1000_25",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "622_fri_c2_1000_50",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "623_fri_c4_1000_10",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "626_fri_c2_500_50",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "628_fri_c3_1000_5",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "631_fri_c1_500_5",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "633_fri_c0_500_25",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "634_fri_c2_100_10",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "635_fri_c0_250_10",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "643_fri_c2_500_25",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "645_fri_c3_500_50",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "646_fri_c3_500_10",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "647_fri_c1_250_10",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "648_fri_c1_250_50",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "650_fri_c0_500_50",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "651_fri_c0_100_25",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "653_fri_c0_250_25",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "654_fri_c0_500_10",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "656_fri_c1_100_5",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "657_fri_c2_250_10",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "658_fri_c3_250_25",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "659_sleuth_ex1714",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "663_rabe_266",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "666_rmftsa_ladata",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "678_visualizing_environmental",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "687_sleuth_ex1605",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "690_visualizing_galaxy",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "695_chatfield_4",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "706_sleuth_case1202",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "GAMETES_Epistasis_2_Way_20atts_0.1H_EDM_1_1",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "GAMETES_Epistasis_2_Way_20atts_0.4H_EDM_1_1",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "GAMETES_Epistasis_3_Way_20atts_0.2H_EDM_1_1",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "GAMETES_Heterogeneity_20atts_1600_Het_0.4_0.2_50_EDM_2_001",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "Hill_Valley_with_noise",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "Hill_Valley_without_noise",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "adult",
+      "reason": "not sampled: stratum large/classification already has 10"
+    },
+    {
+      "name": "agaricus_lepiota",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "allbp",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "allhypo",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "analcatdata_aids",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "analcatdata_asbestos",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "ann_thyroid",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "appendicitis",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "auto_insurance_losses",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "auto_insurance_price",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "backache",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "balance_scale",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "banana",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "biomed",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "breast_cancer",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "breast_cancer_wisconsin_diagnostic",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "bupa",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "calendarDOW",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "car_evaluation",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "cars",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "chess",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "churn",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "clean1",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "clean2",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "coil2000",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "confidence",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "connect_4",
+      "reason": "not sampled: stratum large/classification already has 10"
+    },
+    {
+      "name": "contraceptive_method",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "corral",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "credit_approval_australia",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "credit_approval_germany",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "dermatology",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "dna",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "ecoli",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "first_principles_absorption",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "first_principles_ideal_gas",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "first_principles_supernovae_zg",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "first_principles_supernovae_zr",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "first_principles_tully_fisher",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "flags",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "glass2",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "haberman",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "hayes_roth",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "heart_disease_cleveland",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "heart_disease_hungarian",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "heart_disease_va_long_beach",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "horse_colic_outcome",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "horse_colic_surgery",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "hypothyroid",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "ionosphere",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "irish",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "kr_vs_kp",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "labor",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "led24",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "led7",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "lupus",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "lymphography",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "mfeat_factors",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "mofn_3_7_10",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "molecular_biology_promoters",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "monk1",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "monk2",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "monk3",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "movement_libras",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "mushroom",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "mux6",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "new_thyroid",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "nikuradse_1",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "nikuradse_2",
+      "reason": "not sampled: stratum small/regression already has 10"
+    },
+    {
+      "name": "optdigits",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "page_blocks",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "parity5+5",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "penguins",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "phoneme",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "postoperative_patient_data",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "prnn_crabs",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "prnn_synth",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "profb",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "ring",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "saheart",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "satimage",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "segmentation",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "solar_flare",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "sonar",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "soybean",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "spambase",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "splice",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "tae",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "texture",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "threeOf9",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "tic_tac_toe",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "tokyo1",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "twonorm",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "vehicle",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "waveform_40",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "wine_quality_red",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "wine_quality_white",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "wine_recognition",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "yeast",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    }
+  ]
+}

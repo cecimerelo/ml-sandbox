@@ -157,3 +157,52 @@ def test_coverage_counts_characteristics_the_recommender_reasons_about():
     assert report["regression"] == 1
     assert report["has missing values"] == 1
     assert report["has categorical features"] == 1
+
+
+def test_multiclass_count_ignores_regression_datasets():
+    # PMLB does not zero n_classes for regression, so a regression dataset can report
+    # classes > 2. Counting on that alone files it as multiclass, which is how the
+    # earlier task-detection bug stayed invisible.
+    report = coverage(
+        [
+            make("reg", classes=7, task="regression"),
+            make("clf", classes=3, task="classification"),
+        ]
+    )
+    assert report["multiclass"] == 1
+    assert report["regression"] == 1
+
+
+def test_stratified_sample_keeps_every_band_populated():
+    from mlsandbox.curation import stratified_sample
+
+    datasets = (
+        [make(f"s{i}", rows=100) for i in range(15)]
+        + [make(f"m{i}", rows=5_000) for i in range(15)]
+        + [make(f"l{i}", rows=50_000) for i in range(15)]
+    )
+    sampled = stratified_sample(datasets, per_stratum=5, seed=1)
+
+    report = coverage(sampled.kept)
+    assert report["rows < 500"] == 5
+    assert report["rows 500-10k"] == 5
+    assert report["rows > 10k"] == 5
+
+
+def test_stratified_sample_is_reproducible():
+    from mlsandbox.curation import stratified_sample
+
+    datasets = [make(f"d{i}", rows=100) for i in range(20)]
+    first = stratified_sample(datasets, per_stratum=5, seed=42)
+    second = stratified_sample(datasets, per_stratum=5, seed=42)
+    assert [d.name for d in first.kept] == [d.name for d in second.kept]
+
+
+def test_stratified_sample_explains_what_it_dropped():
+    from mlsandbox.curation import stratified_sample
+
+    datasets = [make(f"d{i}", rows=100) for i in range(10)]
+    sampled = stratified_sample(datasets, per_stratum=3, seed=1)
+    assert len(sampled.kept) == 3
+    assert len(sampled.excluded) == 7
+    assert all("not sampled" in e.reason for e in sampled.excluded)

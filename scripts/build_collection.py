@@ -16,31 +16,47 @@ import logging
 from pathlib import Path
 
 from mlsandbox.config import PROJECT_ROOT, load_config
-from mlsandbox.curation import coverage, screen
+from mlsandbox.curation import coverage, screen, stratified_sample
 from mlsandbox.dataset import Dataset
+from mlsandbox.missingness import RATES as MISSINGNESS_RATES
 from mlsandbox.pmlb_source import PINNED_REVISION, fetch_summary
 
 MANIFEST_PATH = PROJECT_ROOT / "config" / "collection.json"
+
+PER_STRATUM = 10
+"""Datasets kept per size-band x task-type cell. Six cells gives roughly 60 datasets:
+enough rows to train Layer 2 on, and small enough to re-run the benchmark in an evening
+when a bug appears (D-011)."""
 
 MAX_PER_FAMILY = 2
 """PMLB carries large families from one source (`fri_c*`, `analcatdata_*`). Two per family
 keeps some within-family variation without letting one kind of data dominate a band."""
 
 
-def build(datasets: list[Dataset]) -> dict:
+def build(datasets: list[Dataset], *, seed: int) -> dict:
     screening = screen(datasets, max_per_family=MAX_PER_FAMILY)
+    sampled = stratified_sample(screening.kept, per_stratum=PER_STRATUM, seed=seed)
     return {
         "source": "pmlb",
         "revision": PINNED_REVISION,
+        "seed": seed,
         "max_per_family": MAX_PER_FAMILY,
+        "per_stratum": PER_STRATUM,
         "counts": {
             "considered": screening.total,
-            "kept": len(screening.kept),
-            "excluded": len(screening.excluded),
+            "eligible": len(screening.kept),
+            "kept": len(sampled.kept),
+            "excluded": len(screening.excluded) + len(sampled.excluded),
         },
-        "coverage": coverage(screening.kept),
-        "datasets": [d.model_dump(mode="json") for d in screening.kept],
-        "excluded": [e.model_dump(mode="json") for e in screening.excluded],
+        # PMLB ships pre-cleaned data, so the base collection cannot exercise the
+        # recommender's missing-value heuristic. These rates are injected at evaluation
+        # time to cover it as a controlled experiment (D-015).
+        "missingness_rates": list(MISSINGNESS_RATES),
+        "coverage": coverage(sampled.kept),
+        "datasets": [d.model_dump(mode="json") for d in sampled.kept],
+        "excluded": [
+            e.model_dump(mode="json") for e in screening.excluded + sampled.excluded
+        ],
     }
 
 
@@ -48,12 +64,14 @@ def report(manifest: dict) -> None:
     counts = manifest["counts"]
     print(f"source {manifest['source']} @ {manifest['revision']}")
     print(
-        f"considered {counts['considered']} · kept {counts['kept']} "
-        f"· excluded {counts['excluded']}"
+        f"considered {counts['considered']} · eligible {counts['eligible']} "
+        f"· sampled {counts['kept']}"
     )
     print("\ncoverage")
     for band, count in manifest["coverage"].items():
         flag = "  <-- EMPTY" if count == 0 else ""
+        if band == "has missing values" and count == 0:
+            flag = f"  <-- none in source; injected at {MISSINGNESS_RATES} (D-015)"
         print(f"  {band:34} {count:>4}{flag}")
 
     reasons: dict[str, int] = {}
@@ -73,7 +91,7 @@ def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     config = load_config()
 
-    manifest = build(fetch_summary(config))
+    manifest = build(fetch_summary(config), seed=config.run.seed)
     report(manifest)
 
     if manifest["revision"] == "master":

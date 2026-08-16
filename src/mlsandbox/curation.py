@@ -12,6 +12,7 @@ is justified by constraints already written down rather than invented for this s
 
 from __future__ import annotations
 
+import random
 import re
 
 from mlsandbox.base import StrictModel
@@ -30,11 +31,17 @@ DEPRECATED_PREFIX = "_deprecated"
 them, so including them would mean drawing conclusions from data the maintainers no
 longer stand behind."""
 
-SYNTHETIC_FAMILIES = ("feynman_", "strogatz_")
-"""Generated from physics equations for symbolic-regression benchmarking, not measured
-from anything. PMLB carries 119 Feynman and 14 Strogatz datasets — a third of the whole
-collection — and admitting them would let equation-recovery problems dominate a study
-about method selection on real tabular data (D-007)."""
+SYNTHETIC_MARKERS = ("feynman_", "strogatz_", "_bng_", "bng_")
+"""Generated rather than measured, and excluded for the same reason (D-007).
+
+* **Feynman** (119) and **Strogatz** (14) are physics equations used for
+  symbolic-regression benchmarking. A third of the collection; admitting them would let
+  equation recovery dominate a study about method selection on real tabular data.
+* **BNG** (6) are sampled from Bayesian networks fitted to smaller datasets. They are the
+  largest things in PMLB — one has a million rows — so they crowd the large-row band
+  while describing a generator rather than a phenomenon. Five of six had entered the
+  sample, taking a quarter of that band.
+"""
 
 IMAGE_DERIVED = frozenset({"mnist_784", "Fashion-MNIST", "Devnagari-Script", "CIFAR_10"})
 """Datasets whose columns are flattened pixels. The feature cap already removes these;
@@ -65,8 +72,9 @@ def screen_one(meta: Dataset, *, require_small: bool = False) -> str | None:
     """
     if meta.name.lower().startswith(DEPRECATED_PREFIX):
         return "deprecated by the source"
-    if any(meta.name.lower().startswith(prefix) for prefix in SYNTHETIC_FAMILIES):
-        return "synthetic: generated from equations, not measured"
+    lowered = meta.name.lower()
+    if any(marker.strip("_") in lowered for marker in SYNTHETIC_MARKERS):
+        return "synthetic: generated, not measured"
     if meta.name in IMAGE_DERIVED:
         return "image-derived: out of scope per NFR-2"
     if meta.predictors > MAX_FEATURES:
@@ -149,8 +157,10 @@ def coverage(kept: list[Dataset]) -> dict[str, int]:
         "rows > 10k": sum(1 for m in kept if m.rows > 10_000),
         "classification": sum(1 for m in kept if m.is_classification),
         "regression": sum(1 for m in kept if not m.is_classification),
-        "multiclass": sum(1 for m in kept if m.classes > 2),
-        "binary": sum(1 for m in kept if m.classes == 2),
+        # Guarded on is_classification: PMLB does not zero n_classes for regression, so
+        # counting on classes alone silently files regression datasets as multiclass.
+        "multiclass": sum(1 for m in kept if m.is_classification and m.classes > 2),
+        "binary": sum(1 for m in kept if m.is_classification and m.classes == 2),
         # `None` means the source does not report it. PMLB's datasets are pre-cleaned and
         # carry no missing-value count, so this band cannot be covered from PMLB alone —
         # the same shape of gap as the sub-500-row one.
@@ -158,3 +168,54 @@ def coverage(kept: list[Dataset]) -> dict[str, int]:
         "missing-value data unavailable": sum(1 for m in kept if m.missing_values is None),
         "has categorical features": sum(1 for m in kept if m.categorical_predictors > 0),
     }
+
+
+def stratified_sample(
+    kept: list[Dataset],
+    *,
+    per_stratum: int,
+    seed: int,
+) -> Screening:
+    """Reduce the collection to `per_stratum` datasets per size-band × task-type cell.
+
+    The full screened collection is larger than the compute budget allows (D-011), so it
+    is sampled rather than truncated. Stratifying on the two characteristics the
+    recommender reasons about most — sample size and task type — keeps every band
+    populated, which a simple head-of-list cut would not.
+
+    Selection within a stratum is by seeded shuffle, not by any property of the dataset:
+    picking "the easiest N" or "the smallest N" would bias the study in a way nobody
+    could see afterwards.
+    """
+    rng = random.Random(seed)
+    strata: dict[tuple[str, str], list[Dataset]] = {}
+    for dataset in sorted(kept, key=lambda d: d.name):
+        band = (
+            "small"
+            if dataset.rows < SMALL_BAND_MAX_ROWS
+            else "medium"
+            if dataset.rows <= 10_000
+            else "large"
+        )
+        task = "classification" if dataset.is_classification else "regression"
+        strata.setdefault((band, task), []).append(dataset)
+
+    sampled: list[Dataset] = []
+    dropped: list[Excluded] = []
+    for stratum in sorted(strata):
+        members = strata[stratum][:]
+        rng.shuffle(members)
+        sampled.extend(members[:per_stratum])
+        dropped.extend(
+            Excluded(
+                name=d.name,
+                reason=f"not sampled: stratum {stratum[0]}/{stratum[1]} already has "
+                f"{per_stratum}",
+            )
+            for d in members[per_stratum:]
+        )
+
+    return Screening(
+        kept=sorted(sampled, key=lambda d: d.name),
+        excluded=sorted(dropped, key=lambda e: e.name),
+    )
