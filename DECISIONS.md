@@ -521,3 +521,105 @@ of redistributing 46 datasets of unverified provenance.
   published.
 - The thesis's reproducibility claim narrows honestly, from *"here is the frozen
   collection"* to *"here is the exact recipe, pinned to a commit"*.
+
+---
+
+## D-018 — Compute is not the constraint; author time is
+
+**Date:** 2026-08-16 · **Status:** accepted · **Affects:** [#9](https://github.com/cecimerelo/ml-sandbox/issues/9), [#10](https://github.com/cecimerelo/ml-sandbox/issues/10), [#12](https://github.com/cecimerelo/ml-sandbox/issues/12)
+
+**Context.** The method count was about to be cut on an estimate that the full benchmark
+would not fit the schedule. `scripts/pilot_timing.py` measured it instead — 8 methods
+across 12 datasets spanning every size band, on the actual hardware (M2 Pro, 12 cores).
+
+**Measured.** 44 minutes sequential, 132 with the three missingness variants, **~11
+minutes across 12 cores**. The estimate was wrong: the benchmark is an evening, not a
+schedule risk.
+
+Cost is also extremely concentrated:
+
+| Methods | Seconds over 12 datasets | Share |
+|---|---|---|
+| linear, ridge, tree, knn | 9 | 1.6% |
+| random forest, boosting, SVM, MLP | 565 | 98.4% |
+
+Two datasets explain most of it: `connect_4` (67k rows, the run's only timeout, on SVM)
+and `564_fried` (40k).
+
+**Decision.** Choose the method count on **implementation time**, not compute. Trimming
+methods saves nothing measurable unless the four expensive ones go — and those are the
+flexible end of the bias-variance spectrum the recommender exists to reason about.
+
+**Consequences.** Cloud compute was investigated and rejected: every free tier is slower
+than the author's laptop (Colab ~2 vCPU, Kaggle ~4, HF Spaces ~2, against 12 cores). GPUs
+and the Apple Neural Engine do not apply — trees, SVMs, KNN and linear models are
+CPU-bound, and none resembles the matrix work accelerators are built for.
+
+FR-8.4's tiered timeouts work as designed: SVM on `connect_4` was cut rather than hanging
+the run.
+
+---
+
+## D-019 — Hyperparameters are tuned only where the method requires one
+
+**Date:** 2026-08-16 · **Status:** accepted · **Affects:** [#9](https://github.com/cecimerelo/ml-sandbox/issues/9), [#10](https://github.com/cecimerelo/ml-sandbox/issues/10)
+
+**Context.** The PRD defers tuning to v2, but some methods do not exist without a choice.
+Ridge and Lasso need a λ, and there is no sensible default — a poor one zeroes every
+coefficient. KNN needs a k, where 1 overfits and n predicts the mean.
+
+**Decision.** Internal cross-validation for the methods that need a hyperparameter to be
+defined at all; library defaults for the rest. This is what ISLR does, and what the
+literature treats as each method's standard configuration.
+
+**Rejected.** *Fixed values throughout*: arbitrarily penalises the sensitive methods, and
+a poor Ridge result would be uninterpretable — the method, or the λ? *Nested CV for all*:
+cleanest, and affordable per D-018, but it multiplies the four methods that already carry
+98% of the cost.
+
+**Consequences.**
+
+- **The comparison is asymmetric and must be declared.** Ridge competes tuned, Random
+  Forest competes on defaults.
+- Cheap by accident: Ridge, Lasso and KNN are all in the 1.6% group, so tuning them costs
+  roughly 90 seconds in total.
+- **A deliberate mismatch with the application.** The study measures each method's
+  potential; the application trains on defaults, because tuning inside a request cannot
+  fit FR-8.4's timeouts. Layer 2 learns from performance the application does not exactly
+  reproduce, and the thesis must say so.
+
+---
+
+## D-020 — Nineteen methods in scikit-learn, two through R, one dropped
+
+**Date:** 2026-08-16 · **Status:** accepted · **Closes:** D-001's open BART question · **Affects:** [#9](https://github.com/cecimerelo/ml-sandbox/issues/9), [#2](https://github.com/cecimerelo/ml-sandbox/issues/2)
+
+**Context.** Cutting the method list looked necessary until the implementation cost was
+checked properly: **19 of the PRD's 22 methods are one scikit-learn entry each**,
+including several assumed expensive. `SplineTransformer` has shipped since sklearn 1.0,
+PCR is a `PCA` + regression pipeline, PLS is `PLSRegression`, polynomial regression is
+`PolynomialFeatures`. Implementing them is a table, not three weeks.
+
+**Decision.** Keep the full method list. No cut is needed, because the cost that motivated
+one does not exist.
+
+**GAM and BART run through R.** Python's options are weak — `pyGAM` is a partial,
+irregularly maintained port, and BART has no solid implementation at all. R has the
+reference versions: `mgcv` (Wood) and `gam` (Hastie and Tibshirani, the ISLR authors'
+own), plus `dbarts`. Since a bridge is needed for BART regardless, the marginal cost of
+routing GAM through it too is small.
+
+**Simple linear regression is dropped.** With datasets carrying 10 to 48 predictors, a
+one-variable regression is a deliberately crippled version of multiple regression, not a
+competing method. In ISLR it is a teaching chapter, not a contender.
+
+**The bridge is a subprocess, not `reticulate`.** Python writes the data and the fold
+assignments, runs an R script, and reads results back in the same schema. The boundary is
+a file, which means: the R script can be run by hand when it misbehaves; the fold contract
+of D-003 is satisfied literally, since R reads the same file Python wrote; and **if R is
+absent the study still runs**, with those two methods recorded as unavailable exactly like
+a timeout.
+
+**Time-boxed to four hours**, as AMLBID is. If the bridge does not work in that time, both
+methods are documented as absent and the study proceeds on the other nineteen. Two methods
+out of twenty-one cannot be allowed to block the schedule.
