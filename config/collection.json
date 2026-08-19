@@ -1,7 +1,7 @@
 {
   "_fields": {
-    "source": "Where the datasets come from (D-013).",
-    "revision": "The exact commit of the source. Pinned, not a branch: a branch moves, and two runs months apart would draw on different collections.",
+    "sources": "Each source and the band it covers. OpenML's curated suites carry provenance and predefined splits from 500 rows up; PMLB supplies the band below, which CC18 excludes by construction (D-025).",
+    "pmlb_revision": "The exact PMLB commit. Pinned, not a branch: a branch moves, and two runs months apart would draw on different collections. OpenML datasets carry their own version in `revision`.",
     "seed": "Seed for the stratified sample. The same seed reproduces the same selection.",
     "max_per_family": "Cap per dataset family. PMLB carries large families from one source (fri_c*, analcatdata_*); without a cap one kind of data would dominate a band.",
     "per_stratum": "Datasets kept per size-band x task-type cell. Six cells, so roughly six times this number survive.",
@@ -13,8 +13,13 @@
     "coverage": "How many kept datasets exercise each characteristic the recommender reasons about. Zeros are shown rather than omitted: an invisible empty band is a claim the study cannot support.",
     "datasets": "The collection the study runs on.",
     "datasets[].name": "Identifier within the source.",
+    "datasets[].source": "Which collection this came from \u2014 a mixed set must explain itself.",
+    "datasets[].revision": "The exact version fetched: a dataset version for OpenML, the pinned commit for PMLB. What makes a re-run read identical bytes.",
+    "datasets[].licence": "Terms the dataset is published under. `null` means unreported, which is not the same as unrestricted. Every OpenML dataset states one; PMLB states none.",
+    "datasets[].origin": "URL to follow the evidence back past this study.",
     "datasets[].rows": "Observations.",
-    "datasets[].predictors": "Feature columns, excluding the target.",
+    "datasets[].predictors": "Feature columns actually present, excluding the target. Taken from the data rather than the index: OpenML counts row-identifier and ignored attributes that the loader drops.",
+    "datasets[].predictor_count_corrected_from": "Present only where the index over-counted, recording what it claimed. The data is the truth; this keeps the disagreement visible instead of absorbing it.",
     "datasets[].task": "classification or regression, as the source states it. Carried explicitly because it cannot be derived from `classes`: the source does not zero that field for regression, and inferring from it files every regression dataset as classification.",
     "datasets[].classes": "Distinct target values. Only meaningful for classification \u2014 regression datasets also carry a value here.",
     "datasets[].categorical_predictors": "Feature columns that are categorical.",
@@ -27,16 +32,20 @@
     "excluded[].reason": "Why this dataset is absent: out of the product's scope, synthetic, deprecated by the source, or eligible but not sampled.",
     "fetch_failures": "Datasets that could not be downloaded or whose shape disagreed with the index. Recorded rather than raised, so one bad entry does not cost the whole run."
   },
-  "source": "pmlb",
-  "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+  "sources": {
+    "openml-cc18": "classification, 500 rows and above",
+    "openml-ctr23": "regression, 500 rows and above",
+    "pmlb": "both tasks, under 500 rows"
+  },
+  "pmlb_revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
   "seed": 20260815,
   "max_per_family": 2,
   "per_stratum": 10,
   "counts": {
-    "considered": 450,
-    "eligible": 234,
-    "kept": 55,
-    "excluded": 395
+    "considered": 267,
+    "eligible": 195,
+    "kept": 60,
+    "excluded": 497
   },
   "missingness_rates": [
     0.05,
@@ -45,189 +54,29 @@
   "coverage": {
     "rows < 500": 20,
     "rows 500-10k": 20,
-    "rows > 10k": 15,
-    "classification": 28,
-    "regression": 27,
-    "multiclass": 12,
+    "rows > 10k": 20,
+    "classification": 30,
+    "regression": 30,
+    "multiclass": 14,
     "binary": 16,
-    "has missing values": 0,
-    "missing-value data unavailable": 55,
-    "has categorical features": 22
+    "has missing values": 4,
+    "missing-value data unavailable": 20,
+    "has categorical features": 35
   },
   "datasets": [
     {
-      "name": "201_pol",
+      "name": "527_analcatdata_election2000",
       "source": "pmlb",
       "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 15000,
-      "predictors": 48,
+      "rows": 67,
+      "predictors": 14,
       "task": "regression",
-      "classes": 11,
-      "categorical_predictors": 22,
-      "missing_values": null,
-      "imbalance": 0.3746815528888889,
-      "provenance": {
-        "description": "",
-        "sources": [],
-        "publication": ""
-      },
-      "keywords": []
-    },
-    {
-      "name": "210_cloud",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 108,
-      "predictors": 5,
-      "task": "regression",
-      "classes": 94,
-      "categorical_predictors": 1,
-      "missing_values": null,
-      "imbalance": 0.0013791170700768,
-      "provenance": {
-        "description": "",
-        "sources": [],
-        "publication": ""
-      },
-      "keywords": []
-    },
-    {
-      "name": "215_2dplanes",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 40768,
-      "predictors": 10,
-      "task": "regression",
-      "classes": 40368,
-      "categorical_predictors": 9,
-      "missing_values": null,
-      "imbalance": 2.419008481400585e-07,
-      "provenance": {
-        "description": "",
-        "sources": [],
-        "publication": ""
-      },
-      "keywords": []
-    },
-    {
-      "name": "218_house_8L",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 22784,
-      "predictors": 8,
-      "task": "regression",
-      "classes": 2045,
-      "categorical_predictors": 0,
-      "missing_values": null,
-      "imbalance": 0.0193534322439784,
-      "provenance": {
-        "description": "",
-        "sources": [],
-        "publication": ""
-      },
-      "keywords": []
-    },
-    {
-      "name": "227_cpu_small",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 8192,
-      "predictors": 12,
-      "task": "regression",
-      "classes": 56,
-      "categorical_predictors": 0,
-      "missing_values": null,
-      "imbalance": 0.0205723459070379,
-      "provenance": {
-        "description": "",
-        "sources": [],
-        "publication": ""
-      },
-      "keywords": []
-    },
-    {
-      "name": "344_mv",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 40768,
-      "predictors": 10,
-      "task": "regression",
-      "classes": 39029,
-      "categorical_predictors": 1,
-      "missing_values": null,
-      "imbalance": 0.0006300827654696,
-      "provenance": {
-        "description": "",
-        "sources": [],
-        "publication": ""
-      },
-      "keywords": []
-    },
-    {
-      "name": "537_houses",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 20640,
-      "predictors": 8,
-      "task": "regression",
-      "classes": 3842,
-      "categorical_predictors": 0,
-      "missing_values": null,
-      "imbalance": 0.0025041112046606,
-      "provenance": {
-        "description": "",
-        "sources": [],
-        "publication": ""
-      },
-      "keywords": []
-    },
-    {
-      "name": "564_fried",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 40768,
-      "predictors": 10,
-      "task": "regression",
-      "classes": 17396,
-      "categorical_predictors": 0,
-      "missing_values": null,
-      "imbalance": 2.1925705209313144e-05,
-      "provenance": {
-        "description": "",
-        "sources": [],
-        "publication": ""
-      },
-      "keywords": []
-    },
-    {
-      "name": "574_house_16H",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 22784,
-      "predictors": 16,
-      "task": "regression",
-      "classes": 2045,
-      "categorical_predictors": 0,
-      "missing_values": null,
-      "imbalance": 0.0193534322439784,
-      "provenance": {
-        "description": "",
-        "sources": [],
-        "publication": ""
-      },
-      "keywords": []
-    },
-    {
-      "name": "579_fri_c0_250_5",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 250,
-      "predictors": 5,
-      "task": "regression",
-      "classes": 250,
+      "classes": 67,
       "categorical_predictors": 0,
       "missing_values": null,
       "imbalance": 0.0,
+      "licence": null,
+      "origin": null,
       "provenance": {
         "description": "",
         "sources": [],
@@ -236,124 +85,46 @@
       "keywords": []
     },
     {
-      "name": "581_fri_c3_500_25",
+      "name": "542_pollution",
       "source": "pmlb",
       "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 500,
-      "predictors": 25,
+      "rows": 60,
+      "predictors": 15,
       "task": "regression",
-      "classes": 500,
+      "classes": 60,
       "categorical_predictors": 0,
       "missing_values": null,
       "imbalance": 0.0,
+      "licence": null,
+      "origin": null,
       "provenance": {
-        "description": "",
-        "sources": [],
-        "publication": ""
+        "description": "Air pollution and mortality rate",
+        "sources": [
+          "https://www.openml.org/d/542"
+        ],
+        "publication": "McDonald GC, Schwing RC. Instabilities of regression estimates relating air pollution to mortality. Technometrics. 1973 Aug 1;15(3):463-81."
       },
-      "keywords": []
+      "keywords": [
+        "environment",
+        "air pollution",
+        "pollutants",
+        "weather",
+        "mortality"
+      ]
     },
     {
-      "name": "583_fri_c1_1000_50",
+      "name": "557_analcatdata_apnea1",
       "source": "pmlb",
       "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 1000,
-      "predictors": 50,
+      "rows": 475,
+      "predictors": 3,
       "task": "regression",
-      "classes": 1000,
-      "categorical_predictors": 0,
+      "classes": 164,
+      "categorical_predictors": 2,
       "missing_values": null,
-      "imbalance": 0.0,
-      "provenance": {
-        "description": "",
-        "sources": [],
-        "publication": ""
-      },
-      "keywords": []
-    },
-    {
-      "name": "586_fri_c3_1000_25",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 1000,
-      "predictors": 25,
-      "task": "regression",
-      "classes": 1000,
-      "categorical_predictors": 0,
-      "missing_values": null,
-      "imbalance": 0.0,
-      "provenance": {
-        "description": "",
-        "sources": [],
-        "publication": ""
-      },
-      "keywords": []
-    },
-    {
-      "name": "588_fri_c4_1000_100",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 1000,
-      "predictors": 100,
-      "task": "regression",
-      "classes": 1000,
-      "categorical_predictors": 0,
-      "missing_values": null,
-      "imbalance": 0.0,
-      "provenance": {
-        "description": "",
-        "sources": [],
-        "publication": ""
-      },
-      "keywords": []
-    },
-    {
-      "name": "601_fri_c1_250_5",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 250,
-      "predictors": 5,
-      "task": "regression",
-      "classes": 250,
-      "categorical_predictors": 0,
-      "missing_values": null,
-      "imbalance": 0.0,
-      "provenance": {
-        "description": "",
-        "sources": [],
-        "publication": ""
-      },
-      "keywords": []
-    },
-    {
-      "name": "602_fri_c3_250_10",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 250,
-      "predictors": 10,
-      "task": "regression",
-      "classes": 250,
-      "categorical_predictors": 0,
-      "missing_values": null,
-      "imbalance": 0.0,
-      "provenance": {
-        "description": "",
-        "sources": [],
-        "publication": ""
-      },
-      "keywords": []
-    },
-    {
-      "name": "607_fri_c4_1000_50",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 1000,
-      "predictors": 50,
-      "task": "regression",
-      "classes": 1000,
-      "categorical_predictors": 0,
-      "missing_values": null,
-      "imbalance": 0.0,
+      "imbalance": 0.3252596910422626,
+      "licence": null,
+      "origin": null,
       "provenance": {
         "description": "",
         "sources": [],
@@ -372,6 +143,8 @@
       "categorical_predictors": 0,
       "missing_values": null,
       "imbalance": 0.0,
+      "licence": null,
+      "origin": null,
       "provenance": {
         "description": "",
         "sources": [],
@@ -380,34 +153,18 @@
       "keywords": []
     },
     {
-      "name": "620_fri_c1_1000_25",
+      "name": "613_fri_c3_250_5",
       "source": "pmlb",
       "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 1000,
-      "predictors": 25,
+      "rows": 250,
+      "predictors": 5,
       "task": "regression",
-      "classes": 1000,
+      "classes": 250,
       "categorical_predictors": 0,
       "missing_values": null,
       "imbalance": 0.0,
-      "provenance": {
-        "description": "",
-        "sources": [],
-        "publication": ""
-      },
-      "keywords": []
-    },
-    {
-      "name": "621_fri_c0_100_10",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 100,
-      "predictors": 10,
-      "task": "regression",
-      "classes": 100,
-      "categorical_predictors": 0,
-      "missing_values": null,
-      "imbalance": 0.0,
+      "licence": null,
+      "origin": null,
       "provenance": {
         "description": "",
         "sources": [],
@@ -426,6 +183,8 @@
       "categorical_predictors": 0,
       "missing_values": null,
       "imbalance": 0.0,
+      "licence": null,
+      "origin": null,
       "provenance": {
         "description": "",
         "sources": [],
@@ -434,7 +193,7 @@
       "keywords": []
     },
     {
-      "name": "635_fri_c0_250_10",
+      "name": "657_fri_c2_250_10",
       "source": "pmlb",
       "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
       "rows": 250,
@@ -444,60 +203,8 @@
       "categorical_predictors": 0,
       "missing_values": null,
       "imbalance": 0.0,
-      "provenance": {
-        "description": "",
-        "sources": [],
-        "publication": ""
-      },
-      "keywords": []
-    },
-    {
-      "name": "637_fri_c1_500_50",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 500,
-      "predictors": 50,
-      "task": "regression",
-      "classes": 500,
-      "categorical_predictors": 0,
-      "missing_values": null,
-      "imbalance": 0.0,
-      "provenance": {
-        "description": "",
-        "sources": [],
-        "publication": ""
-      },
-      "keywords": []
-    },
-    {
-      "name": "646_fri_c3_500_10",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 500,
-      "predictors": 10,
-      "task": "regression",
-      "classes": 500,
-      "categorical_predictors": 0,
-      "missing_values": null,
-      "imbalance": 0.0,
-      "provenance": {
-        "description": "",
-        "sources": [],
-        "publication": ""
-      },
-      "keywords": []
-    },
-    {
-      "name": "650_fri_c0_500_50",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 500,
-      "predictors": 50,
-      "task": "regression",
-      "classes": 500,
-      "categorical_predictors": 0,
-      "missing_values": null,
-      "imbalance": 0.0,
+      "licence": null,
+      "origin": null,
       "provenance": {
         "description": "",
         "sources": [],
@@ -516,6 +223,8 @@
       "categorical_predictors": 0,
       "missing_values": null,
       "imbalance": 0.0012464748848438,
+      "licence": null,
+      "origin": null,
       "provenance": {
         "description": "",
         "sources": [],
@@ -534,6 +243,8 @@
       "categorical_predictors": 1,
       "missing_values": null,
       "imbalance": 0.0015831087631295,
+      "licence": null,
+      "origin": null,
       "provenance": {
         "description": "",
         "sources": [],
@@ -542,34 +253,70 @@
       "keywords": []
     },
     {
-      "name": "GAMETES_Heterogeneity_20atts_1600_Het_0.4_0.2_75_EDM_2_001",
+      "name": "712_chscase_geyser1",
       "source": "pmlb",
       "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 1600,
-      "predictors": 20,
+      "rows": 222,
+      "predictors": 2,
+      "task": "regression",
+      "classes": 50,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0128435109130089,
+      "licence": null,
+      "origin": null,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
+    },
+    {
+      "name": "PhishingWebsites",
+      "source": "openml-cc18",
+      "revision": "1",
+      "rows": 11055,
+      "predictors": 30,
       "task": "classification",
       "classes": 2,
-      "categorical_predictors": 19,
-      "missing_values": null,
-      "imbalance": 0.0,
-      "provenance": {
-        "description": "",
-        "sources": [],
-        "publication": ""
-      },
+      "categorical_predictors": 31,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/4534",
+      "provenance": null,
       "keywords": []
     },
     {
-      "name": "Hill_Valley_with_noise",
+      "name": "airfoil_self_noise",
+      "source": "openml-ctr23",
+      "revision": "8",
+      "rows": 1503,
+      "predictors": 5,
+      "task": "regression",
+      "classes": 0,
+      "categorical_predictors": 0,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "CC BY 4.0",
+      "origin": "https://www.openml.org/d/44957",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "appendicitis",
       "source": "pmlb",
       "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 1212,
-      "predictors": 100,
+      "rows": 106,
+      "predictors": 7,
       "task": "classification",
       "classes": 2,
       "categorical_predictors": 0,
       "missing_values": null,
-      "imbalance": 0.0,
+      "imbalance": 0.3645425418298327,
+      "licence": null,
+      "origin": null,
       "provenance": {
         "description": "",
         "sources": [],
@@ -578,40 +325,82 @@
       "keywords": []
     },
     {
-      "name": "adult",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 48842,
-      "predictors": 14,
+      "name": "bank-marketing",
+      "source": "openml-cc18",
+      "revision": "1",
+      "rows": 45211,
+      "predictors": 16,
       "task": "classification",
       "classes": 2,
-      "categorical_predictors": 4,
-      "missing_values": null,
-      "imbalance": 0.2718959907996784,
-      "provenance": {
-        "description": "Prediction of whether a person makes over $50K a year, based on 14 other features.",
-        "sources": [
-          "https://archive.ics.uci.edu/ml/datasets/adult",
-          "https://www.openml.org/d/1590"
-        ],
-        "publication": "Ron Kohavi, \"Scaling Up the Accuracy of Naive-Bayes Classifiers: a Decision-Tree Hybrid\", Proceedings of the Second International Conference on Knowledge Discovery and Data Mining, 1996"
-      },
-      "keywords": [
-        "income",
-        "demographics"
-      ]
+      "categorical_predictors": 10,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/1461",
+      "provenance": null,
+      "keywords": []
     },
     {
-      "name": "allhypo",
+      "name": "blood-transfusion-service-center",
+      "source": "openml-cc18",
+      "revision": "1",
+      "rows": 748,
+      "predictors": 4,
+      "task": "classification",
+      "classes": 2,
+      "categorical_predictors": 1,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/1464",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "brazilian_houses",
+      "source": "openml-ctr23",
+      "revision": "16",
+      "rows": 10692,
+      "predictors": 9,
+      "task": "regression",
+      "classes": 0,
+      "categorical_predictors": 4,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "CC 0: Public Domain",
+      "origin": "https://www.openml.org/d/44990",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "breast-w",
+      "source": "openml-cc18",
+      "revision": "1",
+      "rows": 699,
+      "predictors": 9,
+      "task": "classification",
+      "classes": 2,
+      "categorical_predictors": 1,
+      "missing_values": 16,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/15",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "calendarDOW",
       "source": "pmlb",
       "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 3770,
-      "predictors": 29,
+      "rows": 399,
+      "predictors": 32,
       "task": "classification",
-      "classes": 3,
-      "categorical_predictors": 4,
+      "classes": 5,
+      "categorical_predictors": 18,
       "missing_values": null,
-      "imbalance": 0.7837656635873043,
+      "imbalance": 0.0140294344884768,
+      "licence": null,
+      "origin": null,
       "provenance": {
         "description": "",
         "sources": [],
@@ -620,75 +409,68 @@
       "keywords": []
     },
     {
-      "name": "allrep",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 3772,
-      "predictors": 29,
+      "name": "car",
+      "source": "openml-cc18",
+      "revision": "3",
+      "rows": 1728,
+      "predictors": 6,
       "task": "classification",
       "classes": 4,
-      "categorical_predictors": 4,
-      "missing_values": null,
-      "imbalance": 0.9142744795514716,
-      "provenance": {
-        "description": "",
-        "sources": [],
-        "publication": ""
-      },
+      "categorical_predictors": 7,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/40975",
+      "provenance": null,
       "keywords": []
     },
     {
-      "name": "biomed",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 209,
-      "predictors": 8,
+      "name": "climate-model-simulation-crashes",
+      "source": "openml-cc18",
+      "revision": "4",
+      "rows": 540,
+      "predictors": 18,
       "task": "classification",
       "classes": 2,
       "categorical_predictors": 1,
-      "missing_values": null,
-      "imbalance": 0.079691399006433,
-      "provenance": {
-        "description": "",
-        "sources": [],
-        "publication": ""
-      },
-      "keywords": []
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/40994",
+      "provenance": null,
+      "keywords": [],
+      "predictor_count_corrected_from": 20
     },
     {
-      "name": "cars",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 392,
-      "predictors": 8,
+      "name": "cmc",
+      "source": "openml-cc18",
+      "revision": "1",
+      "rows": 1473,
+      "predictors": 9,
       "task": "classification",
       "classes": 3,
-      "categorical_predictors": 1,
-      "missing_values": null,
-      "imbalance": 0.1919968242399,
-      "provenance": {
-        "description": "",
-        "sources": [],
-        "publication": ""
-      },
+      "categorical_predictors": 8,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/23",
+      "provenance": null,
       "keywords": []
     },
     {
-      "name": "confidence",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 72,
-      "predictors": 3,
-      "task": "classification",
-      "classes": 6,
+      "name": "concrete_compressive_strength",
+      "source": "openml-ctr23",
+      "revision": "7",
+      "rows": 1030,
+      "predictors": 8,
+      "task": "regression",
+      "classes": 0,
       "categorical_predictors": 0,
-      "missing_values": null,
-      "imbalance": 0.0,
-      "provenance": {
-        "description": "",
-        "sources": [],
-        "publication": ""
-      },
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "CC BY 4.0",
+      "origin": "https://www.openml.org/d/44959",
+      "provenance": null,
       "keywords": []
     },
     {
@@ -702,6 +484,8 @@
       "categorical_predictors": 16,
       "missing_values": null,
       "imbalance": 0.05179548156956,
+      "licence": null,
+      "origin": null,
       "provenance": {
         "description": "This dataset contains the voting behaviour of each of the 435 members of the 98th Congress of the U.S. House of Representatives on a items for voting. The aim is to identify the political affiliation of the representative based on voting behaviour. Note that there are multiple types of vote possible, which were aggregated to for, against, and unknown. The latter consists of present votes (similar ",
         "sources": [],
@@ -712,62 +496,178 @@
       ]
     },
     {
-      "name": "connect_4",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "name": "connect-4",
+      "source": "openml-cc18",
+      "revision": "2",
       "rows": 67557,
       "predictors": 42,
       "task": "classification",
       "classes": 3,
-      "categorical_predictors": 42,
-      "missing_values": null,
-      "imbalance": 0.2546625519372754,
-      "provenance": {
-        "description": "Database contains the set of all possible board states corresponding to a connect-4 game at 8-ply; Features correspond to spaces on a 7x6 board, with rows [1-6] and columns [a-f]; Each feature has an integral value in range [0,2]; Feature code - 0 = space is empty, 1 = taken by Player 1, 2 = taken by Player 2",
-        "sources": [
-          "https://archive.ics.uci.edu/ml/datasets/Connect-4;",
-          "https://www.openml.org/d/40668"
-        ],
-        "publication": "Dua, D. and Graff, C. (2019). UCI Machine Learning Repository [http://archive.ics.uci.edu/ml]. Irvine, CA: University of California, School of Information and Computer Science."
-      },
-      "keywords": [
-        "board game",
-        "moves"
-      ]
+      "categorical_predictors": 43,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "public",
+      "origin": "https://www.openml.org/d/40668",
+      "provenance": null,
+      "keywords": []
     },
     {
-      "name": "credit_approval_australia",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "name": "cps88wages",
+      "source": "openml-ctr23",
+      "revision": "2",
+      "rows": 28155,
+      "predictors": 6,
+      "task": "regression",
+      "classes": 0,
+      "categorical_predictors": 4,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/44984",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "cpu_activity",
+      "source": "openml-ctr23",
+      "revision": "6",
+      "rows": 8192,
+      "predictors": 21,
+      "task": "regression",
+      "classes": 0,
+      "categorical_predictors": 0,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/44978",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "credit-approval",
+      "source": "openml-cc18",
+      "revision": "1",
       "rows": 690,
       "predictors": 15,
       "task": "classification",
       "classes": 2,
+      "categorical_predictors": 10,
+      "missing_values": 67,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/29",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "credit-g",
+      "source": "openml-cc18",
+      "revision": "1",
+      "rows": 1000,
+      "predictors": 20,
+      "task": "classification",
+      "classes": 2,
+      "categorical_predictors": 14,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/31",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "diamonds",
+      "source": "openml-ctr23",
+      "revision": "8",
+      "rows": 53940,
+      "predictors": 9,
+      "task": "regression",
+      "classes": 0,
+      "categorical_predictors": 3,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/44979",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "electricity",
+      "source": "openml-cc18",
+      "revision": "1",
+      "rows": 45312,
+      "predictors": 8,
+      "task": "classification",
+      "classes": 2,
+      "categorical_predictors": 2,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/151",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "fifa",
+      "source": "openml-ctr23",
+      "revision": "19",
+      "rows": 19178,
+      "predictors": 28,
+      "task": "regression",
+      "classes": 0,
+      "categorical_predictors": 1,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "CC0: Public Domain",
+      "origin": "https://www.openml.org/d/45012",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "fps_benchmark",
+      "source": "openml-ctr23",
+      "revision": "2",
+      "rows": 24624,
+      "predictors": 43,
+      "task": "regression",
+      "classes": 0,
+      "categorical_predictors": 13,
+      "missing_values": 69696,
+      "imbalance": null,
+      "licence": "CC BY",
+      "origin": "https://www.openml.org/d/44992",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "grid_stability",
+      "source": "openml-ctr23",
+      "revision": "7",
+      "rows": 10000,
+      "predictors": 12,
+      "task": "regression",
+      "classes": 0,
+      "categorical_predictors": 0,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "CC BY 4.0",
+      "origin": "https://www.openml.org/d/44973",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "hayes_roth",
+      "source": "pmlb",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "rows": 160,
+      "predictors": 4,
+      "task": "classification",
+      "classes": 3,
       "categorical_predictors": 4,
       "missing_values": null,
-      "imbalance": 0.0121319050619617,
-      "provenance": {
-        "description": "This dataset contains data concerning credit card applications in a large bank. Sadly, the exact meaning of the features is unknown.",
-        "sources": [
-          "https://archive.ics.uci.edu/ml/datasets/Credit+Approval"
-        ],
-        "publication": "['Dua D, Graff C. UCI Machine Learning Repository. University of California, Irvine, School of Information and Computer Sciences; 2019. http://archive.ics.uci.edu/ml', 'Quinlan JR. Simplifying decisio"
-      },
-      "keywords": [
-        "financial"
-      ]
-    },
-    {
-      "name": "hepatitis",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 155,
-      "predictors": 19,
-      "task": "classification",
-      "classes": 2,
-      "categorical_predictors": 10,
-      "missing_values": null,
-      "imbalance": 0.3446826222684704,
+      "imbalance": 0.0438671874999999,
+      "licence": null,
+      "origin": null,
       "provenance": {
         "description": "",
         "sources": [],
@@ -776,145 +676,114 @@
       "keywords": []
     },
     {
-      "name": "krkopt",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 28056,
+      "name": "jm1",
+      "source": "openml-cc18",
+      "revision": "1",
+      "rows": 10885,
+      "predictors": 21,
+      "task": "classification",
+      "classes": 2,
+      "categorical_predictors": 1,
+      "missing_values": 25,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/1053",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "jungle_chess_2pcs_raw_endgame_complete",
+      "source": "openml-cc18",
+      "revision": "1",
+      "rows": 44819,
       "predictors": 6,
       "task": "classification",
-      "classes": 18,
-      "categorical_predictors": 6,
-      "missing_values": null,
-      "imbalance": 0.0516687671160113,
-      "provenance": {
-        "description": "",
-        "sources": [],
-        "publication": ""
-      },
+      "classes": 3,
+      "categorical_predictors": 1,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/41027",
+      "provenance": null,
       "keywords": []
     },
     {
-      "name": "labor",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 57,
-      "predictors": 16,
-      "task": "classification",
-      "classes": 2,
-      "categorical_predictors": 13,
-      "missing_values": null,
-      "imbalance": 0.0889504462911665,
-      "provenance": {
-        "description": "",
-        "sources": [],
-        "publication": ""
-      },
+      "name": "kin8nm",
+      "source": "openml-ctr23",
+      "revision": "4",
+      "rows": 8192,
+      "predictors": 8,
+      "task": "regression",
+      "classes": 0,
+      "categorical_predictors": 0,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/44980",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "kings_county",
+      "source": "openml-ctr23",
+      "revision": "2",
+      "rows": 21613,
+      "predictors": 21,
+      "task": "regression",
+      "classes": 0,
+      "categorical_predictors": 4,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "CC 0: Public Domain",
+      "origin": "https://www.openml.org/d/44989",
+      "provenance": null,
       "keywords": []
     },
     {
       "name": "letter",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "source": "openml-cc18",
+      "revision": "1",
       "rows": 20000,
       "predictors": 16,
       "task": "classification",
       "classes": 26,
-      "categorical_predictors": 0,
-      "missing_values": null,
-      "imbalance": 3.490919999999997e-05,
-      "provenance": {
-        "description": "Features include 16 statistics that describe intentionally warped images of typed capital letters. The images are not included.",
-        "sources": [
-          "https://archive.ics.uci.edu/ml/datasets/letter+recognition"
-        ],
-        "publication": "P. W. Frey and D. J. Slate. \"Letter Recognition Using Holland-style Adaptive Classifiers\". (Machine Learning Vol 6"
-      },
-      "keywords": [
-        "engineered features",
-        "alphabet"
-      ]
+      "categorical_predictors": 1,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/6",
+      "provenance": null,
+      "keywords": []
     },
     {
-      "name": "lupus",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 87,
-      "predictors": 3,
+      "name": "mfeat-factors",
+      "source": "openml-cc18",
+      "revision": "1",
+      "rows": 2000,
+      "predictors": 216,
       "task": "classification",
-      "classes": 2,
-      "categorical_predictors": 0,
-      "missing_values": null,
-      "imbalance": 0.0381820583960893,
-      "provenance": {
-        "description": "A small dataset meant to compare the time from getting lupus to diagnosis against the time from diagnosis to death.",
-        "sources": [
-          "https://www.openml.org/d/472"
-        ],
-        "publication": "Abrahamowicz M, MacKenzie T, Esdaile JM. 'Time-dependent hazard ratio: modeling and hypothesis testing with application in lupus nephritis.' 'J Am Stat Assoc 1996;91:1432\u20139.'"
-      },
-      "keywords": [
-        "survival analysis",
-        "medical"
-      ]
+      "classes": 10,
+      "categorical_predictors": 1,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/12",
+      "provenance": null,
+      "keywords": []
     },
     {
-      "name": "magic",
+      "name": "mux6",
       "source": "pmlb",
       "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 19020,
-      "predictors": 10,
-      "task": "classification",
-      "classes": 2,
-      "categorical_predictors": 0,
-      "missing_values": null,
-      "imbalance": 0.0880547898553849,
-      "provenance": {
-        "description": "particle shower measurements used to classify which type of radiation caused the particle shower.",
-        "sources": [
-          "https://archive.ics.uci.edu/ml/datasets/magic+gamma+telescope"
-        ],
-        "publication": "Bock, R.K., Chilingarian, A., Gaug, M., Hakl, F., Hengstebeck, T., Jirina, M., Klaschka, J., Kotrc, E., Savicky, P., Towers, S., Vaicilius, A., Wittek W. (2004). 'Methods for multidimensional event cl"
-      },
-      "keywords": [
-        "astrophysics",
-        "Experimental physics"
-      ]
-    },
-    {
-      "name": "molecular_biology_promoters",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 106,
-      "predictors": 57,
-      "task": "classification",
-      "classes": 2,
-      "categorical_predictors": 57,
-      "missing_values": null,
-      "imbalance": 0.0,
-      "provenance": {
-        "description": "Title of Database: E. coli promoter gene sequences (DNA) with associated imperfect domain theory Past Usage: (a) biological: -- Harley, C. and Reynolds, R. 1987. \"Analysis of E. Coli Promoter Sequences.\" Nucleic Acids Research, 15:2343-2361. machine learning: -- Towell, G., Shavlik, J. and Noordewier, M. 1990. \"Refinement of Approximate Domain Theories by Knowledge-Based Artificial Neural Networks",
-        "sources": [
-          "https://www.openml.org/d/164"
-        ],
-        "publication": "Harley, C. and Reynolds, R. 1987. \"Analysis of E. Coli Promoter Sequences.\" Nucleic Acids Research, 15:2343-2361. Towell, G., Shavlik, J. and Noordewier, M. 1990. \"Refinement of Approximate Domain The"
-      },
-      "keywords": [
-        "biology",
-        "genetics",
-        "molecular biology"
-      ]
-    },
-    {
-      "name": "monk3",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 554,
+      "rows": 128,
       "predictors": 6,
       "task": "classification",
       "classes": 2,
-      "categorical_predictors": 4,
+      "categorical_predictors": 0,
       "missing_values": null,
-      "imbalance": 0.0015769787173037,
+      "imbalance": 0.0,
+      "licence": null,
+      "origin": null,
       "provenance": {
         "description": "",
         "sources": [],
@@ -923,39 +792,67 @@
       "keywords": []
     },
     {
-      "name": "nursery",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 12958,
-      "predictors": 8,
+      "name": "naval_propulsion_plant",
+      "source": "openml-ctr23",
+      "revision": "7",
+      "rows": 11934,
+      "predictors": 14,
+      "task": "regression",
+      "classes": 0,
+      "categorical_predictors": 0,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "CC BY 4.0",
+      "origin": "https://www.openml.org/d/44969",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "nomao",
+      "source": "openml-cc18",
+      "revision": "1",
+      "rows": 34465,
+      "predictors": 118,
       "task": "classification",
-      "classes": 4,
-      "categorical_predictors": 7,
-      "missing_values": null,
-      "imbalance": 0.0900899366400157,
-      "provenance": {
-        "description": "",
-        "sources": [],
-        "publication": ""
-      },
+      "classes": 2,
+      "categorical_predictors": 30,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/1486",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "numerai28.6",
+      "source": "openml-cc18",
+      "revision": "2",
+      "rows": 96320,
+      "predictors": 21,
+      "task": "classification",
+      "classes": 2,
+      "categorical_predictors": 1,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/23517",
+      "provenance": null,
       "keywords": []
     },
     {
       "name": "pendigits",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "source": "openml-cc18",
+      "revision": "1",
       "rows": 10992,
       "predictors": 16,
       "task": "classification",
       "classes": 10,
-      "categorical_predictors": 0,
-      "missing_values": null,
-      "imbalance": 0.0001780697519917,
-      "provenance": {
-        "description": "",
-        "sources": [],
-        "publication": ""
-      },
+      "categorical_predictors": 1,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/32",
+      "provenance": null,
       "keywords": []
     },
     {
@@ -969,6 +866,8 @@
       "categorical_predictors": 2,
       "missing_values": null,
       "imbalance": 0.0463764196863169,
+      "licence": null,
+      "origin": null,
       "provenance": {
         "description": "Data on three Palmer Archipelago (Antarctica) penguin species collected and made available by Dr. Kristen Gorman and the Palmer Station, Antarctica LTER, a member of the Long Term Ecological Research Network.",
         "sources": [
@@ -985,111 +884,247 @@
       ]
     },
     {
-      "name": "phoneme",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 5404,
-      "predictors": 5,
-      "task": "classification",
-      "classes": 2,
+      "name": "pumadyn32nh",
+      "source": "openml-ctr23",
+      "revision": "2",
+      "rows": 8192,
+      "predictors": 32,
+      "task": "regression",
+      "classes": 0,
       "categorical_predictors": 0,
-      "missing_values": null,
-      "imbalance": 0.1705916225117124,
-      "provenance": {
-        "description": "",
-        "sources": [],
-        "publication": ""
-      },
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/44981",
+      "provenance": null,
       "keywords": []
     },
     {
-      "name": "prnn_crabs",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 200,
-      "predictors": 7,
-      "task": "classification",
-      "classes": 2,
-      "categorical_predictors": 0,
-      "missing_values": null,
-      "imbalance": 0.0,
-      "provenance": {
-        "description": "",
-        "sources": [],
-        "publication": ""
-      },
-      "keywords": []
-    },
-    {
-      "name": "shuttle",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 58000,
-      "predictors": 9,
-      "task": "classification",
-      "classes": 7,
-      "categorical_predictors": 0,
-      "missing_values": null,
-      "imbalance": 0.5852340828378914,
-      "provenance": {
-        "description": "",
-        "sources": [],
-        "publication": ""
-      },
-      "keywords": []
-    },
-    {
-      "name": "tic_tac_toe",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 958,
-      "predictors": 9,
-      "task": "classification",
-      "classes": 2,
-      "categorical_predictors": 9,
-      "missing_values": null,
-      "imbalance": 0.0941810748732789,
-      "provenance": {
-        "description": "",
-        "sources": [],
-        "publication": ""
-      },
-      "keywords": []
-    },
-    {
-      "name": "wine_quality_red",
-      "source": "pmlb",
-      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "name": "red_wine",
+      "source": "openml-ctr23",
+      "revision": "11",
       "rows": 1599,
       "predictors": 11,
+      "task": "regression",
+      "classes": 0,
+      "categorical_predictors": 0,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "CC BY 4.0",
+      "origin": "https://www.openml.org/d/44972",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "saheart",
+      "source": "pmlb",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "rows": 462,
+      "predictors": 9,
       "task": "classification",
-      "classes": 6,
+      "classes": 2,
       "categorical_predictors": 0,
       "missing_values": null,
-      "imbalance": 0.2288041188970123,
+      "imbalance": 0.0944697438203931,
+      "licence": null,
+      "origin": null,
       "provenance": {
-        "description": "The dataset is related to the red variant of the Portuguese \"Vinho Verde\" wine. For more details, consult: http://www.vinhoverde.pt/en/ or the reference (Cortez et al., 2009). Due to privacy and logistic issues, only physicochemical (inputs) and sensory (the output) variables are available (e.g. there is no data about grape types, wine brand, wine selling price, etc.). The inputs include objective",
+        "description": "A retrospective sample of males in a heart-disease high-risk region of the Western Cape.",
         "sources": [
-          "http://archive.ics.uci.edu/ml/datasets/Wine+Quality"
+          "https://www.openml.org/data/get_csv/1592290/phpgNaXZe",
+          "https://www.openml.org/d/1498",
+          "https://rdrr.io/cran/ElemStatLearn/man/SAheart.html"
         ],
-        "publication": "P. Cortez, A. Cerdeira, F. Almeida, T. Matos and J. Reis. Modeling wine preferences by data mining from physicochemical properties. In Decision Support Systems, Elsevier, 47(4):547-553. ISSN: 0167-923"
+        "publication": "Rousseauw, J., du Plessis, J., Benade, A., Jordaan, P., Kotze, J. and Ferreira, J. (1983). Coronary risk factor screening in three rural communities. South African Medical Journal 64: 430-436. pmid:66"
       },
       "keywords": [
-        "wine",
-        "alcoholic drink"
+        "heart disease",
+        "coronary artery",
+        "alcohol",
+        "smoking"
       ]
     },
     {
-      "name": "xd6",
+      "name": "satimage",
+      "source": "openml-cc18",
+      "revision": "1",
+      "rows": 6430,
+      "predictors": 36,
+      "task": "classification",
+      "classes": 6,
+      "categorical_predictors": 1,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/182",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "schizo",
       "source": "pmlb",
       "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
-      "rows": 973,
-      "predictors": 9,
+      "rows": 340,
+      "predictors": 14,
       "task": "classification",
-      "classes": 2,
+      "classes": 3,
       "categorical_predictors": 0,
       "missing_values": null,
-      "imbalance": 0.1143315563376636,
+      "imbalance": 0.1478546712802768,
+      "licence": null,
+      "origin": null,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
+    },
+    {
+      "name": "socmob",
+      "source": "openml-ctr23",
+      "revision": "4",
+      "rows": 1156,
+      "predictors": 5,
+      "task": "regression",
+      "classes": 0,
+      "categorical_predictors": 4,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "Non-commercial scholarly and teaching purposes.",
+      "origin": "https://www.openml.org/d/44987",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "solar_flare",
+      "source": "openml-ctr23",
+      "revision": "7",
+      "rows": 1066,
+      "predictors": 10,
+      "task": "regression",
+      "classes": 0,
+      "categorical_predictors": 8,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "CC BY 4.0",
+      "origin": "https://www.openml.org/d/44966",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "space_ga",
+      "source": "openml-ctr23",
+      "revision": "5",
+      "rows": 3107,
+      "predictors": 6,
+      "task": "regression",
+      "classes": 0,
+      "categorical_predictors": 0,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/45402",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "superconductivity",
+      "source": "openml-ctr23",
+      "revision": "7",
+      "rows": 21263,
+      "predictors": 81,
+      "task": "regression",
+      "classes": 0,
+      "categorical_predictors": 0,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "CC BY 4.0",
+      "origin": "https://www.openml.org/d/44964",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "tae",
+      "source": "pmlb",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "rows": 151,
+      "predictors": 5,
+      "task": "classification",
+      "classes": 3,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0003070040787684,
+      "licence": null,
+      "origin": null,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
+    },
+    {
+      "name": "video_transcoding",
+      "source": "openml-ctr23",
+      "revision": "6",
+      "rows": 68784,
+      "predictors": 18,
+      "task": "regression",
+      "classes": 0,
+      "categorical_predictors": 2,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "CC BY 4.0",
+      "origin": "https://www.openml.org/d/44974",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "wave_energy",
+      "source": "openml-ctr23",
+      "revision": "6",
+      "rows": 72000,
+      "predictors": 48,
+      "task": "regression",
+      "classes": 0,
+      "categorical_predictors": 0,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "CC BY 4.0",
+      "origin": "https://www.openml.org/d/44975",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "wilt",
+      "source": "openml-cc18",
+      "revision": "2",
+      "rows": 4839,
+      "predictors": 5,
+      "task": "classification",
+      "classes": 2,
+      "categorical_predictors": 1,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/40983",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "wine_recognition",
+      "source": "pmlb",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "rows": 178,
+      "predictors": 13,
+      "task": "classification",
+      "classes": 3,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0125299835879308,
+      "licence": null,
+      "origin": null,
       "provenance": {
         "description": "",
         "sources": [],
@@ -1100,36 +1135,1168 @@
   ],
   "excluded": [
     {
-      "name": "1089_USCrime",
-      "reason": "47 rows is below 50: too few for meaningful folds"
+      "name": "1028_SWD",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "1029_LEV",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "1030_ERA",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
     },
     {
       "name": "1191_BNG_pbc",
-      "reason": "synthetic: generated, not measured"
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
     },
     {
       "name": "1193_BNG_lowbwt",
-      "reason": "synthetic: generated, not measured"
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
     },
     {
       "name": "1196_BNG_pharynx",
-      "reason": "synthetic: generated, not measured"
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
     },
     {
       "name": "1199_BNG_echoMonths",
-      "reason": "synthetic: generated, not measured"
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
     },
     {
       "name": "1201_BNG_breastTumor",
-      "reason": "synthetic: generated, not measured"
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
     },
     {
       "name": "1203_BNG_pwLinear",
-      "reason": "synthetic: generated, not measured"
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
     },
     {
       "name": "1595_poker",
-      "reason": "1025010 rows exceeds the 100000 compute ceiling"
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "197_cpu_act",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "201_pol",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "215_2dplanes",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "218_house_8L",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "225_puma8NH",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "227_cpu_small",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "294_satellite_image",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "344_mv",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "4544_GeographicalOriginalofMusic",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "503_wind",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "522_pm10",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "529_pollen",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "537_houses",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "547_no2",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "562_cpu_small",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "564_fried",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "573_cpu_act",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "574_house_16H",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "581_fri_c3_500_25",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "582_fri_c1_500_25",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "583_fri_c1_1000_50",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "584_fri_c4_500_25",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "586_fri_c3_1000_25",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "588_fri_c4_1000_100",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "589_fri_c2_1000_25",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "590_fri_c0_1000_50",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "592_fri_c4_1000_25",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "593_fri_c1_1000_10",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "595_fri_c0_1000_10",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "597_fri_c2_500_5",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "598_fri_c0_1000_25",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "599_fri_c2_1000_5",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "604_fri_c4_500_10",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "606_fri_c2_1000_10",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "607_fri_c4_1000_50",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "608_fri_c3_1000_10",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "609_fri_c0_1000_5",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "612_fri_c1_1000_5",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "616_fri_c4_500_50",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "617_fri_c3_500_5",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "618_fri_c3_1000_50",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "620_fri_c1_1000_25",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "622_fri_c2_1000_50",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "623_fri_c4_1000_10",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "626_fri_c2_500_50",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "627_fri_c2_500_10",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "628_fri_c3_1000_5",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "631_fri_c1_500_5",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "633_fri_c0_500_25",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "637_fri_c1_500_50",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "641_fri_c1_500_10",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "643_fri_c2_500_25",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "645_fri_c3_500_50",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "646_fri_c3_500_10",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "649_fri_c0_500_5",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "650_fri_c0_500_50",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "654_fri_c0_500_10",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "666_rmftsa_ladata",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "GAMETES_Epistasis_2_Way_1000atts_0.4H_EDM_1_EDM_1_1",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "GAMETES_Epistasis_2_Way_20atts_0.1H_EDM_1_1",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "GAMETES_Epistasis_2_Way_20atts_0.4H_EDM_1_1",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "GAMETES_Epistasis_3_Way_20atts_0.2H_EDM_1_1",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "GAMETES_Heterogeneity_20atts_1600_Het_0.4_0.2_50_EDM_2_001",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "GAMETES_Heterogeneity_20atts_1600_Het_0.4_0.2_75_EDM_2_001",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "Hill_Valley_with_noise",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "Hill_Valley_without_noise",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "_deprecated_australian",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "_deprecated_breast",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "_deprecated_breast_cancer_wisconsin",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "_deprecated_breast_w",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "_deprecated_buggyCrx",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "_deprecated_car",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "_deprecated_car_evaluation",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "_deprecated_cmc",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "_deprecated_contraceptive",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "_deprecated_credit_a",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "_deprecated_credit_g",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "_deprecated_crx",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "_deprecated_diabetes",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "_deprecated_flare",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "_deprecated_german",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "_deprecated_pima",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "_deprecated_solar_flare_2",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "_deprecated_wdbc",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "adult",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "agaricus_lepiota",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "allbp",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "allhyper",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "allhypo",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "allrep",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "analcatdata_authorship",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "analcatdata_dmft",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "ann_thyroid",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "balance_scale",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "banana",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "breast_cancer_wisconsin_diagnostic",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "breast_cancer_wisconsin_original",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "car_evaluation",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "chess",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "churn",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "clean2",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "coil2000",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "connect_4",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "contraceptive_method",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "credit_approval_australia",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "credit_approval_germany",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "dis",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "dna",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "fars",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_III_10_19",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_III_12_43",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_III_13_18",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_III_14_14",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_III_15_12",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_III_15_14",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_III_15_27",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_III_17_37",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_III_19_51",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_III_21_20",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_III_4_32",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_III_4_33",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_III_7_38",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_III_8_54",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_III_9_52",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_II_10_9",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_II_11_20",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_II_11_27",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_II_11_28",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_II_11_3",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_II_13_17",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_II_13_23",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_II_13_34",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_II_15_4",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_II_15_5",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_II_21_32",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_II_24_17",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_II_27_16",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_II_27_18",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_II_2_42",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_II_34_11",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_II_34_2",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_II_34_29a",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_II_34_29b",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_II_34_2a",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_II_35_18",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_II_35_21",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_II_36_38",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_II_37_1",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_II_38_14",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_II_38_3",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_II_3_24",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_II_4_23",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_II_6_11",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_II_6_15a",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_II_6_15b",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_II_8_31",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_II_8_7",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_10_7",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_11_19",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_12_1",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_12_11",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_12_2",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_12_4",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_12_5",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_13_12",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_13_4",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_14_3",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_14_4",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_15_10",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_15_3t",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_15_3x",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_16_6",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_18_12",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_18_14",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_18_4",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_24_6",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_25_13",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_26_2",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_27_6",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_29_16",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_29_4",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_30_3",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_30_5",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_32_17",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_32_5",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_34_1",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_34_14",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_34_27",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_34_8",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_37_4",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_38_12",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_39_1",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_39_11",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_39_22",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_40_1",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_41_16",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_43_16",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_43_31",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_43_43",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_44_4",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_47_23",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_48_2",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_50_26",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_6_2",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_6_2a",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_6_2b",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_8_14",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_I_9_18",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_test_1",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_test_10",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_test_11",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_test_12",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_test_13",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_test_14",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_test_15",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_test_16",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_test_17",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_test_18",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_test_19",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_test_2",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_test_20",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_test_3",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_test_4",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_test_5",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_test_6",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_test_7",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_test_8",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "feynman_test_9",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "hypothyroid",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "irish",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "kddcup",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "kr_vs_kp",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "krkopt",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "led24",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "led7",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "letter",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "magic",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "mfeat_factors",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "mfeat_fourier",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "mfeat_karhunen",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "mfeat_morphological",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "mfeat_pixel",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "mfeat_zernike",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "mnist",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "mofn_3_7_10",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "monk1",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "monk2",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "monk3",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "mushroom",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "nursery",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "optdigits",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "page_blocks",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "parity5+5",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "pendigits",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "phoneme",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "poker",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "profb",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "ring",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "satimage",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "segmentation",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "shuttle",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "sleep",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "solar_flare",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "soybean",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "spambase",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "splice",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "texture",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "threeOf9",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "tic_tac_toe",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "titanic",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "tokyo1",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "twonorm",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "vehicle",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "vowel",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "waveform_21",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "waveform_40",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "wine_quality_red",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "wine_quality_white",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "xd6",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "yeast",
+      "reason": "pmlb supplies the sub-500-row band only; OpenML covers this size with better provenance (D-025)"
+    },
+    {
+      "name": "1089_USCrime",
+      "reason": "47 rows is below 50: too few for meaningful folds"
     },
     {
       "name": "485_analcatdata_vehicle",
@@ -1140,8 +2307,24 @@
       "reason": "47 rows is below 50: too few for meaningful folds"
     },
     {
-      "name": "GAMETES_Epistasis_2_Way_1000atts_0.4H_EDM_1_EDM_1_1",
-      "reason": "1000 features exceeds the 500 cap (NFR-2)"
+      "name": "Bioresponse",
+      "reason": "1776 features exceeds the 500 cap (NFR-2)"
+    },
+    {
+      "name": "CIFAR_10",
+      "reason": "image-derived: out of scope per NFR-2"
+    },
+    {
+      "name": "Devnagari-Script",
+      "reason": "image-derived: out of scope per NFR-2"
+    },
+    {
+      "name": "Fashion-MNIST",
+      "reason": "image-derived: out of scope per NFR-2"
+    },
+    {
+      "name": "Internet-Advertisements",
+      "reason": "1558 features exceeds the 500 cap (NFR-2)"
     },
     {
       "name": "_deprecated_195_auto_price",
@@ -1152,35 +2335,7 @@
       "reason": "deprecated by the source"
     },
     {
-      "name": "_deprecated_australian",
-      "reason": "deprecated by the source"
-    },
-    {
       "name": "_deprecated_auto",
-      "reason": "deprecated by the source"
-    },
-    {
-      "name": "_deprecated_breast",
-      "reason": "deprecated by the source"
-    },
-    {
-      "name": "_deprecated_breast_cancer_wisconsin",
-      "reason": "deprecated by the source"
-    },
-    {
-      "name": "_deprecated_breast_w",
-      "reason": "deprecated by the source"
-    },
-    {
-      "name": "_deprecated_buggyCrx",
-      "reason": "deprecated by the source"
-    },
-    {
-      "name": "_deprecated_car",
-      "reason": "deprecated by the source"
-    },
-    {
-      "name": "_deprecated_car_evaluation",
       "reason": "deprecated by the source"
     },
     {
@@ -1196,39 +2351,7 @@
       "reason": "deprecated by the source"
     },
     {
-      "name": "_deprecated_cmc",
-      "reason": "deprecated by the source"
-    },
-    {
       "name": "_deprecated_colic",
-      "reason": "deprecated by the source"
-    },
-    {
-      "name": "_deprecated_contraceptive",
-      "reason": "deprecated by the source"
-    },
-    {
-      "name": "_deprecated_credit_a",
-      "reason": "deprecated by the source"
-    },
-    {
-      "name": "_deprecated_credit_g",
-      "reason": "deprecated by the source"
-    },
-    {
-      "name": "_deprecated_crx",
-      "reason": "deprecated by the source"
-    },
-    {
-      "name": "_deprecated_diabetes",
-      "reason": "deprecated by the source"
-    },
-    {
-      "name": "_deprecated_flare",
-      "reason": "deprecated by the source"
-    },
-    {
-      "name": "_deprecated_german",
       "reason": "deprecated by the source"
     },
     {
@@ -1260,10 +2383,6 @@
       "reason": "deprecated by the source"
     },
     {
-      "name": "_deprecated_pima",
-      "reason": "deprecated by the source"
-    },
-    {
       "name": "_deprecated_prnn_fglass",
       "reason": "deprecated by the source"
     },
@@ -1272,15 +2391,7 @@
       "reason": "deprecated by the source"
     },
     {
-      "name": "_deprecated_solar_flare_2",
-      "reason": "deprecated by the source"
-    },
-    {
       "name": "_deprecated_vote",
-      "reason": "deprecated by the source"
-    },
-    {
-      "name": "_deprecated_wdbc",
       "reason": "deprecated by the source"
     },
     {
@@ -1340,484 +2451,8 @@
       "reason": "family 'auto-insurance' already represented (max 2)"
     },
     {
-      "name": "fars",
-      "reason": "100968 rows exceeds the 100000 compute ceiling"
-    },
-    {
-      "name": "feynman_III_10_19",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_III_12_43",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_III_13_18",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_III_14_14",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_III_15_12",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_III_15_14",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_III_15_27",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_III_17_37",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_III_19_51",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_III_21_20",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_III_4_32",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_III_4_33",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_III_7_38",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_III_8_54",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_III_9_52",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_II_10_9",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_II_11_20",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_II_11_27",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_II_11_28",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_II_11_3",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_II_13_17",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_II_13_23",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_II_13_34",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_II_15_4",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_II_15_5",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_II_21_32",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_II_24_17",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_II_27_16",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_II_27_18",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_II_2_42",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_II_34_11",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_II_34_2",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_II_34_29a",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_II_34_29b",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_II_34_2a",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_II_35_18",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_II_35_21",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_II_36_38",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_II_37_1",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_II_38_14",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_II_38_3",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_II_3_24",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_II_4_23",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_II_6_11",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_II_6_15a",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_II_6_15b",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_II_8_31",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_II_8_7",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_10_7",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_11_19",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_12_1",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_12_11",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_12_2",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_12_4",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_12_5",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_13_12",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_13_4",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_14_3",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_14_4",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_15_10",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_15_3t",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_15_3x",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_16_6",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_18_12",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_18_14",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_18_4",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_24_6",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_25_13",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_26_2",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_27_6",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_29_16",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_29_4",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_30_3",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_30_5",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_32_17",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_32_5",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_34_1",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_34_14",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_34_27",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_34_8",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_37_4",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_38_12",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_39_1",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_39_11",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_39_22",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_40_1",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_41_16",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_43_16",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_43_31",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_43_43",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_44_4",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_47_23",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_48_2",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_50_26",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_6_2",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_6_2a",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_6_2b",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_8_14",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_I_9_18",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_test_1",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_test_10",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_test_11",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_test_12",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_test_13",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_test_14",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_test_15",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_test_16",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_test_17",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_test_18",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_test_19",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_test_2",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_test_20",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_test_3",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_test_4",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_test_5",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_test_6",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_test_7",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_test_8",
-      "reason": "synthetic: generated, not measured"
-    },
-    {
-      "name": "feynman_test_9",
-      "reason": "synthetic: generated, not measured"
+      "name": "cnae-9",
+      "reason": "856 features exceeds the 500 cap (NFR-2)"
     },
     {
       "name": "first_principles_absorption",
@@ -1856,44 +2491,40 @@
       "reason": "18 rows is below 50: too few for meaningful folds"
     },
     {
+      "name": "har",
+      "reason": "561 features exceeds the 500 cap (NFR-2)"
+    },
+    {
       "name": "heart_disease_zurich",
       "reason": "family 'heart-disease' already represented (max 2)"
     },
     {
-      "name": "kddcup",
-      "reason": "494020 rows exceeds the 100000 compute ceiling"
+      "name": "isolet",
+      "reason": "617 features exceeds the 500 cap (NFR-2)"
     },
     {
-      "name": "mfeat_karhunen",
+      "name": "mfeat-karhunen",
       "reason": "family 'mfeat' already represented (max 2)"
     },
     {
-      "name": "mfeat_morphological",
+      "name": "mfeat-morphological",
       "reason": "family 'mfeat' already represented (max 2)"
     },
     {
-      "name": "mfeat_pixel",
+      "name": "mfeat-pixel",
       "reason": "family 'mfeat' already represented (max 2)"
     },
     {
-      "name": "mfeat_zernike",
+      "name": "mfeat-zernike",
       "reason": "family 'mfeat' already represented (max 2)"
     },
     {
-      "name": "mnist",
-      "reason": "784 features exceeds the 500 cap (NFR-2)"
+      "name": "mnist_784",
+      "reason": "image-derived: out of scope per NFR-2"
     },
     {
       "name": "parity5",
       "reason": "32 rows is below 50: too few for meaningful folds"
-    },
-    {
-      "name": "poker",
-      "reason": "1025010 rows exceeds the 100000 compute ceiling"
-    },
-    {
-      "name": "sleep",
-      "reason": "105908 rows exceeds the 100000 compute ceiling"
     },
     {
       "name": "strogatz_bacres1",
@@ -1952,32 +2583,8 @@
       "reason": "synthetic: generated, not measured"
     },
     {
-      "name": "529_pollen",
-      "reason": "synthetic: tagged ['simulation', 'synthetic'] by the source"
-    },
-    {
-      "name": "waveform_21",
-      "reason": "synthetic: tagged ['simulation', 'synthetic'] by the source"
-    },
-    {
-      "name": "waveform_40",
-      "reason": "synthetic: tagged ['simulation', 'synthetic'] by the source"
-    },
-    {
       "name": "1027_ESL",
       "reason": "not sampled: stratum small/regression already has 10"
-    },
-    {
-      "name": "1028_SWD",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
-      "name": "1029_LEV",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
-      "name": "1030_ERA",
-      "reason": "not sampled: stratum medium/regression already has 10"
     },
     {
       "name": "1096_FacultySalaries",
@@ -1988,12 +2595,8 @@
       "reason": "not sampled: stratum small/regression already has 10"
     },
     {
-      "name": "197_cpu_act",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
-      "name": "225_puma8NH",
-      "reason": "not sampled: stratum medium/regression already has 10"
+      "name": "210_cloud",
+      "reason": "not sampled: stratum small/regression already has 10"
     },
     {
       "name": "228_elusage",
@@ -2008,18 +2611,6 @@
       "reason": "not sampled: stratum small/regression already has 10"
     },
     {
-      "name": "294_satellite_image",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
-      "name": "4544_GeographicalOriginalofMusic",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
-      "name": "503_wind",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
       "name": "505_tecator",
       "reason": "not sampled: stratum small/regression already has 10"
     },
@@ -2028,31 +2619,11 @@
       "reason": "not sampled: stratum small/regression already has 10"
     },
     {
-      "name": "522_pm10",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
       "name": "523_analcatdata_neavote",
       "reason": "not sampled: stratum small/regression already has 10"
     },
     {
-      "name": "527_analcatdata_election2000",
-      "reason": "not sampled: stratum small/regression already has 10"
-    },
-    {
-      "name": "542_pollution",
-      "reason": "not sampled: stratum small/regression already has 10"
-    },
-    {
-      "name": "547_no2",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
       "name": "556_analcatdata_apnea2",
-      "reason": "not sampled: stratum small/regression already has 10"
-    },
-    {
-      "name": "557_analcatdata_apnea1",
       "reason": "not sampled: stratum small/regression already has 10"
     },
     {
@@ -2064,95 +2635,35 @@
       "reason": "not sampled: stratum small/regression already has 10"
     },
     {
-      "name": "562_cpu_small",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
-      "name": "573_cpu_act",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
-      "name": "582_fri_c1_500_25",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
-      "name": "584_fri_c4_500_25",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
-      "name": "589_fri_c2_1000_25",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
-      "name": "590_fri_c0_1000_50",
-      "reason": "not sampled: stratum medium/regression already has 10"
+      "name": "579_fri_c0_250_5",
+      "reason": "not sampled: stratum small/regression already has 10"
     },
     {
       "name": "591_fri_c1_100_10",
       "reason": "not sampled: stratum small/regression already has 10"
     },
     {
-      "name": "592_fri_c4_1000_25",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
-      "name": "593_fri_c1_1000_10",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
       "name": "594_fri_c2_100_5",
       "reason": "not sampled: stratum small/regression already has 10"
-    },
-    {
-      "name": "595_fri_c0_1000_10",
-      "reason": "not sampled: stratum medium/regression already has 10"
     },
     {
       "name": "596_fri_c2_250_5",
       "reason": "not sampled: stratum small/regression already has 10"
     },
     {
-      "name": "597_fri_c2_500_5",
-      "reason": "not sampled: stratum medium/regression already has 10"
+      "name": "601_fri_c1_250_5",
+      "reason": "not sampled: stratum small/regression already has 10"
     },
     {
-      "name": "598_fri_c0_1000_25",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
-      "name": "599_fri_c2_1000_5",
-      "reason": "not sampled: stratum medium/regression already has 10"
+      "name": "602_fri_c3_250_10",
+      "reason": "not sampled: stratum small/regression already has 10"
     },
     {
       "name": "603_fri_c0_250_50",
       "reason": "not sampled: stratum small/regression already has 10"
     },
     {
-      "name": "604_fri_c4_500_10",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
       "name": "605_fri_c2_250_25",
-      "reason": "not sampled: stratum small/regression already has 10"
-    },
-    {
-      "name": "606_fri_c2_1000_10",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
-      "name": "608_fri_c3_1000_10",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
-      "name": "609_fri_c0_1000_5",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
-      "name": "612_fri_c1_1000_5",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
-      "name": "613_fri_c3_250_5",
       "reason": "not sampled: stratum small/regression already has 10"
     },
     {
@@ -2160,64 +2671,20 @@
       "reason": "not sampled: stratum small/regression already has 10"
     },
     {
-      "name": "616_fri_c4_500_50",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
-      "name": "617_fri_c3_500_5",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
-      "name": "618_fri_c3_1000_50",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
-      "name": "622_fri_c2_1000_50",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
-      "name": "623_fri_c4_1000_10",
-      "reason": "not sampled: stratum medium/regression already has 10"
+      "name": "621_fri_c0_100_10",
+      "reason": "not sampled: stratum small/regression already has 10"
     },
     {
       "name": "624_fri_c0_100_5",
       "reason": "not sampled: stratum small/regression already has 10"
     },
     {
-      "name": "626_fri_c2_500_50",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
-      "name": "627_fri_c2_500_10",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
-      "name": "628_fri_c3_1000_5",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
-      "name": "631_fri_c1_500_5",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
-      "name": "633_fri_c0_500_25",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
-      "name": "641_fri_c1_500_10",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
-      "name": "643_fri_c2_500_25",
-      "reason": "not sampled: stratum medium/regression already has 10"
+      "name": "635_fri_c0_250_10",
+      "reason": "not sampled: stratum small/regression already has 10"
     },
     {
       "name": "644_fri_c4_250_25",
       "reason": "not sampled: stratum small/regression already has 10"
-    },
-    {
-      "name": "645_fri_c3_500_50",
-      "reason": "not sampled: stratum medium/regression already has 10"
     },
     {
       "name": "647_fri_c1_250_10",
@@ -2228,10 +2695,6 @@
       "reason": "not sampled: stratum small/regression already has 10"
     },
     {
-      "name": "649_fri_c0_500_5",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
       "name": "651_fri_c0_100_25",
       "reason": "not sampled: stratum small/regression already has 10"
     },
@@ -2240,15 +2703,7 @@
       "reason": "not sampled: stratum small/regression already has 10"
     },
     {
-      "name": "654_fri_c0_500_10",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
       "name": "656_fri_c1_100_5",
-      "reason": "not sampled: stratum small/regression already has 10"
-    },
-    {
-      "name": "657_fri_c2_250_10",
       "reason": "not sampled: stratum small/regression already has 10"
     },
     {
@@ -2264,10 +2719,6 @@
       "reason": "not sampled: stratum small/regression already has 10"
     },
     {
-      "name": "666_rmftsa_ladata",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
       "name": "678_visualizing_environmental",
       "reason": "not sampled: stratum small/regression already has 10"
     },
@@ -2280,40 +2731,28 @@
       "reason": "not sampled: stratum small/regression already has 10"
     },
     {
-      "name": "712_chscase_geyser1",
-      "reason": "not sampled: stratum small/regression already has 10"
-    },
-    {
-      "name": "GAMETES_Epistasis_2_Way_20atts_0.1H_EDM_1_1",
+      "name": "GesturePhaseSegmentationProcessed",
       "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
-      "name": "GAMETES_Epistasis_2_Way_20atts_0.4H_EDM_1_1",
+      "name": "MiceProtein",
       "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
-      "name": "GAMETES_Epistasis_3_Way_20atts_0.2H_EDM_1_1",
-      "reason": "not sampled: stratum medium/classification already has 10"
+      "name": "Moneyball",
+      "reason": "not sampled: stratum medium/regression already has 10"
     },
     {
-      "name": "GAMETES_Heterogeneity_20atts_1600_Het_0.4_0.2_50_EDM_2_001",
-      "reason": "not sampled: stratum medium/classification already has 10"
+      "name": "QSAR_fish_toxicity",
+      "reason": "not sampled: stratum medium/regression already has 10"
     },
     {
-      "name": "Hill_Valley_without_noise",
-      "reason": "not sampled: stratum medium/classification already has 10"
+      "name": "abalone",
+      "reason": "not sampled: stratum medium/regression already has 10"
     },
     {
-      "name": "agaricus_lepiota",
-      "reason": "not sampled: stratum medium/classification already has 10"
-    },
-    {
-      "name": "allbp",
-      "reason": "not sampled: stratum medium/classification already has 10"
-    },
-    {
-      "name": "allhyper",
-      "reason": "not sampled: stratum medium/classification already has 10"
+      "name": "adult",
+      "reason": "not sampled: stratum large/classification already has 10"
     },
     {
       "name": "analcatdata_aids",
@@ -2324,12 +2763,8 @@
       "reason": "not sampled: stratum small/classification already has 10"
     },
     {
-      "name": "ann_thyroid",
-      "reason": "not sampled: stratum medium/classification already has 10"
-    },
-    {
-      "name": "appendicitis",
-      "reason": "not sampled: stratum small/classification already has 10"
+      "name": "auction_verification",
+      "reason": "not sampled: stratum medium/regression already has 10"
     },
     {
       "name": "auto_insurance_losses",
@@ -2344,40 +2779,36 @@
       "reason": "not sampled: stratum small/classification already has 10"
     },
     {
-      "name": "balance_scale",
+      "name": "balance-scale",
       "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
-      "name": "banana",
+      "name": "banknote-authentication",
       "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "biomed",
+      "reason": "not sampled: stratum small/classification already has 10"
     },
     {
       "name": "breast_cancer",
       "reason": "not sampled: stratum small/classification already has 10"
     },
     {
-      "name": "breast_cancer_wisconsin_diagnostic",
-      "reason": "not sampled: stratum medium/classification already has 10"
-    },
-    {
-      "name": "breast_cancer_wisconsin_original",
-      "reason": "not sampled: stratum medium/classification already has 10"
-    },
-    {
       "name": "bupa",
       "reason": "not sampled: stratum small/classification already has 10"
     },
     {
-      "name": "calendarDOW",
+      "name": "california_housing",
+      "reason": "not sampled: stratum large/regression already has 10"
+    },
+    {
+      "name": "cars",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "cars",
       "reason": "not sampled: stratum small/classification already has 10"
-    },
-    {
-      "name": "car_evaluation",
-      "reason": "not sampled: stratum medium/classification already has 10"
-    },
-    {
-      "name": "chess",
-      "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
       "name": "churn",
@@ -2388,31 +2819,23 @@
       "reason": "not sampled: stratum small/classification already has 10"
     },
     {
-      "name": "clean2",
-      "reason": "not sampled: stratum medium/classification already has 10"
-    },
-    {
       "name": "cloud",
       "reason": "not sampled: stratum small/classification already has 10"
-    },
-    {
-      "name": "coil2000",
-      "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
       "name": "collins",
       "reason": "not sampled: stratum small/classification already has 10"
     },
     {
-      "name": "contraceptive_method",
-      "reason": "not sampled: stratum medium/classification already has 10"
+      "name": "confidence",
+      "reason": "not sampled: stratum small/classification already has 10"
     },
     {
       "name": "corral",
       "reason": "not sampled: stratum small/classification already has 10"
     },
     {
-      "name": "credit_approval_germany",
+      "name": "cylinder-bands",
       "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
@@ -2420,7 +2843,7 @@
       "reason": "not sampled: stratum small/classification already has 10"
     },
     {
-      "name": "dis",
+      "name": "diabetes",
       "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
@@ -2428,8 +2851,24 @@
       "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
+      "name": "dresses-sales",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
       "name": "ecoli",
       "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "energy_efficiency",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "eucalyptus",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "first-order-theorem-proving",
+      "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
       "name": "first_principles_planck",
@@ -2452,6 +2891,14 @@
       "reason": "not sampled: stratum small/classification already has 10"
     },
     {
+      "name": "forest_fires",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
+      "name": "geographical_origin_of_music",
+      "reason": "not sampled: stratum medium/regression already has 10"
+    },
+    {
       "name": "glass2",
       "reason": "not sampled: stratum small/classification already has 10"
     },
@@ -2460,8 +2907,8 @@
       "reason": "not sampled: stratum small/classification already has 10"
     },
     {
-      "name": "hayes_roth",
-      "reason": "not sampled: stratum small/classification already has 10"
+      "name": "health_insurance",
+      "reason": "not sampled: stratum large/regression already has 10"
     },
     {
       "name": "heart_disease_cleveland",
@@ -2473,6 +2920,10 @@
     },
     {
       "name": "heart_disease_va_long_beach",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "hepatitis",
       "reason": "not sampled: stratum small/classification already has 10"
     },
     {
@@ -2488,7 +2939,7 @@
       "reason": "not sampled: stratum small/classification already has 10"
     },
     {
-      "name": "hypothyroid",
+      "name": "ilpd",
       "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
@@ -2500,55 +2951,47 @@
       "reason": "not sampled: stratum small/classification already has 10"
     },
     {
-      "name": "irish",
+      "name": "kc1",
       "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
-      "name": "kr_vs_kp",
+      "name": "kc2",
       "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
-      "name": "led24",
+      "name": "kr-vs-kp",
       "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
-      "name": "led7",
-      "reason": "not sampled: stratum medium/classification already has 10"
+      "name": "labor",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "lupus",
+      "reason": "not sampled: stratum small/classification already has 10"
     },
     {
       "name": "lymphography",
       "reason": "not sampled: stratum small/classification already has 10"
     },
     {
-      "name": "mfeat_factors",
+      "name": "madelon",
       "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
-      "name": "mfeat_fourier",
+      "name": "mfeat-fourier",
       "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
-      "name": "mofn_3_7_10",
-      "reason": "not sampled: stratum medium/classification already has 10"
+      "name": "miami_housing",
+      "reason": "not sampled: stratum large/regression already has 10"
     },
     {
-      "name": "monk1",
-      "reason": "not sampled: stratum medium/classification already has 10"
-    },
-    {
-      "name": "monk2",
-      "reason": "not sampled: stratum medium/classification already has 10"
-    },
-    {
-      "name": "movement_libras",
+      "name": "molecular_biology_promoters",
       "reason": "not sampled: stratum small/classification already has 10"
     },
     {
-      "name": "mushroom",
-      "reason": "not sampled: stratum medium/classification already has 10"
-    },
-    {
-      "name": "mux6",
+      "name": "movement_libras",
       "reason": "not sampled: stratum small/classification already has 10"
     },
     {
@@ -2568,15 +3011,35 @@
       "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
-      "name": "page_blocks",
+      "name": "ozone-level-8hr",
       "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
-      "name": "parity5+5",
+      "name": "pc1",
       "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "pc3",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "pc4",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "phoneme",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "physiochemical_protein",
+      "reason": "not sampled: stratum large/regression already has 10"
     },
     {
       "name": "postoperative_patient_data",
+      "reason": "not sampled: stratum small/classification already has 10"
+    },
+    {
+      "name": "prnn_crabs",
       "reason": "not sampled: stratum small/classification already has 10"
     },
     {
@@ -2584,40 +3047,28 @@
       "reason": "not sampled: stratum small/classification already has 10"
     },
     {
-      "name": "profb",
+      "name": "qsar-biodeg",
       "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
-      "name": "ring",
+      "name": "sarcos",
+      "reason": "not sampled: stratum large/regression already has 10"
+    },
+    {
+      "name": "segment",
       "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
-      "name": "saheart",
-      "reason": "not sampled: stratum small/classification already has 10"
-    },
-    {
-      "name": "satimage",
+      "name": "semeion",
       "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
-      "name": "schizo",
-      "reason": "not sampled: stratum small/classification already has 10"
-    },
-    {
-      "name": "segmentation",
+      "name": "sick",
       "reason": "not sampled: stratum medium/classification already has 10"
-    },
-    {
-      "name": "solar_flare",
-      "reason": "not sampled: stratum medium/regression already has 10"
     },
     {
       "name": "sonar",
       "reason": "not sampled: stratum small/classification already has 10"
-    },
-    {
-      "name": "soybean",
-      "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
       "name": "spambase",
@@ -2636,27 +3087,19 @@
       "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
-      "name": "tae",
-      "reason": "not sampled: stratum small/classification already has 10"
+      "name": "steel-plates-fault",
+      "reason": "not sampled: stratum medium/classification already has 10"
+    },
+    {
+      "name": "student_performance_por",
+      "reason": "not sampled: stratum medium/regression already has 10"
     },
     {
       "name": "texture",
       "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
-      "name": "threeOf9",
-      "reason": "not sampled: stratum medium/classification already has 10"
-    },
-    {
-      "name": "titanic",
-      "reason": "not sampled: stratum medium/classification already has 10"
-    },
-    {
-      "name": "tokyo1",
-      "reason": "not sampled: stratum medium/classification already has 10"
-    },
-    {
-      "name": "twonorm",
+      "name": "tic-tac-toe",
       "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
@@ -2668,16 +3111,16 @@
       "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
-      "name": "wine_quality_white",
+      "name": "wall-robot-navigation",
       "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
-      "name": "wine_recognition",
-      "reason": "not sampled: stratum small/classification already has 10"
+      "name": "wdbc",
+      "reason": "not sampled: stratum medium/classification already has 10"
     },
     {
-      "name": "yeast",
-      "reason": "not sampled: stratum medium/classification already has 10"
+      "name": "white_wine",
+      "reason": "not sampled: stratum medium/regression already has 10"
     }
   ],
   "fetch_failures": []

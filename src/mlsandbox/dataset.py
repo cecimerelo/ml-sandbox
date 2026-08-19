@@ -40,6 +40,18 @@ class Dataset(StrictModel):
     the difference matters when claiming coverage of the missing-value case."""
 
     imbalance: float | None = None
+
+    licence: str | None = None
+    """Terms the dataset is published under, where the source states them.
+
+    The reason OpenML became the primary source (D-025): PMLB leaves this unfilled for
+    most of its collection, and a licence nobody can read cannot be complied with.
+    `None` means unreported, which is not the same as unrestricted.
+    """
+
+    origin: str | None = None
+    """Where the dataset came from, as a URL. What lets a reader follow the evidence back
+    past this study."""
     """How far the class proportions sit from equal: 0 is a perfect split, and PMLB's
     most skewed binary dataset reaches 0.94.
 
