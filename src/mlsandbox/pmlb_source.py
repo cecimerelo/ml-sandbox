@@ -100,6 +100,10 @@ def _parse_row(row: dict[str, str], revision: str = PINNED_REVISION) -> Dataset:
         # than 0, because "not reported" and "none present" are different claims.
         missing_values=None,
         imbalance=number("imbalance"),
+        # PMLB publishes no licence field, and origin only for a minority of datasets —
+        # fetched separately by `fetch_provenance`. Left unset rather than guessed.
+        licence=None,
+        origin=None,
     )
 
 
