@@ -759,3 +759,50 @@ duplication by another route.
   disabled-with-reason. What the study validates is exactly what the tool offers.
 - One source of truth. Metadata and pipeline cannot contradict each other, because one is
   generated from the other.
+
+---
+
+## D-025 — OpenML returns as the primary source; PMLB covers the small band
+
+**Date:** 2026-08-18 · **Status:** accepted · **Supersedes:** D-013 · **Revises:** D-006, D-017 · **Affects:** [#8](https://github.com/cecimerelo/ml-sandbox/issues/8), [#10](https://github.com/cecimerelo/ml-sandbox/issues/10)
+
+**Context.** D-013 moved the study to PMLB after OpenML's API was unavailable for a full
+working session. **The API is back** — 200 on both endpoints — and building on PMLB
+surfaced a weakness that outweighs the reliability concern: **only 9 of the 55 selected
+datasets have a known original source**, because PMLB leaves most provenance fields
+unfilled. That is what forced D-017 to abandon publishing the collection, and it is a
+thin footing for a thesis that has to say where its evidence came from.
+
+**Decision.** **OpenML-CC18 and OpenML-CTR23 become the primary source.** PMLB supplies
+the **sub-500-row band only**, which CC18 excludes by construction.
+
+Each source is used where it is strong:
+
+| | OpenML CC18 + CTR23 | PMLB |
+|---|---|---|
+| Rows | 500 and above | 50–500 |
+| Splits | Predefined, comparable with published work | Generated under the fold contract |
+| Provenance | Per dataset, with licence | Sparse |
+| Missing values | 9 CC18 datasets carry real gaps | None — pre-cleaned |
+
+**Why.** The author's reason is citation strength: OpenML-CC18 is an established suite in
+the AutoML literature, where PMLB is harder to defend. The provenance argument reinforces
+it, and real missing values in CC18 complement D-015's injection, which only tests MCAR —
+the weakest assumption.
+
+**Consequences.**
+
+- **The reliability risk returns, and is accepted knowingly.** A full day was lost to the
+  last outage, [openml/openml.org#404](https://github.com/openml/openml.org/issues/404)
+  remains open, and there were incidents in June, 2023 and 2021. The mitigation is D-008:
+  download once, then never depend on the service again.
+- **D-006's subsampling is needed again** for the controlled bias-variance experiment,
+  though no longer for band coverage, since PMLB fills that.
+- **D-017 can be revisited.** With OpenML provenance and licences recorded, publishing a
+  mirror becomes checkable rather than unverifiable — for the OpenML portion at least.
+- **Mixed fold schemes**, deliberately. OpenML datasets use their predefined splits;
+  PMLB's get generated ones. Valid because every metric is computed within a dataset
+  before aggregation, so a raw score is never compared across datasets (D-003).
+- The cost is modest: `Dataset`, `curation`, the stratified sample and the coverage report
+  are already source-agnostic, and `openml_client.py` with its retries and cache is still
+  in the repository.
