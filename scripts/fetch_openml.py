@@ -18,17 +18,18 @@ import time
 
 from mlsandbox.config import Config, load_config
 from mlsandbox.curation import screen
-from mlsandbox.dataset import Dataset
-from mlsandbox.openml_source import SUITES, configure, fetch_suite
+from mlsandbox.openml_source import (
+    SUITES,
+    configure,
+    fetch_suite,
+    load_metadata,
+    metadata_path,
+)
 
 logger = logging.getLogger(__name__)
 
 MAX_PER_FAMILY = 2
 """Matches the collection build, so this downloads what the study can actually select."""
-
-
-def metadata_path(config: Config):
-    return config.paths.datasets / "openml" / "suite-metadata.json"
 
 
 def failures_path(config: Config):
@@ -47,14 +48,6 @@ def fetch_metadata(config: Config) -> int:
     total = sum(len(v) for v in by_suite.values())
     print(f"\n{total} datasets described, written to {path.name}")
     return total
-
-
-def load_metadata(config: Config) -> list[Dataset]:
-    path = metadata_path(config)
-    if not path.exists():
-        raise SystemExit(f"{path.name} is missing — run with --metadata first")
-    raw = json.loads(path.read_text(encoding="utf-8"))
-    return [Dataset.model_validate(d) for suite in raw.values() for d in suite]
 
 
 def fetch_data(config: Config) -> int:

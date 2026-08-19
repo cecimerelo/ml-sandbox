@@ -12,6 +12,7 @@ fetched, the study never needs the service again (D-008).
 
 from __future__ import annotations
 
+import json
 import logging
 import time
 
@@ -44,6 +45,30 @@ class Unavailable(StrictModel):
 
     dataset_id: int
     reason: str
+
+
+def metadata_path(config: Config):
+    """Where the fetched suite index lives.
+
+    Belongs with the source rather than with the script that writes it: several callers
+    need to know, and a path defined in a script is a path nobody else can import.
+    """
+    return config.paths.datasets / "openml" / "suite-metadata.json"
+
+
+def load_metadata(config: Config) -> list[Dataset]:
+    """Read the fetched suite index from disk.
+
+    Raises rather than fetching: a silent download here would hide that the study is
+    reaching for the network at a point where D-008 says it should not need to.
+    """
+    path = metadata_path(config)
+    if not path.exists():
+        raise FileNotFoundError(
+            f"{path.name} is missing — run scripts/fetch_openml.py --metadata"
+        )
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    return [Dataset.model_validate(d) for suite in raw.values() for d in suite]
 
 
 def configure(config: Config) -> None:
