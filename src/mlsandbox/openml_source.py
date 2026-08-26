@@ -177,23 +177,29 @@ Using OpenML's splits is what makes results comparable with published work on th
 """
 
 
-def task_id_for(dataset_name: str, suite: str) -> int | None:
-    """Find the task whose dataset has this name.
+def task_ids_by_dataset(suite: str) -> dict[str, int]:
+    """Map every dataset name in a suite to its task id.
 
-    Splits live on the *task*, not the dataset — a distinction easy to miss, since the two
-    are fetched through different endpoints and only the dataset carries the name.
+    Splits live on the *task*, not the dataset — easy to miss, since the two come through
+    different endpoints and only the dataset carries a name.
+
+    Built once per suite rather than searched per dataset. Scanning 72 tasks for each of
+    60 datasets meant minutes of lookups before a single model was fitted, and the answer
+    never changes: it belongs in the manifest.
     """
     study = _with_retries(lambda: openml.study.get_suite(SUITES[suite]), f"suite {suite}")
     if study is None:
-        return None
+        return {}
+
+    mapping: dict[str, int] = {}
     for task_id in study.tasks:
         task = _with_retries(
             lambda tid=task_id: openml.tasks.get_task(tid, download_data=False),
             f"task {task_id}",
         )
-        if task is not None and task.get_dataset().name == dataset_name:
-            return task_id
-    return None
+        if task is not None:
+            mapping[task.get_dataset().name] = task_id
+    return mapping
 
 
 def load_splits(task_id: int) -> list[tuple[list[int], list[int]]] | None:

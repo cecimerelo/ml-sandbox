@@ -23,8 +23,8 @@ from mlsandbox.config import PROJECT_ROOT, load_config, seed_everything
 from mlsandbox.folds import from_openml, generate
 from mlsandbox.methods import METHODS
 from mlsandbox.missingness import RATES
+from mlsandbox.openml_source import N_FOLDS, load_splits
 from mlsandbox.openml_source import configure as configure_openml
-from mlsandbox.openml_source import load_splits, task_id_for
 from mlsandbox.results import ResultStore, run_key
 
 warnings.filterwarnings("ignore")
@@ -51,7 +51,7 @@ def load_frame(entry: dict, config):
     return features, frame[target_column].to_numpy()
 
 
-def folds_for(entry: dict, target: np.ndarray, config):
+def folds_for(entry: dict, target: np.ndarray, config, task_ids: dict[str, int]):
     """Published splits where the source has them, generated ones otherwise (D-003).
 
     Falls back to generated folds when OpenML's are unreachable, and says so — a run that
@@ -61,7 +61,7 @@ def folds_for(entry: dict, target: np.ndarray, config):
     name, task = entry["name"], entry["task"]
     if entry["source"].startswith("openml"):
         configure_openml(config)
-        task_id = task_id_for(name, entry["source"])
+        task_id = task_ids.get(name)
         if task_id is not None:
             splits = load_splits(task_id)
             if splits:
@@ -77,7 +77,14 @@ def folds_for(entry: dict, target: np.ndarray, config):
     )
 
 
-def expected_evaluations(entry: dict, n_folds: int, n_rates: int) -> int:
+def expected_evaluations(entry: dict, generated_folds: int, n_rates: int) -> int:
+    """How many fold evaluations this dataset will produce.
+
+    The fold count differs by source — OpenML's tasks define ten, generated ones follow
+    the config — so a single number here would make the total, and the ETA built on it,
+    wrong for two thirds of the collection.
+    """
+    n_folds = N_FOLDS if entry["source"].startswith("openml") else generated_folds
     applicable = sum(
         1
         for m in METHODS.values()
@@ -98,6 +105,7 @@ def main() -> int:
 
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     datasets = sorted(manifest["datasets"], key=lambda d: d["rows"])
+    task_ids = manifest.get("openml_task_ids", {})
     if args.sample:
         datasets = datasets[: args.sample]
 
@@ -113,7 +121,9 @@ def main() -> int:
     store = ResultStore(config.paths.datasets.parent / "results", key)
     completed = store.completed()
 
-    total = sum(expected_evaluations(d, 10, len(rates) + 1) for d in datasets)
+    total = sum(
+        expected_evaluations(d, config.cv.n_folds, len(rates) + 1) for d in datasets
+    )
     progress = Progress(total=total)
 
     report(f"{len(datasets)} datasets · missingness {(0.0, *rates)} · run {key}")
@@ -122,7 +132,7 @@ def main() -> int:
     started = time.time()
     for index, entry in enumerate(datasets, start=1):
         features, target = load_frame(entry, config)
-        folds = folds_for(entry, target, config)
+        folds = folds_for(entry, target, config, task_ids)
         report(
             f"[{index}/{len(datasets)}] {entry['name']} "
             f"({entry['rows']} rows, {entry['task']}, {folds.n_folds} folds "

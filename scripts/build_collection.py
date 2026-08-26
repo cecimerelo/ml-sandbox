@@ -19,7 +19,9 @@ from mlsandbox.config import PROJECT_ROOT, load_config
 from mlsandbox.curation import SMALL_BAND_MAX_ROWS, Excluded, coverage, screen, stratified_sample
 from mlsandbox.dataset import Dataset
 from mlsandbox.missingness import RATES as MISSINGNESS_RATES
+from mlsandbox.openml_source import configure as configure_openml
 from mlsandbox.openml_source import load_metadata as load_openml_metadata
+from mlsandbox.openml_source import task_ids_by_dataset
 from mlsandbox.pmlb_source import (
     PINNED_REVISION,
     fetch_provenance,
@@ -161,6 +163,11 @@ FIELD_DOCS = {
         "PMLB's own tags. `synthetic` and `simulation` exclude a dataset: the tag is "
         "authoritative where guessing from names is not."
     ),
+    "openml_task_ids": (
+        "Dataset name to OpenML task id, for the selected OpenML datasets. Splits live on "
+        "the task, not the dataset, and resolving the pair at run time meant scanning "
+        "every task in the suite per dataset."
+    ),
     "excluded[].name": "Identifier of the excluded dataset.",
     "excluded[].reason": (
         "Why this dataset is absent: out of the product's scope, synthetic, deprecated "
@@ -204,6 +211,20 @@ def build(datasets: list[Dataset], *, seed: int, config, pre_excluded=()) -> dic
             eligible.append(dataset)
 
     sampled = stratified_sample(eligible, per_stratum=PER_STRATUM, seed=seed)
+
+    selected_openml = {d.name for d in sampled.kept if d.source.startswith("openml")}
+    task_ids: dict[str, int] = {}
+    if selected_openml:
+        configure_openml(config)
+        for suite in {d.source for d in sampled.kept if d.source.startswith("openml")}:
+            task_ids.update(
+                {
+                    name: task_id
+                    for name, task_id in task_ids_by_dataset(suite).items()
+                    if name in selected_openml
+                }
+            )
+
     return {
         "_fields": FIELD_DOCS,
         "sources": {
@@ -230,6 +251,10 @@ def build(datasets: list[Dataset], *, seed: int, config, pre_excluded=()) -> dic
         # recommender's missing-value heuristic. These rates are injected at evaluation
         # time to cover it as a controlled experiment (D-015).
         "missingness_rates": list(MISSINGNESS_RATES),
+        # Resolved once here rather than searched per dataset at run time: scanning 72
+        # tasks for each of 60 datasets cost minutes before a single fit. The answer never
+        # changes, so it belongs beside the selection it describes.
+        "openml_task_ids": task_ids,
         "coverage": coverage(sampled.kept),
         "datasets": [
             {

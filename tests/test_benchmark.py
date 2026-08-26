@@ -155,3 +155,16 @@ def test_each_requested_rate_appears_once(data):
     features, _ = data
     rates = [rate for rate, _ in variants(features, (0.25, 0.05, 0.25), seed=1)]
     assert rates == [0.0, 0.05, 0.25]
+
+
+def test_expected_evaluations_uses_each_sources_fold_count():
+    # OpenML's tasks define ten folds, generated ones follow the config. A single number
+    # here would make the total, and the ETA built on it, wrong for most of the collection.
+    from scripts.run_benchmark import expected_evaluations
+
+    openml_entry = {"task": "regression", "source": "openml-ctr23"}
+    pmlb_entry = {"task": "regression", "source": "pmlb"}
+
+    assert expected_evaluations(openml_entry, 5, 1) == 2 * expected_evaluations(
+        pmlb_entry, 5, 1
+    )
