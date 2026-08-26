@@ -42,6 +42,7 @@ def evaluate(method, data, folds, **overrides):
         fold_index=0,
         missing_rate=0.0,
         budget_seconds=30,
+        seed=1,
     )
     kwargs.update(overrides)
     return evaluate_fold(**kwargs)

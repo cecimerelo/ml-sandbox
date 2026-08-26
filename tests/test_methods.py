@@ -195,3 +195,33 @@ def test_no_tuned_method_relies_on_a_removed_sklearn_parameter():
     for name in ("ridge", "lasso"):
         estimator = ESTIMATORS[name]["classification"]()
         assert estimator.l1_ratios is not None, name
+
+
+@pytest.mark.parametrize(("name", "task"), method_task_pairs())
+def test_no_random_state_is_left_unset(name, task):
+    # Fifteen method/task pairs use stochastic estimators, and scikit-learn leaves
+    # random_state at None. Unfixed, two runs of the benchmark produce different numbers
+    # and the study's reproducibility claim is false — quietly, since nothing errors.
+    pipeline = build(name, task, seed=42)
+    unset = [
+        parameter
+        for parameter, value in pipeline.get_params(deep=True).items()
+        if parameter.endswith("random_state") and value is None
+    ]
+    assert not unset, f"{name}/{task} leaves {unset} unset"
+
+
+def test_the_same_seed_reproduces_a_stochastic_method():
+    features, target = sample("regression")
+    first = build("random_forest", "regression", seed=7).fit(features, target)
+    second = build("random_forest", "regression", seed=7).fit(features, target)
+    assert np.array_equal(first.predict(features), second.predict(features))
+
+
+def test_a_different_seed_changes_a_stochastic_method():
+    # Guards against the fix being vacuous: if the seed were ignored rather than applied,
+    # the previous test would still pass.
+    features, target = sample("regression")
+    first = build("random_forest", "regression", seed=7).fit(features, target)
+    second = build("random_forest", "regression", seed=8).fit(features, target)
+    assert not np.array_equal(first.predict(features), second.predict(features))

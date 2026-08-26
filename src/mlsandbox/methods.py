@@ -493,12 +493,37 @@ METHODS: dict[str, Method] = {
 }
 
 
-def build(name: str, task: Task) -> Pipeline:
+def seed_everything_in(estimator, seed: int):
+    """Fix every random_state the estimator exposes, however deeply nested.
+
+    Fifteen of the method/task pairs use stochastic estimators, and scikit-learn leaves
+    `random_state` at None by default — so two runs of the benchmark would produce
+    different numbers for Random Forest, boosting, the MLP and the rest. That silently
+    contradicts the study's reproducibility claim.
+
+    Done by walking the parameters rather than passing the seed at each construction site,
+    because the latter has to be remembered once per method and is invisible when
+    forgotten. This also reaches inside pipelines and grid searches.
+    """
+    seeded = {
+        parameter: seed
+        for parameter in estimator.get_params(deep=True)
+        if parameter == "random_state" or parameter.endswith("__random_state")
+    }
+    if seeded:
+        estimator.set_params(**seeded)
+    return estimator
+
+
+def build(name: str, task: Task, *, seed: int = 0) -> Pipeline:
     """Assemble the pipeline for a method, derived entirely from its metadata.
 
     Imputation and scaling go inside the pipeline so scikit-learn fits them per training
     fold. Fitting them outside would leak test-fold information into training — which
     raises nothing and simply inflates the score.
+
+    Every random_state is fixed to `seed`, so the same configuration produces the same
+    numbers twice.
     """
     method = METHODS[name]
     reason = method.incompatibility_reason(task)
@@ -513,7 +538,7 @@ def build(name: str, task: Task) -> Pipeline:
     if method.needs_scaling:
         steps.append(("scale", StandardScaler()))
     steps.append(("model", ESTIMATORS[name][task]()))
-    return Pipeline(steps)
+    return seed_everything_in(Pipeline(steps), seed)
 
 
 def available(task: Task, *, implementation: Implementation | None = "sklearn") -> list[Method]:

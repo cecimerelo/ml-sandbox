@@ -101,6 +101,7 @@ def evaluate_fold(
     fold_index: int,
     missing_rate: float,
     budget_seconds: int,
+    seed: int,
 ) -> Result:
     """Fit one method on one fold and score it, or record why it did not.
 
@@ -126,7 +127,7 @@ def evaluate_fold(
         # Built inside the guard: an unknown method, or one whose estimator cannot be
         # constructed, is a recorded outcome like any other failure. Outside it, a single
         # bad name would end a run measured in hours.
-        pipeline = build(method, task)  # type: ignore[arg-type]
+        pipeline = build(method, task, seed=seed)  # type: ignore[arg-type]
         fitted = clone(pipeline).fit(features.iloc[train], target[train])
         predicted = fitted.predict(features.iloc[test])
         score = score_of(task, target[test], predicted)
@@ -209,6 +210,7 @@ def run_dataset(
                     fold_index=fold_index,
                     missing_rate=rate,
                     budget_seconds=budget,
+                    seed=seed,
                 )
                 store.add(result)
                 progress.done += 1
