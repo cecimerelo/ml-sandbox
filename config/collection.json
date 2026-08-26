@@ -28,6 +28,7 @@
     "excluded": "Every dataset considered and not kept, with why. A collection whose gaps cannot be explained invites the suspicion that datasets were chosen to flatter the heuristics.",
     "datasets[].provenance": "Where the dataset came from before PMLB: original source URLs, the publication it accompanied, and PMLB's description. Required before republishing anything under D-010, since licences vary by original source.",
     "datasets[].keywords": "PMLB's own tags. `synthetic` and `simulation` exclude a dataset: the tag is authoritative where guessing from names is not.",
+    "openml_task_ids": "Dataset name to OpenML task id, for the selected OpenML datasets. Splits live on the task, not the dataset, and resolving the pair at run time meant scanning every task in the suite per dataset.",
     "excluded[].name": "Identifier of the excluded dataset.",
     "excluded[].reason": "Why this dataset is absent: out of the product's scope, synthetic, deprecated by the source, or eligible but not sampled.",
     "fetch_failures": "Datasets that could not be downloaded or whose shape disagreed with the index. Recorded rather than raised, so one bad entry does not cost the whole run."
@@ -51,6 +52,48 @@
     0.05,
     0.25
   ],
+  "openml_task_ids": {
+    "letter": 6,
+    "mfeat-factors": 12,
+    "breast-w": 15,
+    "cmc": 23,
+    "credit-approval": 29,
+    "credit-g": 31,
+    "pendigits": 32,
+    "electricity": 219,
+    "satimage": 2074,
+    "jm1": 3904,
+    "nomao": 9977,
+    "blood-transfusion-service-center": 10101,
+    "PhishingWebsites": 14952,
+    "bank-marketing": 14965,
+    "connect-4": 146195,
+    "climate-model-simulation-crashes": 146819,
+    "wilt": 146820,
+    "car": 146821,
+    "jungle_chess_2pcs_raw_endgame_complete": 167119,
+    "numerai28.6": 167120,
+    "airfoil_self_noise": 361235,
+    "concrete_compressive_strength": 361237,
+    "superconductivity": 361242,
+    "solar_flare": 361244,
+    "naval_propulsion_plant": 361247,
+    "red_wine": 361250,
+    "grid_stability": 361251,
+    "video_transcoding": 361252,
+    "wave_energy": 361253,
+    "cpu_activity": 361256,
+    "diamonds": 361257,
+    "kin8nm": 361258,
+    "pumadyn32nh": 361259,
+    "cps88wages": 361261,
+    "socmob": 361264,
+    "kings_county": 361266,
+    "brazilian_houses": 361267,
+    "fps_benchmark": 361268,
+    "fifa": 361272,
+    "space_ga": 361623
+  },
   "coverage": {
     "rows < 500": 20,
     "rows 500-10k": 20,
@@ -429,7 +472,7 @@
       "source": "openml-cc18",
       "revision": "4",
       "rows": 540,
-      "predictors": 18,
+      "predictors": 20,
       "task": "classification",
       "classes": 2,
       "categorical_predictors": 1,
@@ -438,8 +481,7 @@
       "licence": "Public",
       "origin": "https://www.openml.org/d/40994",
       "provenance": null,
-      "keywords": [],
-      "predictor_count_corrected_from": 20
+      "keywords": []
     },
     {
       "name": "cmc",
@@ -3122,6 +3164,5 @@
       "name": "white_wine",
       "reason": "not sampled: stratum medium/regression already has 10"
     }
-  ],
-  "fetch_failures": []
+  ]
 }

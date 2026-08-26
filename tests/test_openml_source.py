@@ -21,3 +21,12 @@ def test_an_unavailable_dataset_is_a_value_not_an_exception():
     failure = Unavailable(dataset_id=31, reason="unreachable after retries")
     assert failure.dataset_id == 31
     assert "retries" in failure.reason
+
+
+def test_the_fold_count_is_openmls_not_the_config_file():
+    # OpenML's tasks define 10 folds; benchmark.toml says 5. Using OpenML's splits is what
+    # makes results comparable with published work on these suites (D-003), so the config
+    # governs only the datasets whose folds the study generates itself.
+    from mlsandbox.openml_source import N_FOLDS
+
+    assert N_FOLDS == 10

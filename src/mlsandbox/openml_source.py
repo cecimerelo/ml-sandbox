@@ -165,3 +165,60 @@ def fetch_suite(suite: str, config: Config) -> tuple[list[Dataset], list[Unavail
         (missing if isinstance(result, Unavailable) else found).append(result)  # type: ignore[arg-type]
     logger.info("%s: %s fetched, %s unavailable", suite, len(found), len(missing))
     return found, missing
+
+
+N_FOLDS = 10
+"""The fold count OpenML's tasks define — verified as (1 repeat, 10 folds) across all 40
+tasks in the collection.
+
+Not the 5 in `benchmark.toml`, which governs only the datasets whose folds we generate.
+Using OpenML's splits is what makes results comparable with published work on these suites
+(D-003), and the price is that the classification half costs twice what a 5-fold run would.
+"""
+
+
+def task_ids_by_dataset(suite: str) -> dict[str, int]:
+    """Map every dataset name in a suite to its task id.
+
+    Splits live on the *task*, not the dataset — easy to miss, since the two come through
+    different endpoints and only the dataset carries a name.
+
+    Built once per suite rather than searched per dataset. Scanning 72 tasks for each of
+    60 datasets meant minutes of lookups before a single model was fitted, and the answer
+    never changes: it belongs in the manifest.
+    """
+    study = _with_retries(lambda: openml.study.get_suite(SUITES[suite]), f"suite {suite}")
+    if study is None:
+        return {}
+
+    mapping: dict[str, int] = {}
+    for task_id in study.tasks:
+        task = _with_retries(
+            lambda tid=task_id: openml.tasks.get_task(tid, download_data=False),
+            f"task {task_id}",
+        )
+        if task is not None:
+            mapping[task.get_dataset().name] = task_id
+    return mapping
+
+
+def load_splits(task_id: int) -> list[tuple[list[int], list[int]]] | None:
+    """Read a task's predefined folds as (train, test) index pairs.
+
+    Returns None when unavailable rather than raising: a dataset whose splits cannot be
+    read is one the harness generates folds for instead, which is a recorded fallback and
+    not a reason to lose the run.
+    """
+    task = _with_retries(
+        lambda: openml.tasks.get_task(task_id, download_splits=True, download_data=False),
+        f"splits for task {task_id}",
+    )
+    if task is None:
+        return None
+    split = task.download_split()
+    # OpenML nests as repeat -> fold -> sample. Every task in this collection is a single
+    # repeat, so the outer level is flattened away rather than carried around unused.
+    repeat = split.split[0]
+    return [
+        (list(repeat[fold][0].train), list(repeat[fold][0].test)) for fold in sorted(repeat)
+    ]
