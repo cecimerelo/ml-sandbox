@@ -9,6 +9,7 @@ another. Declarations are cheap; verified declarations are not.
 """
 
 import numpy as np
+import pandas as pd
 import pytest
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
@@ -19,16 +20,26 @@ SKLEARN_METHODS = [m for m in METHODS.values() if m.implementation == "sklearn"]
 
 
 def sample(task: str, *, with_nan: bool = False, rows: int = 120):
+    """A DataFrame, not an array: the pipeline chooses its treatment per column type, so it
+    needs the dtypes a bare array does not carry."""
     rng = np.random.default_rng(0)
-    features = rng.normal(size=(rows, 5))
+    values = rng.normal(size=(rows, 5))
     if with_nan:
-        features[rng.random(features.shape) < 0.15] = np.nan
+        values[rng.random(values.shape) < 0.15] = np.nan
+    features = pd.DataFrame(values, columns=[f"n{i}" for i in range(5)])
     target = (
         (rng.random(rows) > 0.5).astype(int)
         if task == "classification"
         else rng.normal(size=rows)
     )
     return features, target
+
+
+def numeric_steps(pipeline) -> dict:
+    """The steps applied to numeric columns, now nested inside the ColumnTransformer."""
+    prepare = pipeline.named_steps["prepare"]
+    numeric = next(t for name, t, _ in prepare.transformers if name == "numeric")
+    return dict(numeric.steps) if hasattr(numeric, "steps") else {}
 
 
 def method_task_pairs(implementation: str = "sklearn"):
@@ -48,13 +59,15 @@ def test_every_declared_pairing_builds_and_fits(name, task):
 
 @pytest.mark.parametrize(("name", "task"), method_task_pairs())
 def test_the_pipeline_scales_exactly_when_the_method_says_it_needs_to(name, task):
-    steps = dict(build(name, task).steps)
+    steps = numeric_steps(build(name, task))
     assert isinstance(steps.get("scale"), StandardScaler) is METHODS[name].needs_scaling
 
 
 @pytest.mark.parametrize(("name", "task"), method_task_pairs())
 def test_the_pipeline_imputes_exactly_when_the_method_cannot_handle_gaps(name, task):
-    steps = dict(build(name, task).steps)
+    # Numeric columns only. Categorical ones are always imputed, because an estimator that
+    # tolerates NaN in a number still cannot read a gap in a string.
+    steps = numeric_steps(build(name, task))
     imputes = isinstance(steps.get("impute"), SimpleImputer)
     assert imputes is not METHODS[name].handles_nan
 
@@ -82,7 +95,7 @@ def test_scaling_actually_changes_a_scaled_method():
     # Guards the claim behind needs_scaling. If a method declares it needs scaling but the
     # pipeline produces identical predictions without one, the flag is decorative.
     features, target = sample("classification")
-    features[:, 0] *= 10_000  # one feature on a wildly different scale
+    features["n0"] *= 10_000  # one feature on a wildly different scale
 
     scaled = build("knn", "classification").fit(features, target).predict(features)
 
@@ -225,3 +238,63 @@ def test_a_different_seed_changes_a_stochastic_method():
     first = build("random_forest", "regression", seed=7).fit(features, target)
     second = build("random_forest", "regression", seed=8).fit(features, target)
     assert not np.array_equal(first.predict(features), second.predict(features))
+
+
+def mixed_sample(rows: int = 200, *, with_nan: bool = False):
+    """A frame with both numeric and categorical columns, as 17 of the 60 datasets have."""
+    rng = np.random.default_rng(0)
+    frame = pd.DataFrame(
+        {
+            "n1": rng.normal(size=rows),
+            "n2": rng.normal(size=rows),
+            "c1": rng.choice(["a", "b", "c"], size=rows),
+            "c2": rng.choice(["yes", "no"], size=rows),
+        }
+    )
+    if with_nan:
+        frame.loc[:20, "n1"] = np.nan
+        frame.loc[:15, "c1"] = None
+    return frame, (rng.random(rows) > 0.5).astype(int)
+
+
+@pytest.mark.parametrize(
+    ("name", "task"),
+    [(n, t) for n, t in method_task_pairs() if n != "qda"],
+)
+def test_categorical_columns_do_not_break_any_method(name, task):
+    # The bug this guards against cost a benchmark run. Without encoding, the median
+    # imputer rejects strings and no estimator can read them, so every method except the
+    # tree ensembles failed on 17 of the 60 datasets — and in the results that would not
+    # have looked like an error, only like those methods being unsuited to a quarter of
+    # the collection.
+    features, target = mixed_sample()
+    if task == "regression":
+        target = target.astype(float)
+    build(name, task, seed=1).fit(features, target)
+
+
+@pytest.mark.parametrize(
+    ("name", "task"),
+    [(n, t) for n, t in method_task_pairs() if n != "qda"],
+)
+def test_categorical_and_missing_together_are_survivable(name, task):
+    # Both at once, because a gap in a string column is a different problem from a gap in
+    # a numeric one — and `handles_nan` only ever meant the numeric case.
+    features, target = mixed_sample(with_nan=True)
+    if task == "regression":
+        target = target.astype(float)
+    build(name, task, seed=1).fit(features, target)
+
+
+def test_high_cardinality_columns_do_not_explode_the_feature_space():
+    # An identifier-like column would otherwise turn a small dataset into a wide one, which
+    # is a different problem than the one being studied.
+    from mlsandbox.methods import MAX_CATEGORIES
+
+    rng = np.random.default_rng(0)
+    frame = pd.DataFrame({"id": [f"v{i}" for i in range(300)], "n": rng.normal(size=300)})
+    target = (rng.random(300) > 0.5).astype(int)
+
+    fitted = build("logistic_regression", "classification", seed=1).fit(frame, target)
+    produced = fitted.named_steps["prepare"].transform(frame).shape[1]
+    assert produced <= MAX_CATEGORIES + 2
