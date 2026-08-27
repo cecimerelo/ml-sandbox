@@ -876,3 +876,32 @@ justified when the winning method changes as it is crossed, and that is precisel
 this study measures. The bands will be checked against the results afterwards, and if
 10,000 separates nothing, that is either a documented limitation or a boundary corrected
 with evidence — a better argument than choosing a number now by eye.
+
+---
+
+## D-028 — Six meta-features, the ones the form can supply
+
+**Date:** 2026-08-27 · **Status:** accepted · **Affects:** [#11](https://github.com/cecimerelo/ml-sandbox/issues/11), [#15](https://github.com/cecimerelo/ml-sandbox/issues/15)
+
+**Context.** Layer 2 trains on 60 rows, one per dataset. The rule of thumb is roughly ten
+observations per feature, which allows five or six before overfitting becomes the dominant
+effect. The meta-learning literature in the bibliography — Rivolli 2022, pymfe — offers
+dozens: statistical, information-theoretic, complexity, landmarking.
+
+**Decision.** Use exactly the six FR-1.3 supplies: task type, row band, feature-count band,
+feature types, missing-value rate, class balance.
+
+**Why this is not merely a compromise.** The application can only ever provide these six.
+Any additional feature would have to be computed from the dataset, and the no-dataset path
+— the one the tool exists for — could then not use Layer 2 at all. The constraint and the
+statistics point the same way.
+
+**Landmarking is excluded by the same decision.** Using cheap models' performance as a
+feature is a standard category, but it is not one of the six, it needs a dataset to run
+on, and NFR-1 allows under five seconds for a recommendation without one. Its absence is a
+documented limitation rather than an oversight.
+
+**Consequences.** A meta-model with 60 rows and 20 features would memorise rather than
+learn, and *"you trained a meta-model on sixty points with twenty variables?"* is a
+question the thesis would have no answer to. Six keeps that question away, and the model
+must be simple and report its uncertainty honestly (#15).
