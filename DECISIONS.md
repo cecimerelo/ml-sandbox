@@ -806,3 +806,102 @@ the weakest assumption.
 - The cost is modest: `Dataset`, `curation`, the stratified sample and the coverage report
   are already source-agnostic, and `openml_client.py` with its retries and cache is still
   in the repository.
+
+---
+
+## D-026 — Layer 2 learns only from measurable dataset properties
+
+**Date:** 2026-08-20 · **Status:** accepted · **Affects:** [#11](https://github.com/cecimerelo/ml-sandbox/issues/11), [#15](https://github.com/cecimerelo/ml-sandbox/issues/15), [#2](https://github.com/cecimerelo/ml-sandbox/issues/2)
+
+**Context.** Layer 2 is a supervised model whose training rows are the benchmark's
+datasets. Every input it uses therefore needs a value for each of those 60 datasets. The
+three questions FR-1.4 asks of every user do not all have one.
+
+**Explainability importance has no ground truth at all.** There is no such thing as
+`credit-g`'s required interpretability — it is what a user needs, not what a dataset is,
+and two people with the same data can answer differently and both be right. That column
+would be empty in all 60 rows.
+
+**Non-linearity and feature interactions could be measured**, by checking whether
+non-linear methods beat linear ones on a dataset. But the user answers them by intuition,
+so the model would be trained on measurement and served with guesses.
+
+**Decision.** All three FR-1.4 questions feed **Layer 1 only**. Layer 2 learns from
+measurable properties: rows, predictors, task type, feature types, missing-value rate,
+class balance.
+
+**Consequences.** The division of labour becomes explicit and defensible: **Layer 2
+predicts performance, Layer 1 applies the user's constraints.** A recommendation runs as
+*"your data suggests Random Forest would perform best, but you said interpretability is
+critical, so here is a decision tree and what it costs you"*.
+
+A third of the always-asked questions therefore do not reach the trained model. That is
+worth stating plainly in the thesis rather than leaving a reader to infer it.
+
+---
+
+## D-027 — Layer 2 trains on banded values, not exact ones
+
+**Date:** 2026-08-20 · **Status:** accepted · **Affects:** [#11](https://github.com/cecimerelo/ml-sandbox/issues/11), [#15](https://github.com/cecimerelo/ml-sandbox/issues/15)
+
+**Context.** The benchmark knows `cpu_small` has exactly 8,192 rows. The form offers
+bands, so a user reports `500–10k`. Training on the exact figure and serving a band means
+serving something other than what was trained: the band has to be turned back into a
+number, and 600 rows and 9,000 rows would receive the same answer regardless.
+
+**Decision.** Discretise the benchmark's values into the form's bands before training, so
+the model sees the same representation in training and in use.
+
+**Rejected.** *Exact in training, discretised at serve time*: uses more of the
+information but leaves a train/serve mismatch that has to be disclosed. *Two models*, one
+per path: faithful to both cases, but it splits 60 training rows in half.
+
+**Consequences.** Resolution is lost — 600 and 9,000 rows become the same case. Acceptable
+because the form cannot express more than the band anyway, so the lost resolution is
+information the deployed system never has.
+
+### On the bands themselves
+
+They were never justified. `< 500 / 500–10k / > 10k` appear in FR-1.3 and again in
+FR-8.4's timeout tiers, so the product is at least consistent with itself, but no reason
+was recorded — the same pattern as NFR-2's feature cap, which turned out to be right for
+the wrong reason.
+
+Checked against the 327 eligible datasets, they split it sensibly: 31% / 56% / 13%, with
+the median at 1,000 rows. And **500 has external backing** — it is exactly where CC18's
+generator writes `Too small`. **10,000 has none**; it is a round number.
+
+Kept as they are, because the benchmark can settle the question properly. A band is
+justified when the winning method changes as it is crossed, and that is precisely what
+this study measures. The bands will be checked against the results afterwards, and if
+10,000 separates nothing, that is either a documented limitation or a boundary corrected
+with evidence — a better argument than choosing a number now by eye.
+
+---
+
+## D-028 — Six meta-features, the ones the form can supply
+
+**Date:** 2026-08-27 · **Status:** accepted · **Affects:** [#11](https://github.com/cecimerelo/ml-sandbox/issues/11), [#15](https://github.com/cecimerelo/ml-sandbox/issues/15)
+
+**Context.** Layer 2 trains on 60 rows, one per dataset. The rule of thumb is roughly ten
+observations per feature, which allows five or six before overfitting becomes the dominant
+effect. The meta-learning literature in the bibliography — Rivolli 2022, pymfe — offers
+dozens: statistical, information-theoretic, complexity, landmarking.
+
+**Decision.** Use exactly the six FR-1.3 supplies: task type, row band, feature-count band,
+feature types, missing-value rate, class balance.
+
+**Why this is not merely a compromise.** The application can only ever provide these six.
+Any additional feature would have to be computed from the dataset, and the no-dataset path
+— the one the tool exists for — could then not use Layer 2 at all. The constraint and the
+statistics point the same way.
+
+**Landmarking is excluded by the same decision.** Using cheap models' performance as a
+feature is a standard category, but it is not one of the six, it needs a dataset to run
+on, and NFR-1 allows under five seconds for a recommendation without one. Its absence is a
+documented limitation rather than an oversight.
+
+**Consequences.** A meta-model with 60 rows and 20 features would memorise rather than
+learn, and *"you trained a meta-model on sixty points with twenty variables?"* is a
+question the thesis would have no answer to. Six keeps that question away, and the model
+must be simple and report its uncertainty honestly (#15).
