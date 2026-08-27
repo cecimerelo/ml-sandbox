@@ -12,7 +12,6 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-import sys
 import time
 import warnings
 
@@ -21,6 +20,7 @@ import numpy as np
 from mlsandbox.benchmark import Progress, run_dataset
 from mlsandbox.config import PROJECT_ROOT, load_config, seed_everything
 from mlsandbox.folds import from_openml, generate
+from mlsandbox.loading import load_any, split_target
 from mlsandbox.methods import METHODS
 from mlsandbox.missingness import RATES
 from mlsandbox.openml_source import N_FOLDS, load_splits
@@ -43,12 +43,8 @@ def report(message: str) -> None:
 
 
 def load_frame(entry: dict, config):
-    from scripts.build_collection import load_any
-
-    frame = load_any(entry, config)
-    target_column = "target" if "target" in frame.columns else frame.columns[-1]
-    features = frame.drop(columns=[target_column])
-    return features, frame[target_column].to_numpy()
+    features, target = split_target(load_any(entry, config))
+    return features, target.to_numpy()
 
 
 def folds_for(entry: dict, target: np.ndarray, config, task_ids: dict[str, int]):
@@ -161,5 +157,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.path.insert(0, str(PROJECT_ROOT))
     raise SystemExit(main())

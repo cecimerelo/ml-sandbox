@@ -18,16 +18,12 @@ from pathlib import Path
 from mlsandbox.config import PROJECT_ROOT, load_config
 from mlsandbox.curation import SMALL_BAND_MAX_ROWS, Excluded, coverage, screen, stratified_sample
 from mlsandbox.dataset import Dataset
+from mlsandbox.loading import load_any
 from mlsandbox.missingness import RATES as MISSINGNESS_RATES
 from mlsandbox.openml_source import configure as configure_openml
 from mlsandbox.openml_source import load_metadata as load_openml_metadata
 from mlsandbox.openml_source import task_ids_by_dataset
-from mlsandbox.pmlb_source import (
-    PINNED_REVISION,
-    fetch_provenance,
-    fetch_summary,
-    load_dataset,
-)
+from mlsandbox.pmlb_source import PINNED_REVISION, fetch_provenance, fetch_summary
 
 MANIFEST_PATH = PROJECT_ROOT / "config" / "collection.json"
 
@@ -298,26 +294,6 @@ def report(manifest: dict) -> None:
     print("\nexclusions by reason")
     for reason, count in sorted(reasons.items(), key=lambda kv: -kv[1]):
         print(f"  {reason[:52]:52} {count:>4}")
-
-
-def load_any(entry: dict, config):
-    """Load a dataset whatever source it came from.
-
-    The collection is mixed (D-025), so dispatching on source is not a nicety: calling
-    PMLB's loader for an OpenML dataset would fail on every one of them.
-    """
-    if entry["source"] == "pmlb":
-        return load_dataset(entry["name"], config)
-
-    import openml
-
-    from mlsandbox.openml_source import configure as configure_openml
-
-    configure_openml(config)
-    dataset_id = int(entry["origin"].rsplit("/", 1)[1])
-    record = openml.datasets.get_dataset(dataset_id, download_data=True)
-    frame, _, _, _ = record.get_data(dataset_format="dataframe")
-    return frame
 
 
 def fetch_all(manifest: dict, config) -> tuple[int, list[dict]]:

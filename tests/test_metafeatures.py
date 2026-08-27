@@ -153,3 +153,32 @@ def test_both_paths_agree_across_the_band_grid(rows, features):
         class_balance="not applicable",
     )
     assert uploaded == described
+
+
+def test_the_export_covers_the_whole_collection():
+    # The table Layer 2 trains on. A dataset missing here is one the model never sees.
+    # Keyed on `dataset`, matching the results table it will be joined against in #15.
+    import json
+
+    from mlsandbox.config import PROJECT_ROOT
+
+    collection = json.loads((PROJECT_ROOT / "config" / "collection.json").read_text())
+    exported = json.loads((PROJECT_ROOT / "config" / "metafeatures.json").read_text())
+
+    assert {d["dataset"] for d in exported["datasets"]} == {
+        d["name"] for d in collection["datasets"]
+    }
+
+
+def test_no_level_of_any_feature_is_unrepresented():
+    # A level with no training examples is a case Layer 2 will meet in use and has never
+    # seen — the same shape of gap as the sub-500-row band, and it produces a confident
+    # wrong answer rather than an error.
+    import json
+    from collections import Counter
+
+    from mlsandbox.config import PROJECT_ROOT
+
+    rows = json.loads((PROJECT_ROOT / "config" / "metafeatures.json").read_text())["datasets"]
+    for field in ("task", "rows", "features", "regime", "feature_types"):
+        assert len(Counter(row[field] for row in rows)) > 1, field
