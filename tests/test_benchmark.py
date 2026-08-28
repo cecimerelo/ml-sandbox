@@ -169,3 +169,77 @@ def test_expected_evaluations_uses_each_sources_fold_count():
     assert expected_evaluations(openml_entry, 5, 1) == 2 * expected_evaluations(
         pmlb_entry, 5, 1
     )
+
+
+def big_frame(rows: int):
+    return (
+        pd.DataFrame({"a": np.arange(rows, dtype=float), "b": np.arange(rows) * 2.0}),
+        np.arange(rows),
+    )
+
+
+def five_folds(rows: int):
+    index = np.arange(rows)
+    return from_openml(
+        "big", [(list(index[index % 5 != k]), list(index[index % 5 == k])) for k in range(5)]
+    )
+
+
+def test_a_dataset_within_the_cap_is_untouched():
+    from mlsandbox.benchmark import cap_rows
+
+    features, target = big_frame(100)
+    folds = five_folds(100)
+    capped_features, _, capped_folds = cap_rows(features, target, folds, seed=1)
+    assert len(capped_features) == 100
+    assert capped_folds.origin == "openml"
+
+
+def test_a_large_dataset_is_reduced_to_the_cap():
+    # A timeout does not save time, it spends its whole budget: SVM on 96,000 rows burns
+    # 300 seconds per fold per variant rather than failing fast.
+    from mlsandbox.benchmark import EVALUATION_ROW_CAP, cap_rows
+
+    features, target = big_frame(50_000)
+    capped, _, _ = cap_rows(features, target, five_folds(50_000), seed=1)
+    assert len(capped) == EVALUATION_ROW_CAP
+
+
+def test_capping_keeps_the_published_partitioning():
+    # Subsetting rather than regenerating: a row that survives stays in the fold it was
+    # assigned to, so the study does not quietly swap OpenML's splits for its own on the
+    # datasets where comparability matters most.
+    from mlsandbox.benchmark import cap_rows
+
+    features, target = big_frame(50_000)
+    _, _, folds = cap_rows(features, target, five_folds(50_000), seed=1)
+    assert folds.origin == "openml, capped"
+
+
+def test_capped_folds_still_partition_the_data():
+    from mlsandbox.benchmark import EVALUATION_ROW_CAP, cap_rows
+
+    features, target = big_frame(50_000)
+    capped, _, folds = cap_rows(features, target, five_folds(50_000), seed=1)
+    assert folds.covers(EVALUATION_ROW_CAP)
+    for train, test in folds.folds:
+        assert not set(train) & set(test)
+
+
+def test_features_and_target_stay_aligned_after_capping():
+    # The failure this guards against is silent: shuffled labels produce scores that look
+    # like a method performing badly.
+    from mlsandbox.benchmark import cap_rows
+
+    features, target = big_frame(50_000)
+    capped_features, capped_target, _ = cap_rows(features, target, five_folds(50_000), seed=1)
+    assert np.array_equal(capped_features["a"].to_numpy(), capped_target.astype(float))
+
+
+def test_capping_is_reproducible():
+    from mlsandbox.benchmark import cap_rows
+
+    features, target = big_frame(50_000)
+    first, _, _ = cap_rows(features, target, five_folds(50_000), seed=3)
+    second, _, _ = cap_rows(features, target, five_folds(50_000), seed=3)
+    assert first.equals(second)

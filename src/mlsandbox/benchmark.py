@@ -27,6 +27,21 @@ TIMEOUTS_BY_ROWS = ((500, 60), (10_000, 120), (float("inf"), 300))
 """Per-method budget in seconds, tiered by dataset size (FR-8.4). A flat cap generous for
 300 rows fails every ensemble on 50,000."""
 
+EVALUATION_ROW_CAP = 20_000
+"""Rows used to evaluate a dataset, however many it has.
+
+A timeout does not save time — it spends its whole budget. SVM is quadratic in the sample
+size, so on 96,000 rows it does not fail fast: it burns 300 seconds on every fold of every
+variant, which is two and a half hours for one method on one dataset. Nineteen datasets of
+that size turn an evening's run into days, and a study that cannot be re-run is a study
+that cannot be corrected.
+
+Capping applies identically to every method on a dataset, so it costs no comparability
+between them — it only shrinks the problem. The `>10k` band and the data-rich regime stay
+populated, which is what the recommender reasons about; what is lost is fidelity to the
+exact original size, and that is stated rather than hidden.
+"""
+
 R2_FLOOR = 0.0
 """R² is floored so a catastrophic model cannot drag an average through large negative
 values (D-021). Documented rather than silent."""
@@ -38,6 +53,35 @@ class Timeout(Exception):
 
 def _raise_timeout(_signum, _frame):
     raise Timeout
+
+
+def cap_rows(
+    features: pd.DataFrame, target: np.ndarray, folds: FoldSet, *, seed: int
+) -> tuple[pd.DataFrame, np.ndarray, FoldSet]:
+    """Reduce a dataset to `EVALUATION_ROW_CAP` rows, folds included.
+
+    The folds are subset rather than regenerated, so a dataset keeps OpenML's published
+    partitioning: an index that survives the cap stays in the fold it was assigned to.
+    Regenerating instead would silently swap the study's splits for its own on exactly the
+    datasets where comparability with published work matters most.
+    """
+    if len(features) <= EVALUATION_ROW_CAP:
+        return features, target, folds
+
+    rng = np.random.default_rng(seed)
+    keep = np.sort(rng.choice(len(features), size=EVALUATION_ROW_CAP, replace=False))
+    position = {original: new for new, original in enumerate(keep)}
+    kept = set(position)
+
+    capped = [
+        ([position[i] for i in train if i in kept], [position[i] for i in test if i in kept])
+        for train, test in folds.folds
+    ]
+    return (
+        features.iloc[keep].reset_index(drop=True),
+        target[keep],
+        folds.model_copy(update={"folds": capped, "origin": f"{folds.origin}, capped"}),
+    )
 
 
 def timeout_for(n_rows: int) -> int:

@@ -17,7 +17,7 @@ import warnings
 
 import numpy as np
 
-from mlsandbox.benchmark import Progress, run_dataset
+from mlsandbox.benchmark import Progress, cap_rows, run_dataset
 from mlsandbox.config import PROJECT_ROOT, load_config, seed_everything
 from mlsandbox.folds import from_openml, generate
 from mlsandbox.loading import load_any, split_target
@@ -129,9 +129,13 @@ def main() -> int:
     for index, entry in enumerate(datasets, start=1):
         features, target = load_frame(entry, config)
         folds = folds_for(entry, target, config, task_ids)
+        original_rows = len(features)
+        features, target, folds = cap_rows(features, target, folds, seed=config.run.seed)
+        if len(features) < original_rows:
+            report(f"  capped {original_rows:,} rows to {len(features):,} for evaluation")
         report(
             f"[{index}/{len(datasets)}] {entry['name']} "
-            f"({entry['rows']} rows, {entry['task']}, {folds.n_folds} folds "
+            f"({len(features)} rows, {entry['task']}, {folds.n_folds} folds "
             f"from {folds.origin}) — {progress.line()}"
         )
         run_dataset(
