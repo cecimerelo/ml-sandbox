@@ -988,3 +988,39 @@ methods above a size*: would bias precisely the comparison being measured.
 say so: results on the largest datasets describe a 20,000-row sample of them, not the
 whole. The 41 datasets already evaluated at full size are kept — their rows are recorded,
 so the difference is visible rather than assumed.
+
+---
+
+## D-031 — Two baselines: random choice and the single best method
+
+**Date:** 2026-08-28 · **Status:** accepted · **Extends:** [#13](https://github.com/cecimerelo/ml-sandbox/issues/13) · **Affects:** [#16](https://github.com/cecimerelo/ml-sandbox/issues/16)
+
+**Context.** D-029 dropped AMLBID, leaving the study with no upper bound. That makes the
+random baseline the only comparator, and beating random is a low bar: *"the recommender
+does better than choosing blindly"* is a weak claim to build an evaluation chapter on.
+
+**Decision.** Add a second baseline: **always recommend the method that wins most often
+across the collection**, ignoring the user's data entirely.
+
+**Why this is the one that matters.** It answers the question the thesis actually has to
+answer — not *"is this better than random?"* but **"is there any point looking at the
+user's data at all?"** If a recommender that inspects the problem cannot beat one that says
+"use Random Forest" to everybody, personalisation is not earning its complexity, and that
+is worth knowing before the defence rather than during it.
+
+It is also standard in the meta-learning literature for exactly this reason.
+
+**Both are free.** Neither trains anything. A baseline picks a method name and looks up the
+score that method already recorded on that dataset — arithmetic over the benchmark's
+results table. That is why the benchmark stores every method on every dataset rather than
+only the winner: without it, *"what would have happened had I chosen X?"* is unanswerable.
+
+The recommender is evaluated the same way, so all three are measured by the same procedure
+over the same numbers.
+
+**Consequences.** The random baseline can be repeated over many seeds and reported as a
+distribution rather than a single draw, since a repetition costs a table lookup.
+
+Two open questions remain for the implementation: whether a random draw may select a
+method that errors on that dataset — counting it as a failure makes random look worse and
+the recommender better by comparison — and how many repetitions to run.
