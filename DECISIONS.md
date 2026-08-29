@@ -1109,3 +1109,42 @@ recommendation should be the same.
 - Validation must group by dataset. A random split would put the same dataset in training
   and test, and the model would recall its scores rather than generalise — inflating every
   number reported.
+
+---
+
+## D-034 — Layer 1 belongs to the study, not the application
+
+**Date:** 2026-08-29 · **Status:** accepted · **Moves work from:** [#2](https://github.com/cecimerelo/ml-sandbox/issues/2) · **Affects:** [#16](https://github.com/cecimerelo/ml-sandbox/issues/16), Epic 1
+
+**Context.** #16 requires the research metrics to compare four approaches, the first being
+**heuristics only**. Layer 1 was scoped into Epic 2 with the application — the epic reduced
+under D-011.
+
+That is the wrong place for it. The thesis's secondary objective is *whether the
+pedagogical heuristics hold up empirically*, so Layer 1 is not a feature of the tool: **it
+is the object of study.** The benchmark says what actually won; Layer 1 says what the
+textbook predicts. Without both written down there is nothing to compare, and the study
+cannot answer the question it exists for.
+
+The difference in what the thesis can claim:
+
+| Without Layer 1 | With Layer 1 |
+|---|---|
+| *"A trained model predicts which method performs well"* | *"The heuristics taught in class are right X% of the time; a model trained on data reaches Y%; always picking one method reaches Z%"* |
+
+The first is another meta-learning exercise. The second is the contribution.
+
+**Decision.** Layer 1 moves into Epic 1 and is implemented before #16.
+
+**Consequences.** It is cheap — twelve rules over the same seven meta-features, not a
+system. Each rule carries the claim it encodes in the words a user is shown, which is also
+the sentence the thesis quotes when reporting whether that claim survived.
+
+The two user inputs that reach it — required interpretability and suspected non-linearity —
+are constraints and beliefs rather than measurable properties, which is why they arrive
+here and never in the trained model (D-026).
+
+**A rule that turns out to be wrong is a result.** Nothing in the reporting is arranged to
+avoid that conclusion: if the heuristics do not predict performance, that is worth knowing
+and worth stating, and the per-rule structure makes it possible to say *which* claims failed
+rather than only that the set did.
