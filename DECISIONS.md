@@ -1295,6 +1295,36 @@ length of one request, which is what the privacy notice claims.
 **Decision.** FastAPI · React + MUI · SQLite · Recharts drawing client-side from aggregates
 computed server-side.
 
+**Why FastAPI and not Flask or Django.** The study's type registry is already pydantic:
+`MetaFeatures` is a `StrictModel` with `extra="forbid"` and bands typed as
+`Literal["<500", "500-10k", ">10k"]`. Under FastAPI **that class is the request schema**,
+so a form answer the model never saw is rejected at the edge, naming the field, with no
+validation written by hand.
+
+That matters more here than it usually would. D-027's train/serve agreement is held up by
+those types, and it has already failed once — `regime` computed two ways gave `moderate` on
+one path and `data-rich` on the other. An API carrying its own copy of the schema is a
+second place to define what a valid band is, and **when the two drift the model does not
+error, it predicts.** Flask would work; it would mean writing that validation by hand, or
+adding pydantic to it, which is rebuilding a worse FastAPI. Django brings an ORM, an admin
+and migrations for five endpoints and one SQLite table.
+
+**Rejected: Streamlit, and what rejecting it costs.** Streamlit or Gradio would remove the
+frontend entirely — no React, no build step, no endpoints — and save roughly thirty of the
+ninety-eight estimated hours. Given the schedule, that is precisely the margin the memoria
+is short of, so this was a real option and not a straw man.
+
+It was rejected because it cannot deliver the design that already exists. `EXPERIENCE.md`
+and `DESIGN.md` specify named MUI components (a non-sticky `AppBar`, an `Accordion`
+collapsed by default, one-level `Dialog`s), a thirteen-row load-bearing accessibility
+register, and a chart behaviour contract with a view-as-table toggle and text equivalents
+per plot family. Streamlit supplies none of the three. Choosing it turns the UX work into
+an appendix describing an interface that was never built, rather than into the product.
+
+**Rejected: Streamlit first, React if time allows.** The prudent-sounding option, which in
+practice means maintaining two interfaces, or shipping the first one without the polish
+that was deferred to the second.
+
 **Consequences.** The EDA endpoints return summaries — bin counts, correlation matrices,
 quartiles — never rows. That constrains the API in a useful direction: an endpoint that
 cannot return the raw data cannot leak it by accident.
