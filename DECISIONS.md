@@ -1068,3 +1068,44 @@ selected instead of 3.
   the collection is not scored under two different definitions of the same method.
 - The smallest degree always survives the filter: a grid with nothing in it would fail
   rather than degrade, and a basis expansion that expands nothing is not one.
+
+---
+
+## D-033 — Layer 2 predicts relative performance, not the winner
+
+**Date:** 2026-08-29 · **Status:** accepted · **Affects:** [#15](https://github.com/cecimerelo/ml-sandbox/issues/15), [#16](https://github.com/cecimerelo/ml-sandbox/issues/16), [#2](https://github.com/cecimerelo/ml-sandbox/issues/2)
+
+**Context.** The obvious target — "which method wins" — is not well defined. The
+one-standard-deviation tie rule means most datasets have several winners, so a
+single-label classifier would be taught that `boosting` is *wrong* on a dataset where it
+tied with the best. It would be penalising correct answers.
+
+**Decision.** Layer 2 is a **regression over (dataset, method) pairs**, and its target is
+**performance relative to the best method on that dataset** — negative regret.
+
+**Why regression rather than classification.**
+
+- **FR-2.2 needs three ranked alternatives**, not one pick. Predicted scores give an order
+  directly; a classifier's ranking would have to be invented.
+- **Ties stop being a problem.** Methods that tie have near-identical targets, which is the
+  truth, rather than one being labelled correct and the rest wrong.
+- **Sixty training rows become about nine hundred** — 60 datasets by 15 methods — which
+  changes the overfitting picture D-028 was written under. Seven meta-features against 900
+  rows is a different proposition from seven against 60.
+
+**Why relative rather than raw score.** A balanced accuracy of 0.70 can be excellent on a
+hard dataset and mediocre on an easy one. Trained on raw scores, the model spends much of
+its capacity learning **which datasets are easy** — information that is useless at
+recommendation time, since only the ordering *within* a dataset ever matters.
+
+Subtracting the best score per dataset removes that dimension. An easy dataset and a hard
+one look the same when the spread between methods is the same, which is correct: the
+recommendation should be the same.
+
+**Consequences.**
+
+- The prediction is directly interpretable as *"how much you lose by choosing this"*, which
+  the explanation layer can state to a user without translation.
+- Validation must group by dataset. A random split would put the same dataset in training
+  and test, and the model would recall its scores rather than generalise — inflating every
+  number reported.
