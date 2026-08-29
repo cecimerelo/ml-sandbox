@@ -4,7 +4,7 @@ import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 
-import { spacing } from '../theme/tokens';
+import { chrome, spacing } from '../theme/tokens';
 import { SkipLink } from './SkipLink';
 
 /**
@@ -28,11 +28,9 @@ export function TopBar() {
     <AppBar
       position="static"
       elevation={0}
-      sx={{
-        bgcolor: 'background.paper',
-        borderBottom: 1,
-        borderColor: 'divider',
-      }}
+      // A coloured bar separates itself from the page; the divider hairline the white
+      // version needed would be drawing a line that is already there.
+      sx={{ bgcolor: chrome.topBar.hex }}
     >
       <SkipLink />
       <Toolbar
@@ -48,9 +46,9 @@ export function TopBar() {
           variant="h6"
           component={RouterLink}
           to="/"
-          sx={{ color: 'text.primary', textDecoration: 'none', flexGrow: 1 }}
+          sx={{ color: 'common.white', textDecoration: 'none', flexGrow: 1 }}
         >
-          Which method should I use?
+          ML Sandbox
         </Typography>
 
         <Button
@@ -58,6 +56,7 @@ export function TopBar() {
           to="/benchmark"
           // On its own surface it is the current page, not somewhere to go. Announcing it
           // as a link would send a screen-reader user to where they already are.
+          sx={{ color: 'common.white' }}
           {...(onBenchmark ? { 'aria-current': 'page' as const } : {})}
         >
           Benchmark

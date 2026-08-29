@@ -16,7 +16,7 @@ from mlsandbox.base import StrictModel
 from mlsandbox.methods import METHODS
 
 app = FastAPI(
-    title="Which method should I use?",
+    title="ML Sandbox",
     description="An explainable recommender for supervised learning methods.",
 )
 

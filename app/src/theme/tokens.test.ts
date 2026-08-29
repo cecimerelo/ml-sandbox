@@ -71,6 +71,28 @@ describe('text', () => {
   });
 });
 
+describe('the top bar', () => {
+  it('carries white text at 4.5:1 or better', () => {
+    expect(contrast(chrome.topBar.hex, WHITE)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('is not a chart series colour', () => {
+    // Chrome must never be confusable with a data mark. The palette already keeps chrome
+    // blue a step darker than series-1 for this reason; an orange bar must not undo it
+    // from the other side by wearing series-2's hex.
+    const seriesHexes = Object.values(series).map((token) => token.hex);
+    expect(seriesHexes).not.toContain(chrome.topBar.hex);
+  });
+
+  it('is far enough from series-2 in lightness to read as chrome', () => {
+    // Both are orange. What separates them is that one is furniture and one is a mark,
+    // and lightness is what carries that difference.
+    expect(contrast(chrome.topBar.hex, WHITE)).toBeGreaterThan(
+      contrast(series[2].hex, WHITE) + 2,
+    );
+  });
+});
+
 describe('the series slots are distinct values', () => {
   it('no two slots share a hex', () => {
     const hexes = Object.values(series).map((token) => token.hex);

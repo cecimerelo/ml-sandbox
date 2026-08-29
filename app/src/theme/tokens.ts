@@ -39,6 +39,20 @@ const t = (hex: string, contrast: number, needsReliefChannel?: true): Token => (
  */
 export const chrome = {
   primary: t('#1976d2', 4.6),
+  /**
+   * The top bar. A deliberate departure from `DESIGN.md`, which specifies a white bar and
+   * no brand colour at all — recorded in D-038.
+   *
+   * Deep orange **900**, not the orange the chart palette uses. `series-2` `#eb6834` is
+   * 3.20:1, so white text on it fails AA outright; and using a chart slot as chrome would
+   * make the app's furniture the same colour as "the first alternative the user selected"
+   * in every plot. The palette already keeps chrome blue one step darker than `series-1`
+   * for exactly this reason, and going orange must not reintroduce the problem from the
+   * other side. At this lightness the bar reads as chrome, not as a mark.
+   *
+   * Still a stock Material value, so the file keeps its posture of inventing no colours.
+   */
+  topBar: t('#bf360c', 5.6),
   textPrimary: t('#212121', 16.1),
   textSecondary: t('#666666', 5.74),
   textDisabled: t('#9e9e9e', 2.68),
