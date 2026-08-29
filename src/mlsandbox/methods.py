@@ -182,9 +182,18 @@ class Method(StrictModel):
         """
         if self.supports(task):
             return None
+        # Leads with the consequence, then the reason. Stating only the fact leaves the
+        # user to work out that it means they cannot pick this — which is the one thing
+        # they need from the sentence.
         if task == "classification":
-            return f"{self.label} predicts continuous numbers, and your target is categories."
-        return f"{self.label} predicts categories, and your target is a continuous number."
+            return (
+                f"{self.label} can't be used here — you're sorting things into categories, "
+                "and this method only predicts numbers."
+            )
+        return (
+            f"{self.label} can't be used here — you're predicting a number, and this "
+            "method only sorts things into categories."
+        )
 
 
 def _basis_grid(estimator: BaseEstimator, parameter: str, degrees: list[int]) -> BaseEstimator:

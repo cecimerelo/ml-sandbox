@@ -1,0 +1,161 @@
+/**
+ * The explanation catalogue — every pre-authored string the product shows, in one place.
+ *
+ * One artifact, keyed by string ID, rather than copy scattered through components. A
+ * supervisor has to be able to read the pedagogy as a body of writing and sign it off as
+ * content, separately from the code, and that is impossible if it lives in forty JSX files.
+ *
+ * Four hard constraints, enforced by `catalogue.test.ts` where a machine can check them:
+ *
+ * 1. **Citation-free.** No textbook, paper, author, year, or "the literature". The theory
+ *    underneath is a statistical learning course; the interface never says so.
+ * 2. **No prior knowledge assumed.** Any term of art is unpacked in the same breath, or
+ *    not used.
+ * 3. **No claim stronger than the rule that produced it.** Where the engine knows "few
+ *    rows and interpretability critical → prefer a simpler method", the copy says why it
+ *    was preferred, never that it *is* better.
+ * 4. **No progressive disclosure.** No "learn more", no glossary, no tour. Education is
+ *    always visible or it is not there.
+ *
+ * Grounding lives in `docs/copy-traceability.md`, a thesis appendix — never in the UI.
+ */
+
+export interface Question {
+  /** Stable ID. What the record stores and the traceability table keys on. */
+  id: string;
+  label: string;
+  /** Always visible beneath the control (FR-1.6). Two to three sentences. */
+  explanation: string;
+}
+
+/**
+ * Shape B — the no-dataset form. Order matches the spine's field order.
+ *
+ * Shape A replaces the first six with detections and needs its own variants, which arrive
+ * with 3.2: the question there is "is this right?", not "what is it?", and copy written
+ * for one does not answer the other.
+ */
+export const FORM_QUESTIONS: Question[] = [
+  {
+    id: 'form.prediction-type',
+    label: 'What are you trying to predict?',
+    explanation:
+      'A number, like a price or a temperature, is a different problem from a category, ' +
+      'like whether an email is spam. Methods are built for one or the other, so this ' +
+      'answer decides which ones are even available to you.',
+  },
+  {
+    id: 'form.rows',
+    label: 'Roughly how many rows does your data have?',
+    explanation:
+      'A row is one example — one house, one patient, one transaction. Methods that can ' +
+      'describe complicated patterns need a lot of examples to tell a real pattern from ' +
+      'coincidence, so with few rows a simpler method often does better.',
+  },
+  {
+    id: 'form.features',
+    label: 'How many columns are you predicting from?',
+    explanation:
+      "These are the things you already know about each row — a house's size, age and " +
+      'location. Not the thing you are trying to predict. The more columns there are ' +
+      'relative to rows, the easier it is for a method to find patterns that are not there.',
+  },
+  {
+    id: 'form.feature-types',
+    label: 'What kind of columns are they?',
+    explanation:
+      'Numbers you can do arithmetic with, like age or price, behave differently from ' +
+      'labels like city or blood type. Some methods work with labels directly; others ' +
+      'need them converted into numbers first, which can go badly when there are many ' +
+      'distinct labels.',
+  },
+  {
+    id: 'form.missing',
+    label: 'How much of your data is missing?',
+    explanation:
+      'Blank cells — a survey question nobody answered, a sensor that dropped out. Most ' +
+      'methods cannot read a blank, so the gaps have to be filled in with a guess before ' +
+      'training. The more there are, the more the filling-in shapes the result.',
+  },
+  {
+    id: 'form.class-balance',
+    label: 'Are your categories about the same size?',
+    explanation:
+      'If ninety-nine of every hundred rows are one category, a method can score very ' +
+      'well by always guessing that one and never being useful. Knowing this in advance ' +
+      'changes both which method suits you and how its score should be read.',
+  },
+  {
+    id: 'form.explainability',
+    label: 'Do you need to explain individual predictions?',
+    explanation:
+      'Not whether the method is simple — whether you will have to tell someone why ' +
+      'their particular case came out the way it did. Some methods hand you the reason ' +
+      'directly; others give an answer with no reason attached. If a decision has to be ' +
+      'defended, that difference matters more than accuracy does.',
+  },
+  {
+    id: 'form.non-linearity',
+    label: 'Do you think the pattern in your data is a straight line?',
+    explanation:
+      'Some methods can only draw straight relationships — as one number goes up, the ' +
+      'other goes up or down at a steady rate. Others can bend. If you already know the ' +
+      'relationship curves, levels off, or flips direction somewhere, say so and we will ' +
+      "prefer a method that can follow it. If you don't know, say so — that's a real " +
+      'answer and we will treat it as one.',
+  },
+  {
+    id: 'form.interactions',
+    label: 'Do any of your columns only matter in combination?',
+    explanation:
+      'Sometimes two things matter together in a way neither does alone — a medication ' +
+      'that helps at one age and harms at another. Some methods find these combinations ' +
+      'on their own; others treat every column separately and miss them entirely unless ' +
+      "someone points the combination out. If you don't know, say so and we will hedge.",
+  },
+];
+
+/** The three answers the always-asked questions share, so they read as one rhythm. */
+export const SUSPICION_ANSWERS = [
+  { value: 'no', label: 'No' },
+  { value: 'unsure', label: "I don't know" },
+  { value: 'yes', label: 'Yes' },
+] as const;
+
+/**
+ * The recommendation panel's prose (FR-2.2).
+ *
+ * These describe an axis so a reader can place the recommendation on it. They deliberately
+ * do not say which end is better: which end is better depends on the problem, and that is
+ * what the rest of the panel is for.
+ */
+export const PANEL = {
+  'panel.bias-variance.heading': 'How closely this method follows your data',
+  'panel.bias-variance.explanation':
+    'Methods sit on a scale. At one end they assume a simple shape and stick to it, which ' +
+    'means they miss detail but stay steady when the data changes. At the other they ' +
+    'follow the data closely, catching detail but also catching quirks that happen to be ' +
+    'in the rows you have and will not repeat, so they can shift a lot when the data does. Neither end is the right one — it depends on how much data ' +
+    'you have and how complicated the real pattern is.',
+
+  'panel.interpretability.heading': 'Whether you can explain its answers',
+  'panel.interpretability.explanation':
+    'Some methods show you the reasoning behind a single prediction: the questions asked, ' +
+    'or the weight given to each column. Others produce an answer with no reason you can ' +
+    'read back. This says nothing about which is more accurate — only about what you will ' +
+    'be able to tell someone who asks.',
+
+  'panel.factors.heading': 'What led to this',
+  'panel.provenance.link': 'Where does this come from?',
+} as const;
+
+/** Every string, flat, for the checks that apply to all of them. */
+export const ALL_STRINGS: Record<string, string> = {
+  ...Object.fromEntries(
+    FORM_QUESTIONS.flatMap((q) => [
+      [`${q.id}.label`, q.label],
+      [`${q.id}.explanation`, q.explanation],
+    ]),
+  ),
+  ...PANEL,
+};

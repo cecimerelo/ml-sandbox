@@ -32,7 +32,7 @@
       "implementation": "sklearn",
       "rationale": "The high-bias, fully interpretable baseline every other method is judged against.",
       "incompatibility": {
-        "classification": "Linear Regression predicts continuous numbers, and your target is categories."
+        "classification": "Linear Regression can't be used here \u2014 you're sorting things into categories, and this method only predicts numbers."
       }
     },
     {
@@ -49,7 +49,7 @@
       "implementation": "sklearn",
       "rationale": "The interpretable classification baseline: coefficients read as log-odds.",
       "incompatibility": {
-        "regression": "Logistic Regression predicts categories, and your target is a continuous number."
+        "regression": "Logistic Regression can't be used here \u2014 you're predicting a number, and this method only sorts things into categories."
       }
     },
     {
@@ -114,7 +114,7 @@
       "implementation": "sklearn",
       "rationale": "Stable where logistic regression struggles: small samples, well-separated classes.",
       "incompatibility": {
-        "regression": "Linear Discriminant Analysis predicts categories, and your target is a continuous number."
+        "regression": "Linear Discriminant Analysis can't be used here \u2014 you're predicting a number, and this method only sorts things into categories."
       }
     },
     {
@@ -131,7 +131,7 @@
       "implementation": "sklearn",
       "rationale": "Allows each class its own covariance, buying a curved boundary at the price of many more parameters.",
       "incompatibility": {
-        "regression": "Quadratic Discriminant Analysis predicts categories, and your target is a continuous number."
+        "regression": "Quadratic Discriminant Analysis can't be used here \u2014 you're predicting a number, and this method only sorts things into categories."
       }
     },
     {
@@ -148,7 +148,7 @@
       "implementation": "sklearn",
       "rationale": "Assumes features are independent, which is almost never true and often works anyway. Very high bias, very cheap.",
       "incompatibility": {
-        "regression": "Naive Bayes predicts categories, and your target is a continuous number."
+        "regression": "Naive Bayes can't be used here \u2014 you're predicting a number, and this method only sorts things into categories."
       }
     },
     {
@@ -165,7 +165,7 @@
       "implementation": "sklearn",
       "rationale": "Compresses correlated predictors before fitting. Components are chosen without reference to the target, which is its weakness against PLS.",
       "incompatibility": {
-        "classification": "Principal Components Regression predicts continuous numbers, and your target is categories."
+        "classification": "Principal Components Regression can't be used here \u2014 you're sorting things into categories, and this method only predicts numbers."
       }
     },
     {
@@ -182,7 +182,7 @@
       "implementation": "sklearn",
       "rationale": "Like PCR, but builds components that relate to the target.",
       "incompatibility": {
-        "classification": "Partial Least Squares predicts continuous numbers, and your target is categories."
+        "classification": "Partial Least Squares can't be used here \u2014 you're sorting things into categories, and this method only predicts numbers."
       }
     },
     {
@@ -199,7 +199,7 @@
       "implementation": "sklearn",
       "rationale": "The simplest way out of linearity, and the least controlled: high degrees oscillate wildly at the edges of the data.",
       "incompatibility": {
-        "classification": "Polynomial Regression predicts continuous numbers, and your target is categories."
+        "classification": "Polynomial Regression can't be used here \u2014 you're sorting things into categories, and this method only predicts numbers."
       }
     },
     {
@@ -216,7 +216,7 @@
       "implementation": "sklearn",
       "rationale": "Local flexibility without the edge behaviour of high-degree polynomials.",
       "incompatibility": {
-        "classification": "Regression Splines predicts continuous numbers, and your target is categories."
+        "classification": "Regression Splines can't be used here \u2014 you're sorting things into categories, and this method only predicts numbers."
       }
     },
     {
