@@ -25,7 +25,7 @@ from mlsandbox.methods import METHODS
 from mlsandbox.missingness import RATES
 from mlsandbox.openml_source import N_FOLDS, load_splits
 from mlsandbox.openml_source import configure as configure_openml
-from mlsandbox.results import ResultStore, run_key
+from mlsandbox.results import store_for
 
 warnings.filterwarnings("ignore")
 
@@ -106,15 +106,7 @@ def main() -> int:
         datasets = datasets[: args.sample]
 
     rates = tuple(args.rates) if args.rates is not None else tuple(RATES)
-    key = run_key(
-        {
-            "seed": config.run.seed,
-            "n_folds": config.cv.n_folds,
-            "rates": sorted(rates),
-            "methods": sorted(METHODS),
-        }
-    )
-    store = ResultStore(config.paths.datasets.parent / "results", key)
+    store = store_for(config, rates=rates, methods=METHODS)
     completed = store.completed()
 
     total = sum(
@@ -122,7 +114,7 @@ def main() -> int:
     )
     progress = Progress(total=total)
 
-    report(f"{len(datasets)} datasets · missingness {(0.0, *rates)} · run {key}")
+    report(f"{len(datasets)} datasets · missingness {(0.0, *rates)} · run {store.path.stem}")
     report(f"~{total} evaluations expected, {len(completed)} already recorded\n")
 
     started = time.time()
