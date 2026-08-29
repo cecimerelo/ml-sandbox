@@ -1336,3 +1336,45 @@ upload-and-detect path, dropping the EDA layer, which demonstrates nothing the t
 argues. **Both epics in full was chosen deliberately.** The tasks below are sequenced so
 that each stopping point leaves something coherent — if time runs out, what exists still
 works, rather than being half of everything.
+## D-038 — An orange top bar, against the design's own advice
+
+**Date:** 2026-08-29 · **Status:** accepted · **Amends:** D-037 · **Affects:** [#32](https://github.com/cecimerelo/ml-sandbox/issues/32)
+
+**Context.** `DESIGN.md` is emphatic that the product has **no brand colour**: MUI's default
+light theme *is* the design, the top bar is white on a divider hairline, and the entire
+design budget is spent on the charts. The author asked for a coloured bar anyway.
+
+**Decision.** Deep orange 900, `#bf360c`, white text.
+
+**Two constraints made the choice, not taste.**
+
+The obvious orange is the one already in the product — `series-2` `#eb6834`. It fails
+twice. It is **3.20:1**, so white text on it does not clear AA at all. And it is a **chart
+slot**: using it as chrome would make the app's furniture the same colour as *"the first
+alternative the user selected"* in every plot. The palette already keeps chrome blue one
+step darker than `series-1` precisely so chrome and marks are never confusable, and going
+orange must not reintroduce that from the other side.
+
+| Candidate | White text on it | |
+|---|---|---|
+| `#eb6834` `series-2` | 3.20:1 | fails, and collides with a data slot |
+| `#e64a19` deep-orange 700 | 3.92:1 | fails |
+| `#d84315` deep-orange 800 | 4.44:1 | fails, narrowly |
+| **`#bf360c` deep-orange 900** | **5.60:1** | **adopted** |
+
+Only one orange clears AA, and it clears it by being dark enough to read as furniture
+rather than as a mark — which is the same property that keeps it away from `series-2`.
+It is also a stock Material value, so the file keeps its posture of inventing no colours.
+
+**Consequences.** The bar drops its divider hairline: a coloured bar separates itself from
+the page, and the rule the white version needed would be drawing a line already there.
+
+Three tests hold the reasoning rather than the result: white text clears 4.5:1, the bar's
+hex is not any series slot, and it sits at least 2 contrast points away from `series-2`.
+A future adjustment toward a friendlier, lighter orange fails them, which is the point —
+the failure mode here is drifting back toward the colour that looks nicer and cannot be
+read.
+
+**Not revisited:** the rest of the chrome. This is one deviation, not permission for a
+brand system — which is the elaborate thing `DESIGN.md` ruled out and the reason it says
+there is no brand colour in the first place.

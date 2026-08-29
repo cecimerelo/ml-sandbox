@@ -32,3 +32,33 @@ jobs:
 
       - name: Test
         run: uv run pytest -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: app
+
+      # Type errors and failing tests both stop the build. The token tests recompute the
+      # palette's published contrast ratios, so an accessibility claim cannot drift from
+      # the value beside it without CI saying so.
+      - name: Typecheck
+        run: npm run lint
+        working-directory: app
+
+      - name: Test
+        run: npm test
+        working-directory: app
+
+      - name: Build
+        run: npm run build
+        working-directory: app
