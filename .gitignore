@@ -27,3 +27,4 @@ logs/
 node_modules/
 app/dist/
 app/tsconfig.tsbuildinfo
+app/.vite/

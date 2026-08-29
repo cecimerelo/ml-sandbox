@@ -8,5 +8,11 @@ export default defineConfig({
     // configured per environment — one fewer thing to get wrong between dev and deploy.
     proxy: { '/api': 'http://127.0.0.1:8000' },
   },
-  test: { globals: true, environment: 'node' },
+  test: {
+    globals: true,
+    // jsdom rather than node: the accessibility criteria in #32 are about focus order and
+    // ARIA state, and neither can be checked without rendering.
+    environment: 'jsdom',
+    setupFiles: ['src/setupTests.ts'],
+  },
 });
