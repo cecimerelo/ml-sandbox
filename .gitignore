@@ -21,3 +21,6 @@ artifacts/
 
 # Secrets
 .env
+
+# Run logs — regenerated, and they change every second
+logs/
