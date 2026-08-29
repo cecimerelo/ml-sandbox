@@ -1209,3 +1209,56 @@ lasso, naive Bayes and the linear SVM are all readable — the hand-written list
 under-inclusive. That overlap exposed a latent scoring bug: rules built as
 `INTERPRETABLE + REGULARISED` named ridge twice and would have paid it the weight twice,
 with its claim shown twice in the explanation. Rules now deduplicate on construction.
+
+---
+
+## D-036 — Report the strategies on two strata, because pooling hides the answer
+
+**Date:** 2026-08-29 · **Status:** accepted · **Affects:** [#16](https://github.com/cecimerelo/ml-sandbox/issues/16)
+
+**Context.** The first run of the comparison produced a table that read as a null result:
+every strategy within a few points of every other, the trained model barely ahead of
+*"always recommend the same method"*.
+
+One number gave it away. **Random choice hit top-3 on 75% of datasets.** Choosing three
+methods at random out of fifteen should not find the best one three times in four.
+
+The cause is in the results, not the code. Averaged over the collection, **5.2 of the 14.1
+methods that run tie with the best** under the 1-standard-deviation rule (D-031) — 37% of
+the catalogue. On `schizo`, all fourteen tie. With a third of methods winning, three drawn
+at random contain a winner 77% of the time, which is the observed figure to within noise.
+
+So the pooled metric was largely measuring **how often the question has no wrong answer.**
+Datasets where anything works hand an identical hit to all five strategies and dominate the
+average, compressing everything toward the middle.
+
+**How much it hid**, on the 44 datasets available when this was found:
+
+| Strategy | Pooled | Where the choice matters |
+|---|---|---|
+| Learned (Layer 2) | 0.59 | **0.57** |
+| Single best method | 0.59 | **0.33** |
+| Heuristics (ISLR) | 0.41 | 0.24 |
+| Random choice | 0.36 | 0.10 |
+
+The recommender's margin over the baseline that ignores the user's data goes from **2
+points to 24**. The pooled table supports "there is no point looking at the user's
+problem"; the narrowed one refutes it. Both come from the same results.
+
+**Decision.** Report both strata, always. A dataset is *discriminating* when at most
+`TOP_K` methods tie for best.
+
+**The threshold is `TOP_K`, not a tuned number.** The interface shows three alternatives,
+so where more than three methods are best, a user following the tool cannot land wrong —
+there is nothing for a strategy to get right. Tying it to the interface means it cannot be
+quietly adjusted until the results improve.
+
+**Both, not one.** The pooled figure alone understates every margin. The narrowed figure
+alone looks like a subset chosen to flatter. Together they answer two different questions:
+*how often does the recommendation matter?* and *when it matters, is it right?* — and the
+first is itself a finding worth reporting, since roughly half the collection turns out not
+to need a recommender at all.
+
+**Consequences.** Narrowing applies to **scoring only**, never to training. A deployed
+recommender learns from every dataset it has, easy ones included, so training only on the
+hard ones would measure a system nobody would build. Tested.

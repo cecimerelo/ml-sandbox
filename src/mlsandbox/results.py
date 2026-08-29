@@ -109,3 +109,25 @@ class ResultStore:
 
     def load(self) -> pd.DataFrame:
         return pd.read_parquet(self.path) if self.path.exists() else pd.DataFrame()
+
+
+def store_for(config, *, rates, methods) -> ResultStore:
+    """The store a run with these settings reads and writes.
+
+    Here rather than in the script that runs the benchmark, because a second caller — the
+    one that reports the metrics — has to reach the same file, and computing the key in two
+    places means computing it two ways. That already happened: the reporting script left
+    out the rates and the method list, looked for a file that had never existed, and
+    announced there were no results while fourteen thousand of them sat on disk.
+    """
+    return ResultStore(
+        config.paths.datasets.parent / "results",
+        run_key(
+            {
+                "seed": config.run.seed,
+                "n_folds": config.cv.n_folds,
+                "rates": sorted(rates),
+                "methods": sorted(methods),
+            }
+        ),
+    )

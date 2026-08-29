@@ -28,6 +28,27 @@ TOP_K = 3
 the best method appears anywhere a user would look — not only in first place."""
 
 
+def discriminating(summary: DatasetScores) -> bool:
+    """Whether choosing a method on this dataset makes any difference.
+
+    On average five of the fourteen methods that run tie with the best, and on some
+    datasets every single one does — on `schizo`, all fourteen. Those datasets hand a hit
+    to every strategy alike, and pooled over the collection they dominate: with roughly a
+    third of methods tying, three drawn at random contain a winner 77% of the time, which
+    is exactly the top-3 rate random choice achieves. The metric was largely measuring how
+    often the question has no wrong answer.
+
+    Reported as a separate stratum rather than replacing the pooled figure, because both
+    are true and they answer different questions: *"how often does the recommendation
+    matter?"* and *"when it matters, does the recommender get it right?"*
+
+    The threshold is `TOP_K`, not a number picked to make the numbers move. The interface
+    shows three alternatives, so where more than three methods are best, a user following
+    the tool cannot land wrong — there is nothing there for a strategy to get right.
+    """
+    return len(summary.winners) <= TOP_K
+
+
 class StrategyScore(StrictModel):
     """How one strategy did across the collection."""
 
@@ -44,6 +65,8 @@ class StrategyScore(StrictModel):
     still always land close, which is a good recommender by any use a person has for one."""
 
     datasets: int
+    stratum: str = "all"
+    """`all`, or `discriminating` for the datasets where the choice makes a difference."""
 
 
 class ConstraintCost(StrictModel):
@@ -95,18 +118,30 @@ def evaluate(
     seed: int,
     missing_rate: float = 0.0,
     strategy_options: dict | None = None,
+    only_discriminating: bool = False,
 ) -> list[StrategyScore]:
-    """Score every strategy, holding out one dataset at a time."""
+    """Score every strategy, holding out one dataset at a time.
+
+    `only_discriminating` narrows the *scoring* to datasets where the choice matters. It
+    does not narrow what the strategies train on: a recommender deployed in the world
+    learns from every dataset it has, including the easy ones, so removing them from
+    training would measure a system nobody would build.
+    """
     summaries = {s.dataset: s for s in summarise(results, missing_rate=missing_rate)}
     tasks = dict(zip(metafeatures.dataset, metafeatures.task, strict=True))
     all_datasets = set(summaries) & set(tasks)
+    scored_datasets = (
+        {name for name in all_datasets if discriminating(summaries[name])}
+        if only_discriminating
+        else all_datasets
+    )
     options = strategy_options or {}
 
     tallies: dict[str, list[tuple[bool, bool, float]]] = {
         name: [] for name in strategies.STRATEGIES
     }
 
-    for held_out in sorted(all_datasets):
+    for held_out in sorted(scored_datasets):
         summary = summaries[held_out]
         features = _features_for(metafeatures, held_out)
         task = "regression" if features.task == "regression" else "classification"
@@ -133,6 +168,7 @@ def evaluate(
             top_k_hit_rate=sum(top for _, top, _ in rows) / len(rows),
             mean_regret=sum(regret for _, _, regret in rows) / len(rows),
             datasets=len(rows),
+            stratum="discriminating" if only_discriminating else "all",
         )
         for name, rows in tallies.items()
         if rows
