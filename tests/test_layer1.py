@@ -8,7 +8,10 @@ is a result rather than a failing test.
 import pytest
 
 from mlsandbox.layer1 import (
+    ADDITIVE,
+    FINDS_INTERACTIONS,
     RULES,
+    SUSPICION_STRENGTH,
     applicable_rules,
     excluded_by_constraints,
     methods_by_explainability,
@@ -82,7 +85,7 @@ def test_plenty_of_data_makes_flexibility_affordable():
 
 
 def test_suspected_non_linearity_demotes_the_linear_methods():
-    ranked = top(problem(), n=14, suspects_non_linearity=True)
+    ranked = top(problem(), n=14, suspects_non_linearity="yes")
     assert ranked.index("knn") < ranked.index("logistic_regression")
 
 
@@ -208,3 +211,93 @@ def test_a_rule_scores_each_method_once():
     """
     for rule in RULES:
         assert len(rule.methods) == len(set(rule.methods)), rule.name
+
+
+# What the user believes about the shape of their data
+
+
+@pytest.mark.parametrize("question", ["suspects_interactions", "suspects_non_linearity"])
+def test_all_three_answers_behave_differently(question):
+    """The form offers three options, so three things have to happen.
+
+    An option that behaves identically to another asks the user a question that changes
+    nothing — the fault D-035 fixed for explainability, and the reason this task exists.
+    """
+    outcomes = {
+        answer: tuple(
+            (r.method, r.score)
+            for r in recommend(problem(), CLASSIFIERS, **{question: answer})
+        )
+        for answer in ("no", "unsure", "yes")
+    }
+    assert len(set(outcomes.values())) == 3
+
+
+@pytest.mark.parametrize("question", ["suspects_interactions", "suspects_non_linearity"])
+def test_no_fires_nothing(question):
+    assert applicable_rules(problem(), **{question: "no"}) == []
+
+
+@pytest.mark.parametrize("question", ["suspects_interactions", "suspects_non_linearity"])
+def test_unsure_moves_half_as_far_as_yes(question):
+    """A hedge that moves as much as a conviction is not a hedge."""
+    unsure = applicable_rules(problem(), **{question: "unsure"})
+    certain = applicable_rules(problem(), **{question: "yes"})
+    assert [r.name for r in unsure] == [r.name for r in certain]
+    for hedged, sure in zip(unsure, certain, strict=True):
+        assert hedged.weight == pytest.approx(sure.weight * SUSPICION_STRENGTH["unsure"])
+
+
+@pytest.mark.parametrize("question", ["suspects_interactions", "suspects_non_linearity"])
+def test_hedging_does_not_change_what_the_user_is_told(question):
+    """Only how far the claim moves the ranking changes with confidence — not the claim.
+
+    Rewording an explanation because the user was unsure would make the tool's reasoning
+    depend on the user's confidence, which is not something the textbook has an opinion
+    about.
+    """
+    unsure = applicable_rules(problem(), **{question: "unsure"})
+    certain = applicable_rules(problem(), **{question: "yes"})
+    assert [r.claim for r in unsure] == [r.claim for r in certain]
+
+
+def test_suspected_interactions_favour_methods_that_find_them():
+    ranked = top(problem(), n=4, suspects_interactions="yes")
+    assert set(ranked) <= set(FINDS_INTERACTIONS)
+
+
+def test_suspected_interactions_demote_the_additive_methods():
+    ranked = [
+        r.method for r in recommend(problem(), CLASSIFIERS, suspects_interactions="yes")
+    ]
+    for method in ("naive_bayes", "logistic_regression", "lda"):
+        assert ranked.index(method) > ranked.index("random_forest")
+
+
+def test_naive_bayes_counts_as_additive():
+    """Its independence assumption is the interaction assumption, negated.
+
+    Conditional independence says the predictors carry no joint information — which is
+    exactly what a suspected interaction denies.
+    """
+    assert "naive_bayes" in ADDITIVE
+
+
+def test_a_gam_is_additive_by_construction():
+    """The sum of per-feature curves is the whole of its form, not an incidental limit."""
+    assert "gam" in ADDITIVE
+
+
+def test_no_method_both_finds_and_misses_interactions():
+    assert not set(ADDITIVE) & set(FINDS_INTERACTIONS)
+
+
+def test_the_two_beliefs_are_asked_and_answered_separately():
+    """Non-linearity and interactions are different claims about the data.
+
+    A curved relationship in one variable is not a joint effect between two, and a method
+    can handle one without the other — splines bend, and are still additive.
+    """
+    curved = recommend(problem(), CLASSIFIERS, suspects_non_linearity="yes")
+    joint = recommend(problem(), CLASSIFIERS, suspects_interactions="yes")
+    assert [(r.method, r.score) for r in curved] != [(r.method, r.score) for r in joint]

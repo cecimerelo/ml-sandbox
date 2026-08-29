@@ -92,7 +92,8 @@ def heuristics(
     *,
     seed: int,
     explainability: layer1.Explainability = "not important",
-    suspects_non_linearity: bool = False,
+    suspects_non_linearity: layer1.Suspicion = "no",
+    suspects_interactions: layer1.Suspicion = "no",
 ) -> Ranker:
     """What the textbook says. Learns nothing — that is the point.
 
@@ -107,6 +108,7 @@ def heuristics(
             candidates,
             explainability=explainability,
             suspects_non_linearity=suspects_non_linearity,
+            suspects_interactions=suspects_interactions,
         )
         return [r.method for r in recommendations]
 
@@ -141,7 +143,8 @@ def hybrid(
     *,
     seed: int,
     explainability: layer1.Explainability = "not important",
-    suspects_non_linearity: bool = False,
+    suspects_non_linearity: layer1.Suspicion = "no",
+    suspects_interactions: layer1.Suspicion = "no",
 ) -> Ranker:
     """The user's constraints filter; the evidence orders what survives.
 

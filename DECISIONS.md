@@ -1378,3 +1378,56 @@ read.
 **Not revisited:** the rest of the chrome. This is one deviation, not permission for a
 brand system — which is the elaborate thing `DESIGN.md` ruled out and the reason it says
 there is no brand colour in the first place.
+
+---
+
+## D-039 — Three-option beliefs, and what `unsure` does
+
+**Date:** 2026-08-29 · **Status:** accepted · **Extends:** D-035 · **Closes:** [#35](https://github.com/cecimerelo/ml-sandbox/issues/35)
+
+**Context.** FR-1.4 asks the user three questions and offers three answers to each. Two of
+them reached an engine that could not hear the middle one.
+
+**Feature interactions** were not consumed at all: `MetaFeatures` has seven fields and none
+is interactions, so the form would have asked a question that changed nothing.
+**Non-linearity suspicion** was worse, because it looked implemented — `suspects_non_linearity`
+was a `bool`, so `unsure` and `no` were the same value and produced the same recommendation.
+
+This is D-035's fault a second and third time: a three-option control with two-option
+behaviour. It is worth naming as a pattern, since it has now appeared in every place the
+form and the engine meet.
+
+**Decision.** Both become `Suspicion = Literal["no", "unsure", "yes"]`, scaled by
+`SUSPICION_STRENGTH = {no: 0.0, unsure: 0.5, yes: 1.0}`, and two rules answer the
+interaction question.
+
+**Why `unsure` tilts rather than abstains, and tilts toward flexibility.** The cost of
+being wrong is **asymmetric**. Assume additivity when the truth is not additive, and a
+linear model cannot recover — the surface it needs is not in the space of functions it can
+fit. Assume flexibility when the truth is additive, and a flexible method can still
+represent a line: it pays variance for the privilege, but it gets there. Under genuine
+uncertainty the recoverable error is the one to prefer.
+
+**Half rather than full**, because a hedge that moves as far as a conviction is not a
+hedge, and `unsure` would be indistinguishable from `yes` — the same defect in a new
+costume.
+
+**The claim does not change with the user's confidence, only its weight.** Scaled rules are
+copies: same name, same sentence. Rewording an explanation because the user was unsure
+would make the tool's reasoning depend on the user's confidence, which is not something the
+textbook has an opinion about.
+
+**Which methods.** `FINDS_INTERACTIONS` — trees, and the kernels and hidden layers that
+reach the same place by another route. A tree's second split is conditional on its first,
+which is what an interaction *is*.
+
+`ADDITIVE` — linear, logistic, LDA, GAM, naive Bayes. Additive by construction rather than
+by accident: a GAM's entire form is a sum of per-feature curves, and naive Bayes assumes
+conditional independence, **which is the interaction assumption negated**. They can
+represent a joint effect only if a person works out which one matters and writes the
+product term in by hand.
+
+**Consequences.** The two beliefs stay separate questions because they are separate claims:
+a curved relationship in one variable is not a joint effect between two, and splines bend
+while remaining additive. Passing a boolean now raises rather than being silently coerced —
+`True` is not an answer the user could have given.
