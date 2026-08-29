@@ -24,3 +24,6 @@ artifacts/
 
 # Run logs — regenerated, and they change every second
 logs/
+node_modules/
+app/dist/
+app/tsconfig.tsbuildinfo
