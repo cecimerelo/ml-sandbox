@@ -7,7 +7,13 @@ is a result rather than a failing test.
 
 import pytest
 
-from mlsandbox.layer1 import RULES, applicable_rules, recommend
+from mlsandbox.layer1 import (
+    RULES,
+    applicable_rules,
+    excluded_by_constraints,
+    methods_by_explainability,
+    recommend,
+)
 from mlsandbox.metafeatures import MetaFeatures
 
 CLASSIFIERS = [
@@ -134,3 +140,71 @@ def test_only_offered_candidates_are_scored():
 def test_every_rule_names_methods_and_pushes_somewhere(rule):
     assert rule.methods
     assert rule.weight != 0
+
+
+# The user's constraint, and what it rules out
+
+
+def test_no_constraint_rules_nothing_out():
+    assert excluded_by_constraints(CLASSIFIERS, explainability="not important") == []
+
+
+def test_somewhat_rules_out_only_the_opaque():
+    excluded = set(excluded_by_constraints(CLASSIFIERS, explainability="somewhat"))
+    assert "random_forest" in excluded
+    assert "knn" not in excluded, "KNN can exhibit its neighbours; that is an explanation"
+
+
+def test_critical_also_rules_out_what_takes_effort():
+    somewhat = set(excluded_by_constraints(CLASSIFIERS, explainability="somewhat"))
+    critical = set(excluded_by_constraints(CLASSIFIERS, explainability="critical"))
+    assert somewhat < critical
+
+
+def test_the_middle_answer_does_something():
+    """The form offers three levels, so all three have to differ.
+
+    An option that behaves identically to another asks the user a question that changes
+    nothing, which is worse than not asking it.
+    """
+    outcomes = {
+        level: tuple(excluded_by_constraints(CLASSIFIERS, explainability=level))
+        for level in ("not important", "somewhat", "critical")
+    }
+    assert len(set(outcomes.values())) == 3
+
+
+def test_readable_methods_survive_every_constraint():
+    assert not excluded_by_constraints(
+        methods_by_explainability("readable"), explainability="critical"
+    )
+
+
+def test_the_excluded_are_returned_not_hidden():
+    """The cost of the constraint has to be visible, or the user cannot weigh it."""
+    assert excluded_by_constraints(CLASSIFIERS, explainability="critical")
+
+
+def test_layer_one_does_not_keep_its_own_copy_of_who_is_explainable():
+    """One source of truth: the method registry.
+
+    A second copy here would drift, and the failure is silent — the ranking penalises a
+    method for being opaque while the filter lets it through, producing a coherent and
+    wrong recommendation.
+    """
+    from mlsandbox.methods import METHODS
+
+    rule = next(r for r in RULES if r.name == "interpretability-rules-out-black-boxes")
+    assert set(rule.methods) == {
+        m.name for m in METHODS.values() if m.explainability == "opaque"
+    }
+
+
+def test_a_rule_scores_each_method_once():
+    """The groups overlap, so a rule can name the same method twice.
+
+    Ridge is both regularised and readable. Scored per occurrence, it would collect the
+    weight twice and show the same claim twice in its explanation.
+    """
+    for rule in RULES:
+        assert len(rule.methods) == len(set(rule.methods)), rule.name

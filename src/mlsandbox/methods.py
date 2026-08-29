@@ -101,6 +101,36 @@ turn a small dataset into a wide one. Rarer levels collapse into a single `infre
 column rather than being dropped."""
 
 
+Explainability = Literal["readable", "with effort", "opaque"]
+"""How a method's answers can be justified to the person they affect.
+
+`readable` — the model *is* the explanation. A decision tree's prediction is a path of
+yes/no questions; a linear model's is a weighted sum you can read off.
+
+`with effort` — the reason is recoverable but needs work or a translation. A KNN
+prediction is justified by exhibiting its neighbours, a GAM by one curve per variable,
+PCR by unwinding components back into original features.
+
+`opaque` — there is no single reason to give. A forest of three hundred trees predicts by
+vote: each tree arrived down a different path, and showing all of them is not an
+explanation, it is the model again. Feature importances do not close this gap — they say
+which variables mattered across the data, not why *this* case came out this way.
+
+This describes the *model*, not the recommendation. The tool explains why it suggested a
+method — from theory, for every method, `opaque` ones included — and that never stops
+working. What this field records is whether the user, having deployed the thing, can
+justify an individual prediction to the person it affects. "An explainable recommender"
+and "a recommender of explainable models" are separate properties, and only the second is
+in question here.
+
+Post-hoc attribution (SHAP, LIME) is deliberately not counted as making a method
+explainable. It fits a simple surrogate near one point and explains the surrogate; where
+the surrogate fits badly the explanation is plausible and wrong, with nothing to signal
+which happened. For a tool whose purpose is justified recommendations, that is the wrong
+side of the line to sit on (D-035).
+"""
+
+
 class Method(StrictModel):
     """What a method is, declared rather than implied.
 
@@ -124,6 +154,12 @@ class Method(StrictModel):
     handles_nan: bool
     """Whether the estimator accepts missing values without imputation. Verified against
     the installed scikit-learn by the test suite rather than trusted (D-022)."""
+
+    explainability: Explainability
+    """Declared per method rather than derived from `family`, because families straddle the
+    line: `trees` holds both the decision tree and the random forest, `svm` both the linear
+    and the RBF kernel. Stated here rather than in the recommender so there is one place to
+    change it, and no way for the ranking and the filtering to disagree."""
 
     tuning: Tuning
     """`internal-cv` where the method has no meaningful default — Ridge and Lasso have no
@@ -279,6 +315,7 @@ METHODS: dict[str, Method] = {
             tasks=["regression"],
             needs_scaling=False,
             handles_nan=False,
+            explainability="readable",
             tuning="none",
             implementation="sklearn",
             rationale="The high-bias, fully interpretable baseline every other method is "
@@ -291,6 +328,7 @@ METHODS: dict[str, Method] = {
             tasks=["classification"],
             needs_scaling=True,
             handles_nan=False,
+            explainability="readable",
             tuning="none",
             implementation="sklearn",
             rationale="The interpretable classification baseline: coefficients read as "
@@ -303,6 +341,7 @@ METHODS: dict[str, Method] = {
             tasks=BOTH,
             needs_scaling=True,
             handles_nan=False,
+            explainability="readable",
             tuning="internal-cv",
             implementation="sklearn",
             rationale="Shrinks coefficients without eliminating them. Where correlated "
@@ -315,6 +354,7 @@ METHODS: dict[str, Method] = {
             tasks=BOTH,
             needs_scaling=True,
             handles_nan=False,
+            explainability="readable",
             tuning="internal-cv",
             implementation="sklearn",
             rationale="Drives coefficients to exactly zero, so it selects features as "
@@ -327,6 +367,7 @@ METHODS: dict[str, Method] = {
             tasks=BOTH,
             needs_scaling=True,
             handles_nan=False,
+            explainability="with effort",
             tuning="internal-cv",
             implementation="sklearn",
             rationale="Assumes nothing about the shape of the relationship, and pays for "
@@ -339,6 +380,7 @@ METHODS: dict[str, Method] = {
             tasks=["classification"],
             needs_scaling=False,
             handles_nan=False,
+            explainability="readable",
             tuning="none",
             implementation="sklearn",
             rationale="Stable where logistic regression struggles: small samples, "
@@ -351,6 +393,7 @@ METHODS: dict[str, Method] = {
             tasks=["classification"],
             needs_scaling=False,
             handles_nan=False,
+            explainability="with effort",
             tuning="none",
             implementation="sklearn",
             rationale="Allows each class its own covariance, buying a curved boundary at "
@@ -363,6 +406,7 @@ METHODS: dict[str, Method] = {
             tasks=["classification"],
             needs_scaling=False,
             handles_nan=False,
+            explainability="readable",
             tuning="none",
             implementation="sklearn",
             rationale="Assumes features are independent, which is almost never true and "
@@ -375,6 +419,7 @@ METHODS: dict[str, Method] = {
             tasks=["regression"],
             needs_scaling=True,
             handles_nan=False,
+            explainability="with effort",
             tuning="internal-cv",
             implementation="sklearn",
             rationale="Compresses correlated predictors before fitting. Components are "
@@ -387,6 +432,7 @@ METHODS: dict[str, Method] = {
             tasks=["regression"],
             needs_scaling=True,
             handles_nan=False,
+            explainability="with effort",
             tuning="internal-cv",
             implementation="sklearn",
             rationale="Like PCR, but builds components that relate to the target.",
@@ -398,6 +444,7 @@ METHODS: dict[str, Method] = {
             tasks=["regression"],
             needs_scaling=True,
             handles_nan=False,
+            explainability="with effort",
             tuning="internal-cv",
             implementation="sklearn",
             rationale="The simplest way out of linearity, and the least controlled: high "
@@ -410,6 +457,7 @@ METHODS: dict[str, Method] = {
             tasks=["regression"],
             needs_scaling=True,
             handles_nan=False,
+            explainability="with effort",
             tuning="internal-cv",
             implementation="sklearn",
             rationale="Local flexibility without the edge behaviour of high-degree "
@@ -422,6 +470,7 @@ METHODS: dict[str, Method] = {
             tasks=BOTH,
             needs_scaling=False,
             handles_nan=True,
+            explainability="readable",
             tuning="none",
             implementation="sklearn",
             rationale="The most interpretable non-linear method: the model is a diagram "
@@ -434,6 +483,7 @@ METHODS: dict[str, Method] = {
             tasks=BOTH,
             needs_scaling=False,
             handles_nan=True,
+            explainability="opaque",
             tuning="none",
             implementation="sklearn",
             rationale="Averages many trees to cure a single tree's instability, at the "
@@ -446,6 +496,7 @@ METHODS: dict[str, Method] = {
             tasks=BOTH,
             needs_scaling=False,
             handles_nan=True,
+            explainability="opaque",
             tuning="none",
             implementation="sklearn",
             rationale="Bagging plus decorrelated trees. The strong default when "
@@ -458,6 +509,7 @@ METHODS: dict[str, Method] = {
             tasks=BOTH,
             needs_scaling=False,
             handles_nan=True,
+            explainability="opaque",
             tuning="none",
             implementation="sklearn",
             rationale="Fits trees sequentially to what the previous ones got wrong. Often "
@@ -470,6 +522,7 @@ METHODS: dict[str, Method] = {
             tasks=BOTH,
             needs_scaling=True,
             handles_nan=False,
+            explainability="readable",
             tuning="none",
             implementation="sklearn",
             rationale="A linear boundary chosen to maximise the margin. Robust in high "
@@ -482,6 +535,7 @@ METHODS: dict[str, Method] = {
             tasks=BOTH,
             needs_scaling=True,
             handles_nan=False,
+            explainability="opaque",
             tuning="none",
             implementation="sklearn",
             rationale="A curved boundary via the kernel trick. Scales badly: cost grows "
@@ -494,6 +548,7 @@ METHODS: dict[str, Method] = {
             tasks=BOTH,
             needs_scaling=True,
             handles_nan=False,
+            explainability="opaque",
             tuning="none",
             implementation="sklearn",
             rationale="Maximum flexibility, minimum interpretability, and hungry for data "
@@ -506,6 +561,7 @@ METHODS: dict[str, Method] = {
             tasks=BOTH,
             needs_scaling=False,
             handles_nan=False,
+            explainability="with effort",
             tuning="internal-cv",
             implementation="r",
             rationale="Flexible per feature while staying additive, so each variable's "
@@ -519,6 +575,7 @@ METHODS: dict[str, Method] = {
             tasks=BOTH,
             needs_scaling=False,
             handles_nan=False,
+            explainability="opaque",
             tuning="none",
             implementation="r",
             rationale="Bayesian tree ensemble, giving uncertainty intervals rather than "

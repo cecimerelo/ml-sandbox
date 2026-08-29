@@ -38,6 +38,13 @@ FIELD_DOCS = {
         "Whether the method accepts missing values without imputation. Verified against "
         "the installed scikit-learn by the test suite, not merely declared."
     ),
+    "explainability": (
+        "Whether a user can be shown why their particular case came out as it did: "
+        "`readable` (the model is the explanation), `with effort` (recoverable, but needs "
+        "translating) or `opaque` (a vote among hundreds of trees has no single reason). "
+        "This describes the model, not the recommendation — the tool explains why it "
+        "suggested a method for every method, opaque ones included."
+    ),
     "tuning": (
         "`internal-cv` where the method has no meaningful default value and shipping it "
         "untuned would measure an arbitrary choice rather than the method (D-019)."

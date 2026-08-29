@@ -1148,3 +1148,64 @@ here and never in the trained model (D-026).
 avoid that conclusion: if the heuristics do not predict performance, that is worth knowing
 and worth stating, and the per-rule structure makes it possible to say *which* claims failed
 rather than only that the set did.
+
+---
+
+## D-035 — Explainability is a property of the method, on three levels
+
+**Date:** 2026-08-29 · **Status:** accepted · **Affects:** [#16](https://github.com/cecimerelo/ml-sandbox/issues/16), FR-1.4, FR-2.2
+
+**Context.** The hybrid strategy needs to know which methods a user's explainability
+requirement rules out. The obvious move — a list of opaque methods inside Layer 1 — is
+wrong twice over.
+
+It duplicates. The rule `interpretability-rules-out-black-boxes` already names those
+methods, so a second copy means two places to update when a method is added. **When they
+drift, nothing fails:** the ranking penalises a method for being opaque while the filter
+lets it through, and the output is coherent and wrong.
+
+And it is the wrong home. Whether a method can be explained is a property *of the method*,
+like `handles_nan` or `needs_scaling`. The registry is where those live, it is already
+declared rather than implied, and the application already reads it.
+
+**Two explanations, easily conflated.** The tool always explains **why it recommended a
+method** — from theory, for every method, opaque ones included. That never stops working.
+This field is about something else: whether the user, having deployed the model, can
+justify **an individual prediction** to the person it affects. *An explainable recommender*
+and *a recommender of explainable models* are separate properties, and only the second is
+what the constraint restricts.
+
+**Decision.** `Method.explainability`, one of three levels.
+
+| Level | Meaning | Count |
+|---|---|---|
+| `readable` | The model *is* the explanation — a tree's path, a linear model's weights | 8 |
+| `with effort` | Recoverable but needs translating — KNN's neighbours, a GAM's curves | 7 |
+| `opaque` | No single reason exists — three hundred trees voting | 6 |
+
+Declared per method, not derived from `family`: `trees` holds both the decision tree and
+the random forest, `svm` both the linear and the RBF kernel.
+
+**Three levels because the form asks for three.** FR-1.4 offers *not important / somewhat /
+critical*, and with a binary field `somewhat` behaves exactly like `not important` — the
+user answers a question that changes nothing, which is worse than not asking. The scales
+now line up: `somewhat` drops the opaque, `critical` also drops what takes effort.
+
+**Post-hoc attribution is not counted.** SHAP and LIME give per-case attributions for a
+forest and are widely used, so this is a position rather than a fact. They fit a simple
+surrogate near one point and explain *the surrogate*; where it fits badly the explanation
+is plausible and wrong, with nothing to signal which happened. For a tool whose purpose is
+justified recommendations, that is the wrong side of the line.
+
+**Exclusions are returned, never silently dropped.** A recommender that quietly withholds
+the best method leaves the user unable to see what the constraint cost them. The caller
+reports the gap — *"a random forest would score 0.08 higher, but you could not explain its
+decisions"* — and the choice stays with the person who set the constraint. Aggregated over
+the collection, that gap is **the cost of requiring interpretability**, which is a result
+the memoria can report rather than an interface detail.
+
+**Consequences.** `INTERPRETABLE` in Layer 1 grows from four methods to eight, since ridge,
+lasso, naive Bayes and the linear SVM are all readable — the hand-written list was simply
+under-inclusive. That overlap exposed a latent scoring bug: rules built as
+`INTERPRETABLE + REGULARISED` named ridge twice and would have paid it the weight twice,
+with its claim shown twice in the explanation. Rules now deduplicate on construction.
