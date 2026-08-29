@@ -1432,6 +1432,55 @@ a curved relationship in one variable is not a joint effect between two, and spl
 while remaining additive. Passing a boolean now raises rather than being silently coerced —
 `True` is not an answer the user could have given.
 
+## D-040 — A glossary, against the spine's own rule
+
+**Date:** 2026-08-29 · **Status:** accepted · **Amends:** `EXPERIENCE.md § The Explanation Layer` · **Affects:** [#39](https://github.com/cecimerelo/ml-sandbox/issues/39)
+
+**Context.** The experience spine rules this out in as many words:
+
+> **No progressive disclosure of education.** There is no "learn more", no expandable
+> glossary, no tour, no first-run coach marks. A wizard was rejected upstream; a tutorial
+> layered on top of a dashboard is the same rejected idea wearing a coat.
+
+And FR-1.6's explanations are *"always visible. Never behind a tooltip or icon."*
+
+The author asked for one anyway, having watched copy get worse to avoid words it could not
+use. That is a real cost: *"catching quirks that happen to be in the rows you have and will
+not repeat"* is what a sentence becomes when it may not say **noise**.
+
+**Decision.** A glossary, with the two objections answered by construction rather than by
+declining to build it.
+
+**Objection 1 — you have to know that you don't know.** A definition behind an unmarked
+word only reaches a reader who already suspects the word. Someone who reads *noise* as
+loud sounds has no reason to hover. **So glossed terms are visibly marked** — a dotted
+underline, present before any interaction. That is the whole difference between a glossary
+and a trap, and it is why this is not the progressive disclosure the spine rejected: the
+reader is told the explanation exists rather than left to discover it.
+
+**Objection 2 — hover does not exist on touch or keyboard.** `Term` opens on hover, on
+focus **and** on tap, and carries `aria-describedby` regardless of whether the popup
+appears. Putting the definition out of reach of a phone or a keyboard would be a strange
+thing to do to the one part of the interface that exists for people who are stuck.
+
+**The unexpected gain.** The catalogue's jargon rule stops being a blocklist and becomes a
+completeness check: a term of art may appear **if and only if** it is marked for the
+glossary. That is strictly stronger. A blocklist only catches the words someone thought to
+list, and silently permits every term nobody remembered.
+
+**Markers live in the copy, not in components.** `{{noise}}` inside a plain string keeps
+the catalogue readable as writing — a supervisor has to review it as content (D-039's
+requirement), and a file of JSX is not writing.
+
+**Consequences.** Definitions obey the copy's own constraints: citation-free, one or two
+sentences, and not leaning on a second undefined term. All three are tested. FR-1.6 is
+untouched — the form explanations stay always-visible prose; the glossary marks terms
+*inside* them rather than replacing them with a link.
+
+**What was rejected.** Restricting the glossary to unavoidable vocabulary — method and
+metric names, which the product cannot not use — leaving concepts written around as before.
+Narrower and fully compatible with the spine. Overruled by the author in favour of the
+general form.
 ---
 
 ## D-041 — The outcome is declared, never guessed

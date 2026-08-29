@@ -8,6 +8,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { ALL_STRINGS, FORM_QUESTIONS, PANEL, SUSPICION_ANSWERS } from './catalogue';
+import { GLOSSARY } from './glossary';
+import { plainText, termsIn } from './render';
 
 const entries = Object.entries(ALL_STRINGS);
 const explanations = FORM_QUESTIONS.map((q) => [q.id, q.explanation] as const);
@@ -27,22 +29,25 @@ const CITATIONS = [
 ];
 
 /**
- * Terms of art that cannot be unpacked inside two or three sentences, so they are simply
- * not used. This is not a style preference: a reader who already knows these words is not
- * the reader this copy is for.
+ * Terms of art. A string may use one **if and only if** it marks it for the glossary
+ * (D-040) — so this is a completeness check, not a ban.
+ *
+ * That is the stronger rule. A blocklist only catches the words someone thought to list,
+ * and quietly permits every term of art nobody remembered.
  */
 const JARGON = [
-  /\boverfit/i,
-  /\bvariance\b/i,
-  /\bbias\b/i,
-  /\bregularis|regulariz/i,
-  /\bhyperparameter/i,
-  /\bcross-?validat/i,
-  /\bcollinear/i,
-  /\bp-value/i,
-  /\bnon-?linear/i,
-  /\bcategorical\b/i,
-  /\bnoise\b/i,
+  /\boverfit\w*/gi,
+  /\bvariance\b/gi,
+  /\bbias\b/gi,
+  /\bregularis\w*|regulariz\w*/gi,
+  /\bhyperparameter\w*/gi,
+  /\bcross-?validat\w*/gi,
+  /\bcollinear\w*/gi,
+  /\bp-values?\b/gi,
+  /\bnoise\b/gi,
+  /\bensembles?\b/gi,
+  /\bimputation\b/gi,
+  /\binteractions?\b/gi,
 ];
 
 /** Verdicts the rule layer does not license. */
@@ -53,8 +58,16 @@ describe('every string', () => {
     for (const pattern of CITATIONS) expect(text).not.toMatch(pattern);
   });
 
-  it.each(entries)('%s uses no unexplained term of art', (_id, text) => {
-    for (const pattern of JARGON) expect(text).not.toMatch(pattern);
+  it.each(entries)('%s leaves no term of art unglossed', (_id, text) => {
+    // Strip the marked ones, then look for what is left. A term inside {{ }} carries its
+    // definition; the same word bare does not, and the reader has no way to tell that the
+    // word means something they do not know.
+    const unmarked = text.replace(/\{\{[^}]+\}\}/g, '');
+    for (const pattern of JARGON) expect(unmarked).not.toMatch(pattern);
+  });
+
+  it.each(entries)('%s marks only terms the glossary defines', (_id, text) => {
+    for (const term of termsIn(text)) expect(GLOSSARY).toHaveProperty([term]);
   });
 
   it.each(entries)('%s claims no verdict the engine cannot support', (_id, text) => {
@@ -72,13 +85,13 @@ describe('the form explanations', () => {
     // Long enough to define what it uses, short enough to read beneath a control. The
     // spine's specimen is four; below two, a question is being labelled rather than
     // explained.
-    const sentences = text.split(/[.?!]\s+|[.?!]$/).filter(Boolean);
+    const sentences = plainText(text).split(/[.?!]\s+|[.?!]$/).filter(Boolean);
     expect(sentences.length).toBeGreaterThanOrEqual(2);
     expect(sentences.length).toBeLessThanOrEqual(4);
   });
 
   it.each(explanations)('%s explains rather than restating the label', (_id, text) => {
-    expect(text.length).toBeGreaterThan(120);
+    expect(plainText(text).length).toBeGreaterThan(120);
   });
 
   it('covers every question in the no-dataset form', () => {
@@ -104,6 +117,40 @@ describe('the three-option answers', () => {
     // used as one.
     expect(SUSPICION_ANSWERS.map((a) => a.value)).toEqual(['no', 'unsure', 'yes']);
     expect(SUSPICION_ANSWERS[1].label).toBe("I don't know");
+  });
+});
+
+describe('the glossary', () => {
+  it('defines every term without leaning on another undefined one', () => {
+    // A definition that needs a second definition to be read is not a definition.
+    for (const [key, entry] of Object.entries(GLOSSARY)) {
+      const others = Object.keys(GLOSSARY).filter((t) => t !== key && t.length > 6);
+      for (const other of others) {
+        if (entry.definition.toLowerCase().includes(other)) {
+          expect(entry.definition, `${key} leans on ${other}`).toMatch(/never/);
+        }
+      }
+    }
+  });
+
+  it('keeps definitions to one or two sentences', () => {
+    // Longer than that and it is copy, which belongs on the page rather than in a popup a
+    // reader has to hold open.
+    for (const [key, entry] of Object.entries(GLOSSARY)) {
+      const sentences = entry.definition.split(/[.?!]\s+|[.?!]$/).filter(Boolean);
+      expect(sentences.length, key).toBeLessThanOrEqual(2);
+    }
+  });
+
+  it('names no source', () => {
+    for (const entry of Object.values(GLOSSARY)) {
+      for (const pattern of CITATIONS) expect(entry.definition).not.toMatch(pattern);
+    }
+  });
+
+  it('is actually used — an unused glossary is a file nobody maintains', () => {
+    const used = new Set(Object.values(ALL_STRINGS).flatMap(termsIn));
+    expect(used.size).toBeGreaterThan(0);
   });
 });
 

@@ -67,7 +67,7 @@ export const FORM_QUESTIONS: Question[] = [
       'Numbers you can do arithmetic with, like age or price, behave differently from ' +
       'labels like city or blood type. Some methods work with labels directly; others ' +
       'need them converted into numbers first, which can go badly when there are many ' +
-      'distinct labels.',
+      'distinct labels. A column of labels is a {{categorical column}}.',
   },
   {
     id: 'form.missing',
@@ -75,7 +75,8 @@ export const FORM_QUESTIONS: Question[] = [
     explanation:
       'Blank cells — a survey question nobody answered, a sensor that dropped out. Most ' +
       'methods cannot read a blank, so the gaps have to be filled in with a guess before ' +
-      'training. The more there are, the more the filling-in shapes the result.',
+      'training. That filling-in is called {{imputation}}, and the more gaps there are, ' +
+      'the more it shapes the result.',
   },
   {
     id: 'form.class-balance',
@@ -110,8 +111,8 @@ export const FORM_QUESTIONS: Question[] = [
     explanation:
       'Sometimes two things matter together in a way neither does alone — a medication ' +
       'that helps at one age and harms at another. Some methods find these combinations ' +
-      'on their own; others treat every column separately and miss them entirely unless ' +
-      "someone points the combination out. If you don't know, say so and we will hedge.",
+      'on their own; others treat every column separately and miss such an {{interaction}} ' +
+      "entirely unless someone points it out. If you don't know, say so and we will hedge.",
   },
 ];
 
@@ -134,9 +135,9 @@ export const PANEL = {
   'panel.bias-variance.explanation':
     'Methods sit on a scale. At one end they assume a simple shape and stick to it, which ' +
     'means they miss detail but stay steady when the data changes. At the other they ' +
-    'follow the data closely, catching detail but also catching quirks that happen to be ' +
-    'in the rows you have and will not repeat, so they can shift a lot when the data does. Neither end is the right one — it depends on how much data ' +
-    'you have and how complicated the real pattern is.',
+    'follow the data closely, catching detail but also catching {{noise}}, so they can ' +
+    'shift a lot when the data does. Neither end is the right one — it depends on how ' +
+    'much data you have and how complicated the real pattern is.',
 
   'panel.interpretability.heading': 'Whether you can explain its answers',
   'panel.interpretability.explanation':
