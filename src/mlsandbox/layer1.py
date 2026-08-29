@@ -31,6 +31,26 @@ Three values because the form offers three, and they map onto the three levels a
 can have. Anything coarser would make `somewhat` behave identically to `not important`,
 which is worse than not asking: the user answers a question that changes nothing."""
 
+Suspicion = Literal["no", "unsure", "yes"]
+"""What the user believes about their data's shape — a belief, not a measurement, which is
+why it reaches Layer 1 and never Layer 2 (D-026).
+
+Three values because FR-1.4 asks for three. Held as a boolean, `unsure` behaves exactly
+like `no` and the user answers a question that changes nothing — the same fault D-035 fixed
+for explainability."""
+
+SUSPICION_STRENGTH: dict[Suspicion, float] = {"no": 0.0, "unsure": 0.5, "yes": 1.0}
+"""How far an answer moves the rules that depend on it.
+
+`unsure` tilts rather than abstains, and it tilts toward flexibility, because **the cost of
+being wrong is asymmetric**. Assume additivity when the truth is not additive and a linear
+model cannot recover: the surface it needs is not in the space of functions it can fit.
+Assume flexibility when the truth is additive and a flexible method can still represent a
+line — it pays variance for the privilege, but it gets there.
+
+Half rather than full, because a hedge that moves as much as a conviction is not a hedge,
+and `unsure` would then be indistinguishable from `yes`."""
+
 EXCLUDED_BY: dict[Explainability, tuple[str, ...]] = {
     "not important": (),
     "somewhat": ("opaque",),
@@ -114,6 +134,19 @@ INTERPRETABLE = methods_by_explainability("readable")
 REGULARISED = ["ridge", "lasso", "pcr", "pls"]
 TREES = ["decision_tree", "random_forest", "boosting", "bagging"]
 NON_LINEAR = ["splines", "polynomial", "knn", "svm_rbf", *TREES, "mlp"]
+
+FINDS_INTERACTIONS = [*TREES, "mlp", "svm_rbf", "knn"]
+"""Methods that pick up a joint effect without being told to look for one. A tree's second
+split is conditional on its first, which is what an interaction is; kernels and hidden
+layers get there by a different route."""
+
+ADDITIVE = ["linear_regression", "logistic_regression", "lda", "gam", "naive_bayes"]
+"""Methods that model each predictor's contribution separately and sum them.
+
+Additive by construction, not by accident: a GAM's whole form is a sum of per-feature
+curves, and naive Bayes assumes the predictors are conditionally independent — which is
+the assumption an interaction violates by definition. They can represent one only if a
+person works out which one and writes the product term in by hand."""
 
 RULES: list[Rule] = [
     Rule(
@@ -201,20 +234,49 @@ RULES: list[Rule] = [
 ]
 
 
+INTERACTION_RULES = [
+    Rule(
+        name="interactions-favour-methods-that-find-them",
+        claim="When two variables only matter together, methods that split the data "
+        "repeatedly find that combination on their own.",
+        methods=FINDS_INTERACTIONS,
+        weight=1.0,
+    ),
+    Rule(
+        name="interactions-penalise-additive-methods",
+        claim="Some methods add up each variable's effect separately, so a combined effect "
+        "is invisible to them unless someone works out which combination matters and "
+        "writes it in by hand.",
+        methods=ADDITIVE,
+        weight=-1.0,
+    ),
+]
+"""Kept beside the rest by `RULES` below. Named separately only so the two claims that
+answer FR-1.4's interaction question can be found together."""
+
+RULES += INTERACTION_RULES
+
+
 def applicable_rules(
     features: MetaFeatures,
     *,
     explainability: Explainability = "not important",
-    suspects_non_linearity: bool = False,
+    suspects_non_linearity: Suspicion = "no",
+    suspects_interactions: Suspicion = "no",
 ) -> list[Rule]:
-    """Which claims apply to this problem.
+    """Which claims apply to this problem, at the strength the user's answers give them.
 
-    `explainability` and `suspects_non_linearity` come from the user rather than the data
-    (FR-1.4). They are constraints and beliefs, not measurable properties, which is exactly
-    why they belong here and not in the trained model (D-026).
+    The three user inputs come from the person rather than the data (FR-1.4). They are
+    constraints and beliefs, not measurable properties, which is exactly why they belong
+    here and not in the trained model (D-026).
+
+    Rules whose strength is not full are returned as scaled copies — same name, same claim,
+    smaller weight. The explanation a user reads does not change with their confidence;
+    only how far it moves the ranking does.
     """
     by_name = {rule.name: rule for rule in RULES}
     fired: list[str] = []
+    scaled: dict[str, float] = {}
 
     if features.rows == "<500":
         fired += ["small-sample-favours-simple", "small-sample-penalises-flexible"]
@@ -231,15 +293,35 @@ def applicable_rules(
     if features.feature_types in ("categorical", "mixed"):
         fired.append("categorical-features-favour-trees")
 
-    if suspects_non_linearity:
-        fired += ["non-linearity-penalises-linear-methods", "non-linearity-favours-flexible"]
+    for answer, names in (
+        (
+            suspects_non_linearity,
+            ("non-linearity-penalises-linear-methods", "non-linearity-favours-flexible"),
+        ),
+        (
+            suspects_interactions,
+            (
+                "interactions-favour-methods-that-find-them",
+                "interactions-penalise-additive-methods",
+            ),
+        ),
+    ):
+        strength = SUSPICION_STRENGTH[answer]
+        if strength:
+            fired += names
+            scaled.update(dict.fromkeys(names, strength))
 
     if features.class_balance == "one class dominates":
         fired.append("imbalance-penalises-naive-methods")
     if features.task == "multiclass classification":
         fired.append("multiclass-penalises-binary-first-methods")
 
-    return [by_name[name] for name in fired]
+    return [
+        by_name[name].model_copy(update={"weight": by_name[name].weight * scaled[name]})
+        if name in scaled and scaled[name] != 1.0
+        else by_name[name]
+        for name in fired
+    ]
 
 
 def recommend(
@@ -247,7 +329,8 @@ def recommend(
     candidates: list[str],
     *,
     explainability: Explainability = "not important",
-    suspects_non_linearity: bool = False,
+    suspects_non_linearity: Suspicion = "no",
+    suspects_interactions: Suspicion = "no",
 ) -> list[Recommendation]:
     """Score every candidate method by the claims that apply, best first.
 
@@ -259,6 +342,7 @@ def recommend(
         features,
         explainability=explainability,
         suspects_non_linearity=suspects_non_linearity,
+        suspects_interactions=suspects_interactions,
     )
 
     scores = dict.fromkeys(candidates, 0.0)
