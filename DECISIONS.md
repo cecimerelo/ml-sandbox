@@ -1021,6 +1021,15 @@ over the same numbers.
 **Consequences.** The random baseline can be repeated over many seeds and reported as a
 distribution rather than a single draw, since a repetition costs a table lookup.
 
-Two open questions remain for the implementation: whether a random draw may select a
-method that errors on that dataset — counting it as a failure makes random look worse and
-the recommender better by comparison — and how many repetitions to run.
+### Settled the same day
+
+**A random draw skips methods that error on that dataset.** Counting a failure as a zero
+would have made random look worse and the recommender better by comparison — a bias a
+committee would be right to point at. It is also unrealistic: a user who picked QDA and saw
+an error would try something else rather than give up. Random competes only against methods
+that ran, which is the harder and fairer bar.
+
+**A thousand repetitions**, reported as a mean with an interval rather than a single
+figure. One draw is noise, and a repetition costs a table lookup. Reporting *"random
+reaches 0.52 ± 0.04"* rather than *"random reached 0.49"* keeps the comparison from
+resting on an accident of the seed.
