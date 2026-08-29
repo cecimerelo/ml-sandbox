@@ -1262,3 +1262,47 @@ to need a recommender at all.
 **Consequences.** Narrowing applies to **scoring only**, never to training. A deployed
 recommender learns from every dataset it has, easy ones included, so training only on the
 hard ones would measure a system nobody would build. Tested.
+
+---
+
+## D-037 — The application stack, and why most of it was already decided
+
+**Date:** 2026-08-29 · **Status:** accepted · **Unblocks:** [#2](https://github.com/cecimerelo/ml-sandbox/issues/2), [#3](https://github.com/cecimerelo/ml-sandbox/issues/3)
+
+**Context.** Both application epics were labelled blocked on architecture. Most of that
+block was illusory: Layer 1 and Layer 2 are Python, and a recommender whose engine cannot
+be called from the server is not a design option. The frontend was settled earlier — a
+simple interface in MUI, so React.
+
+| Layer | Choice | Why it was not really open |
+|---|---|---|
+| Backend | FastAPI | The engine is Python. Anything else means serving the model over a second hop, or reimplementing Layer 1 in another language and letting the two drift. |
+| Frontend | React + MUI | Already chosen. MUI supplies the form controls, the collapsible sections and the accessible defaults this interface is mostly made of. |
+| Session storage | SQLite | FR-7.3 stores one anonymised row per session — a few hundred, not a few million. A database server is infrastructure to run, back up and explain, for a table that fits in a file. |
+| Charts | Recharts, client-side | The real decision. |
+
+**The charts were the genuine choice.** Rendering them server-side as matplotlib images is
+faster to write in a language already in use, and it was tempting for that reason alone.
+It also removes hover and the *"view as table"* toggle — FR-3 asks for both — so choosing
+it means re-scoping Epic 3 rather than building it.
+
+There is a privacy argument too. **FR-7.2 says uploaded datasets are processed in memory
+and never written to disk.** Server-rendered charts sit awkwardly beside that: the image is
+derived from the user's data, and every rendering pipeline worth its name writes temporary
+files. Sending aggregates the client draws keeps the raw data on the server for exactly the
+length of one request, which is what the privacy notice claims.
+
+**Decision.** FastAPI · React + MUI · SQLite · Recharts drawing client-side from aggregates
+computed server-side.
+
+**Consequences.** The EDA endpoints return summaries — bin counts, correlation matrices,
+quartiles — never rows. That constrains the API in a useful direction: an endpoint that
+cannot return the raw data cannot leak it by accident.
+
+**Scope, recorded because it was raised and decided against.** With roughly ninety hours
+left before submission and the memoria still to write, Epic 2 and Epic 3 in full consume
+the whole budget. The alternative offered was Epic 2 complete with Epic 3 reduced to the
+upload-and-detect path, dropping the EDA layer, which demonstrates nothing the thesis
+argues. **Both epics in full was chosen deliberately.** The tasks below are sequenced so
+that each stopping point leaves something coherent — if time runs out, what exists still
+works, rather than being half of everything.
