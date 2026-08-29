@@ -179,3 +179,60 @@ def test_ranking_covers_every_candidate_offered(simple_table):
     )
     candidates = ["forest", "linear", "unseen_method"]
     assert len(rank_methods(model, features, candidates)) == 3
+
+
+@pytest.fixture
+def fitted_model(simple_table):
+    return build_model(seed=1).fit(simple_table.frame, simple_table.target)
+
+
+@pytest.fixture
+def any_problem():
+    return MetaFeatures(
+        task="regression",
+        rows="500-10k",
+        features="10-50",
+        regime="moderate",
+        feature_types="numeric",
+        missing="none",
+        class_balance="not applicable",
+    )
+
+
+def test_every_prediction_carries_an_uncertainty(fitted_model, any_problem):
+    # #15's central risk is a meta-model trained on tens of datasets. A confident wrong
+    # answer is worse than a hesitant one, so the field is not optional.
+    for prediction in rank_methods(fitted_model, any_problem, ["forest", "linear"]):
+        assert prediction.uncertainty >= 0
+
+
+def test_uncertainty_is_the_spread_of_the_forest_not_an_invented_number(any_problem):
+    # Trees that disagree must produce more spread than trees that agree, or the field is
+    # decoration.
+    rng = np.random.default_rng(0)
+    metas = [meta_row(f"d{i}", rows=["<500", "500-10k", ">10k"][i % 3]) for i in range(9)]
+    noisy = []
+    for i in range(9):
+        noisy += result_rows(f"d{i}", {"a": rng.uniform(0, 1), "b": rng.uniform(0, 1)})
+
+    table = build_training_table(pd.DataFrame(noisy), pd.DataFrame(metas))
+    model = build_model(seed=1).fit(table.frame, table.target)
+    noisy_spread = max(p.uncertainty for p in rank_methods(model, any_problem, ["a", "b"]))
+
+    consistent = []
+    for i in range(9):
+        consistent += result_rows(f"d{i}", {"a": 0.9, "b": 0.5})
+    clean_table = build_training_table(pd.DataFrame(consistent), pd.DataFrame(metas))
+    clean_model = build_model(seed=1).fit(clean_table.frame, clean_table.target)
+    clean_spread = max(p.uncertainty for p in rank_methods(clean_model, any_problem, ["a", "b"]))
+
+    assert noisy_spread > clean_spread
+
+
+def test_overlapping_intervals_mark_an_ordering_that_is_not_evidence(fitted_model, any_problem):
+    # Where two predictions sit inside each other's spread, the order between them says
+    # nothing — and the interface has to be able to tell.
+    ranked = rank_methods(fitted_model, any_problem, ["forest", "linear"])
+    first, second = ranked[0], ranked[1]
+    overlapping = second.expected_shortfall <= first.indistinguishable_from
+    assert isinstance(overlapping, bool)

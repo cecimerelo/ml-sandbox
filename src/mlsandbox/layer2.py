@@ -45,6 +45,21 @@ class Prediction(StrictModel):
     """Predicted distance below the best available method, in the study's metric. Zero
     means "expected to be the best"; larger means more is given up by choosing it."""
 
+    uncertainty: float
+    """Spread of the forest's trees around that prediction.
+
+    Reported because #15's central risk is a meta-model trained on tens of datasets, and a
+    confident wrong answer is worse than a hesitant one. Where two methods' intervals
+    overlap, the ordering between them is not evidence — and the interface should say so
+    rather than present a ranking that looks decisive.
+    """
+
+    @property
+    def indistinguishable_from(self) -> float:
+        """How far another method's prediction can sit and still be within this one's
+        spread."""
+        return self.expected_shortfall + self.uncertainty
+
 
 class TrainingTable(StrictModel):
     """The rows Layer 2 learns from, and the dataset each came from.
@@ -148,11 +163,23 @@ def rank_methods(model: Pipeline, features: MetaFeatures, methods: list[str]) ->
         [{**features.as_row(), METHOD_COLUMN: method} for method in sorted(methods)]
     )
     predicted = model.predict(frame)
-    ranked = sorted(
+
+    # Each tree is one vote; their spread is what the forest does not agree on. A cheap
+    # honest uncertainty, rather than a number invented to fill the field.
+    encoded = model.named_steps["encode"].transform(frame)
+    per_tree = np.stack([tree.predict(encoded) for tree in model.named_steps["model"].estimators_])
+    spread = per_tree.std(axis=0)
+
+    return sorted(
         (
-            Prediction(method=method, expected_shortfall=float(value))
-            for method, value in zip(frame[METHOD_COLUMN], predicted, strict=True)
+            Prediction(
+                method=method,
+                expected_shortfall=float(value),
+                uncertainty=float(deviation),
+            )
+            for method, value, deviation in zip(
+                frame[METHOD_COLUMN], predicted, spread, strict=True
+            )
         ),
         key=lambda p: p.expected_shortfall,
     )
-    return ranked
