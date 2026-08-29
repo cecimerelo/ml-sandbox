@@ -905,3 +905,49 @@ documented limitation rather than an oversight.
 learn, and *"you trained a meta-model on sixty points with twenty variables?"* is a
 question the thesis would have no answer to. Six keeps that question away, and the model
 must be simple and report its uncertainty honestly (#15).
+
+---
+
+## D-029 — AMLBID could not be reproduced; the upper bound is dropped
+
+**Date:** 2026-08-27 · **Status:** accepted · **Affects:** [#14](https://github.com/cecimerelo/ml-sandbox/issues/14), [#16](https://github.com/cecimerelo/ml-sandbox/issues/16)
+
+**Context.** AMLBID (Garouani et al. 2022) was the study's upper-bound comparator — the
+published meta-learning recommender against which a heuristic approach could be placed.
+D-011 time-boxed the attempt to four hours precisely because a 2022 package might not
+still run.
+
+**What was tried.** The package installs and imports cleanly, and its API is intact. It
+then fails on the collection's data, for three distinct reasons:
+
+| Failure | Cause |
+|---|---|
+| `IndexError: single positional indexer is out-of-bounds` | `categ_data.mode().iloc[0]` assumes every dataset has at least one categorical column |
+| `ValueError: autodetected range of [nan, nan]` | Histogram-based meta-feature extraction does not tolerate missing values |
+| `IndexError: list index out of range`, `KeyError: 'GradientBoostingClassifier'` | Gaps in its own bundled knowledge base |
+
+**Not a version problem.** A separate environment with Python 3.10, pandas 1.x, numpy 1.x
+and an older scikit-learn was built to rule that out. The first and third failures persist
+there — they are defects in the package, not incompatibilities with current tooling.
+
+**Measured.** Restricting to the cases AMLBID can even attempt — classification, at least
+one categorical column, no missing values — leaves 8 of the collection's 30 classification
+datasets. **Two of those eight succeed.** Two of thirty overall.
+
+**Decision.** Drop AMLBID. The evaluation compares against the **Random baseline** (#13)
+as a lower bound, with no upper bound.
+
+**Consequences.**
+
+- **The comparison weakens, and the thesis must say so.** Beating random is a low bar, and
+  without an upper bound there is no evidence about how close the heuristics come to a
+  state-of-the-art meta-learner. This is the honest cost.
+- **It is a reportable finding rather than an omission.** "A published AutoML baseline
+  could not be reproduced" is a result, and a specific one: the failures are named, the
+  version hypothesis was tested and excluded, and the success rate is measured.
+- The time-box worked. Ninety minutes spent, a clear answer, and the evaluation chapter
+  can be planned around a known absence rather than a hope.
+
+An alternative upper bound could be substituted later — a well-tuned strong learner, say —
+but it would not be the published comparator the proposal named, and that substitution
+belongs in the thesis rather than in a footnote.
