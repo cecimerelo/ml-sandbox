@@ -298,3 +298,36 @@ def test_high_cardinality_columns_do_not_explode_the_feature_space():
     fitted = build("logistic_regression", "classification", seed=1).fit(frame, target)
     produced = fitted.named_steps["prepare"].transform(frame).shape[1]
     assert produced <= MAX_CATEGORIES + 2
+
+
+def test_a_basis_expansion_drops_degrees_the_data_cannot_carry():
+    # Degree 3 over 34 encoded features gives 7,770 columns: more than the data supports,
+    # and a single long numpy call that the signal-based timeout cannot interrupt. The run
+    # stops rather than recording a timeout, so this has to be prevented, not caught.
+    from mlsandbox.methods import WidthAwareGrid
+
+    grid = WidthAwareGrid(None, "poly__degree", [2, 3], scoring="r2")
+    assert grid._affordable(5) == [2, 3]
+    assert grid._affordable(40) == [2]
+
+
+def test_the_smallest_degree_always_survives():
+    # A grid with nothing in it would fail rather than degrade, and a basis expansion that
+    # expands nothing is not one.
+    from mlsandbox.methods import WidthAwareGrid
+
+    grid = WidthAwareGrid(None, "poly__degree", [2, 3], scoring="r2")
+    assert grid._affordable(5_000) == [2]
+
+
+def test_polynomial_stays_fast_on_a_wide_dataset():
+    # The regression this guards: an unbounded degree stalled a benchmark run indefinitely.
+    import time
+
+    rng = np.random.default_rng(0)
+    features = pd.DataFrame(rng.normal(size=(1_000, 34)))
+    target = rng.normal(size=1_000)
+
+    started = time.perf_counter()
+    build("polynomial", "regression", seed=1).fit(features, target)
+    assert time.perf_counter() - started < 30

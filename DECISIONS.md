@@ -1033,3 +1033,38 @@ that ran, which is the harder and fairer bar.
 figure. One draw is noise, and a repetition costs a table lookup. Reporting *"random
 reaches 0.52 ± 0.04"* rather than *"random reached 0.49"* keeps the comparison from
 resting on an accident of the seed.
+
+---
+
+## D-032 — Basis expansions are bounded by the width of the data
+
+**Date:** 2026-08-29 · **Status:** accepted · **Affects:** [#9](https://github.com/cecimerelo/ml-sandbox/issues/9), [#12](https://github.com/cecimerelo/ml-sandbox/issues/12)
+
+**Context.** The benchmark stalled indefinitely on `brazilian_houses` — CPU at 100%, no
+results written, no timeout fired. The method was polynomial regression.
+
+The dataset has 9 columns, but one-hot encoding expands them to 34. A degree-3 polynomial
+over 34 features produces **7,770 columns**, a 0.7GB matrix rebuilt on every inner fold of
+the tuning search. More columns than the data has information to support, and slow enough
+to look like a hang.
+
+**Why the timeout did not save it.** That fit is a single long numpy call, and
+`signal.alarm` delivers between Python instructions. The budget never fired. This is a real
+limit of the sequential, signal-based design chosen for #10: it interrupts Python, not C.
+
+**Decision.** Choose the degree from the input width at fit time, keeping the expansion
+under **2,000 columns**. Prevention rather than interruption, because interruption
+demonstrably does not work here.
+
+`brazilian_houses` went from hanging indefinitely to fitting in 0.5 seconds, with degree 2
+selected instead of 3.
+
+**Consequences.**
+
+- **A known limitation is now documented**: signal-based timeouts cannot interrupt a long
+  call inside a C extension. Anything capable of one long call has to be bounded by
+  construction. Nothing else in the registry currently is, but a future addition might be.
+- Polynomial results computed under the old unbounded grid were discarded — 450 rows — so
+  the collection is not scored under two different definitions of the same method.
+- The smallest degree always survives the filter: a grid with nothing in it would fail
+  rather than degrade, and a basis expansion that expands nothing is not one.

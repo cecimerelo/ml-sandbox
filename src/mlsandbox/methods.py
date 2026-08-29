@@ -19,7 +19,7 @@ from collections.abc import Callable
 from typing import Literal
 
 import numpy as np
-from sklearn.base import BaseEstimator
+from sklearn.base import BaseEstimator, clone
 from sklearn.compose import ColumnTransformer, make_column_selector
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.decomposition import PCA
@@ -83,6 +83,17 @@ this collection, where a single extreme value drags the mean somewhere no observ
 sits. Categorical columns use the most frequent value, since a median of categories is
 meaningless."""
 
+MAX_EXPANDED_FEATURES = 2_000
+"""Ceiling on the columns a basis expansion may produce.
+
+Degree 3 over 34 encoded features gives 7,770 columns — a 0.7GB matrix rebuilt on every
+inner fold, and more columns than the data has information to support. Worse, that fit is a
+single long numpy call, and a signal-based timeout cannot interrupt one: signals are
+delivered between Python instructions, so the budget never fires and the run simply stops.
+
+The degree is therefore chosen from the input width rather than left to a fixed grid.
+Prevention, because the timeout cannot be relied on to catch it."""
+
 MAX_CATEGORIES = 20
 """One-hot ceiling per categorical column. Beyond this the encoding adds more columns than
 the dataset has information to support, and a high-cardinality identifier would quietly
@@ -138,6 +149,16 @@ class Method(StrictModel):
         if task == "classification":
             return f"{self.label} predicts continuous numbers, and your target is categories."
         return f"{self.label} predicts categories, and your target is a continuous number."
+
+
+def _basis_grid(estimator: BaseEstimator, parameter: str, degrees: list[int]) -> BaseEstimator:
+    """A polynomial or spline search whose degree is bounded by the data's width.
+
+    The grid cannot be fixed in advance: the same degree that is reasonable on eight
+    features is ruinous on forty. `WidthAwareGrid` reads the width at fit time, which is
+    the only point where it is known — the pipeline is built before any data is seen.
+    """
+    return WidthAwareGrid(estimator, parameter, degrees, scoring=SCORING["regression"])
 
 
 def _grid(estimator: BaseEstimator, params: dict, task: Task) -> GridSearchCV:
@@ -208,10 +229,10 @@ ESTIMATORS: dict[str, dict[Task, Callable[[], BaseEstimator]]] = {
         ),
     },
     "polynomial": {
-        "regression": lambda: _grid(
+        "regression": lambda: _basis_grid(
             Pipeline([("poly", PolynomialFeatures()), ("model", LinearRegression())]),
-            {"poly__degree": [2, 3]},
-            "regression",
+            "poly__degree",
+            [2, 3],
         ),
     },
     "splines": {
@@ -605,3 +626,46 @@ def available(task: Task, *, implementation: Implementation | None = "sklearn") 
         if method.supports(task)
         and (implementation is None or method.implementation == implementation)
     ]
+
+
+class WidthAwareGrid(BaseEstimator):
+    """A grid search that drops basis degrees too large for the data in front of it.
+
+    A polynomial of degree `d` over `p` features produces `C(p+d, d)` columns: fine at
+    eight features, ruinous at forty. The pipeline is constructed before any data is seen,
+    so the decision has to be deferred to fit time.
+
+    Prevention rather than interruption. The oversized fit is a single long numpy call, and
+    the signal-based timeout cannot interrupt one — signals arrive between Python
+    instructions, so the budget never fires and the run stops rather than recording a
+    timeout.
+    """
+
+    def __init__(self, estimator, parameter: str, degrees: list[int], scoring: str) -> None:
+        self.estimator = estimator
+        self.parameter = parameter
+        self.degrees = degrees
+        self.scoring = scoring
+
+    def _affordable(self, n_features: int) -> list[int]:
+        from math import comb
+
+        affordable = [d for d in self.degrees if comb(n_features + d, d) <= MAX_EXPANDED_FEATURES]
+        # Always keep the smallest degree: a basis expansion that expands nothing is not a
+        # basis expansion, and returning no grid at all would fail rather than degrade.
+        return affordable or [min(self.degrees)]
+
+    def fit(self, X, y=None):
+        n_features = X.shape[1]
+        self.search_ = GridSearchCV(
+            clone(self.estimator),
+            {self.parameter: self._affordable(n_features)},
+            cv=5,
+            n_jobs=1,
+            scoring=self.scoring,
+        )
+        self.search_.fit(X, y)
+        return self
+
+    def predict(self, X):
+        return self.search_.predict(X)
