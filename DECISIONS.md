@@ -951,3 +951,40 @@ as a lower bound, with no upper bound.
 An alternative upper bound could be substituted later — a well-tuned strong learner, say —
 but it would not be the published comparator the proposal named, and that substitution
 belongs in the thesis rather than in a footnote.
+
+---
+
+## D-030 — Datasets are capped at 20,000 rows for evaluation
+
+**Date:** 2026-08-28 · **Status:** accepted · **Revises:** D-016 · **Affects:** [#12](https://github.com/cecimerelo/ml-sandbox/issues/12)
+
+**Context.** The first full run reached 41 of 60 datasets and then slowed to a crawl. All
+19 remaining are above 10,000 rows, the largest at 96,320.
+
+The reasoning that allowed this was wrong in a specific way. D-018 concluded that the
+tiered timeouts bound the worst case — but **a timeout does not save time, it spends its
+whole budget**. SVM is quadratic in sample size, so on 96,000 rows it does not fail fast:
+it burns the full 300 seconds on every fold of every variant. That is two and a half hours
+for one method on one dataset, and nineteen such datasets turn an evening into days.
+
+**Decision.** Cap every dataset at **20,000 rows** for evaluation, sampled with the run's
+seed.
+
+**Why it costs little.** The cap applies identically to every method on a dataset, so it
+takes nothing from the comparison between them — it only shrinks the problem. The `>10k`
+band and the data-rich regime stay populated, which is what the recommender reasons about.
+
+**Folds are subset, not regenerated.** A row that survives the cap stays in the fold
+OpenML assigned it. Regenerating would have swapped the study's published partitioning for
+its own on exactly the datasets where comparability with the literature matters most.
+
+**Rejected.** *Letting it run*: fidelity to the original sizes, at the price of days per
+run and no ability to correct a mistake — and a study that cannot be re-run is a study
+that cannot be corrected. *Lowering the timeout for large datasets*: more timeouts, and
+each is a method the study then knows nothing about on that dataset. *Excluding expensive
+methods above a size*: would bias precisely the comparison being measured.
+
+**Consequences.** What is lost is fidelity to the exact original size, and the thesis must
+say so: results on the largest datasets describe a 20,000-row sample of them, not the
+whole. The 41 datasets already evaluated at full size are kept — their rows are recorded,
+so the difference is visible rather than assumed.

@@ -18,7 +18,9 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Literal
 
+import numpy as np
 from sklearn.base import BaseEstimator
+from sklearn.compose import ColumnTransformer, make_column_selector
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.decomposition import PCA
 from sklearn.discriminant_analysis import (
@@ -46,7 +48,12 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from sklearn.neural_network import MLPClassifier, MLPRegressor
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import PolynomialFeatures, SplineTransformer, StandardScaler
+from sklearn.preprocessing import (
+    OneHotEncoder,
+    PolynomialFeatures,
+    SplineTransformer,
+    StandardScaler,
+)
 from sklearn.svm import SVC, SVR, LinearSVC, LinearSVR
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 
@@ -71,8 +78,16 @@ methods are tuned (D-019), the bias would fall on them alone.
 """
 
 IMPUTATION_STRATEGY = "median"
-"""Median rather than mean: it survives the skewed features common in this collection,
-where a single extreme value drags the mean somewhere no observation sits."""
+"""Median rather than mean for numeric columns: it survives the skewed features common in
+this collection, where a single extreme value drags the mean somewhere no observation
+sits. Categorical columns use the most frequent value, since a median of categories is
+meaningless."""
+
+MAX_CATEGORIES = 20
+"""One-hot ceiling per categorical column. Beyond this the encoding adds more columns than
+the dataset has information to support, and a high-cardinality identifier would quietly
+turn a small dataset into a wide one. Rarer levels collapse into a single `infrequent`
+column rather than being dropped."""
 
 
 class Method(StrictModel):
@@ -532,13 +547,54 @@ def build(name: str, task: Task, *, seed: int = 0) -> Pipeline:
     if method.implementation != "sklearn":
         raise ValueError(f"{method.label} runs through {method.implementation}, not scikit-learn")
 
-    steps: list[tuple[str, BaseEstimator]] = []
-    if not method.handles_nan:
-        steps.append(("impute", SimpleImputer(strategy=IMPUTATION_STRATEGY)))
-    if method.needs_scaling:
-        steps.append(("scale", StandardScaler()))
+    steps: list[tuple[str, BaseEstimator]] = [("prepare", _preparation(method))]
     steps.append(("model", ESTIMATORS[name][task]()))
     return seed_everything_in(Pipeline(steps), seed)
+
+
+def _preparation(method: Method) -> ColumnTransformer:
+    """Impute, encode and scale, choosing the treatment per column type.
+
+    Categorical columns need encoding before anything else can touch them: a median has no
+    meaning over categories, and no estimator here accepts a string. Seventeen of the
+    sixty datasets carry categorical columns, and without this every method except the
+    tree ensembles fails on all of them — which would not have looked like an error in the
+    results, only like those methods being unsuited to a quarter of the collection.
+
+    Built as a `ColumnTransformer` so the choice is made per column and still fitted per
+    training fold, keeping D-024's guarantee intact.
+    """
+    numeric_steps: list[tuple[str, BaseEstimator]] = []
+    if not method.handles_nan:
+        numeric_steps.append(("impute", SimpleImputer(strategy=IMPUTATION_STRATEGY)))
+    if method.needs_scaling:
+        numeric_steps.append(("scale", StandardScaler()))
+    numeric = Pipeline(numeric_steps) if numeric_steps else "passthrough"
+
+    categorical = Pipeline(
+        [
+            # Most frequent regardless of `handles_nan`: an estimator that tolerates NaN in
+            # a numeric column still cannot read a gap in a string one.
+            ("impute", SimpleImputer(strategy="most_frequent")),
+            (
+                "encode",
+                OneHotEncoder(
+                    handle_unknown="infrequent_if_exist",
+                    max_categories=MAX_CATEGORIES,
+                    sparse_output=False,
+                ),
+            ),
+        ]
+    )
+
+    return ColumnTransformer(
+        [
+            ("numeric", numeric, make_column_selector(dtype_include=np.number)),
+            ("categorical", categorical, make_column_selector(dtype_exclude=np.number)),
+        ],
+        remainder="drop",
+        verbose_feature_names_out=False,
+    )
 
 
 def available(task: Task, *, implementation: Implementation | None = "sklearn") -> list[Method]:
