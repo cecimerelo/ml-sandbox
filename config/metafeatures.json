@@ -8,6 +8,43 @@
     "missing": "none, some or a lot of missing predictor cells.",
     "class_balance": "How far class proportions sit from equal. `not applicable` for regression rather than a default, which would mean nothing."
   },
+  "_bands": {
+    "task": [
+      "regression",
+      "binary classification",
+      "multiclass classification"
+    ],
+    "rows": [
+      "<500",
+      "500-10k",
+      ">10k"
+    ],
+    "features": [
+      "<10",
+      "10-50",
+      ">50"
+    ],
+    "regime": [
+      "high-dimensional",
+      "moderate",
+      "data-rich"
+    ],
+    "feature_types": [
+      "numeric",
+      "categorical",
+      "mixed"
+    ],
+    "missing": [
+      "none",
+      "some",
+      "a lot"
+    ],
+    "class_balance": [
+      "roughly equal",
+      "one class dominates",
+      "not applicable"
+    ]
+  },
   "datasets": [
     {
       "dataset": "527_analcatdata_election2000",

@@ -57,19 +57,11 @@ describe('focus order', () => {
 });
 
 describe('the Benchmark link', () => {
-  it('is marked as the current page on its own surface', () => {
-    renderAt('/benchmark');
-    expect(screen.getByRole('link', { name: 'Benchmark' })).toHaveAttribute(
-      'aria-current',
-      'page',
-    );
-  });
-
-  it('is not marked current from the dashboard', () => {
-    // Announcing it as current elsewhere would tell a screen-reader user they are already
-    // where the link goes.
-    renderAt('/');
-    expect(screen.getByRole('link', { name: 'Benchmark' })).not.toHaveAttribute('aria-current');
+  it.each(['/', '/benchmark'])('is absent from %s while the surface is empty', (path) => {
+    // The spine specifies it, and it returns with Epic 6. A link to a blank page spends
+    // the user's attention and returns nothing, which is worse than not offering it.
+    renderAt(path);
+    expect(screen.queryByRole('link', { name: 'Benchmark' })).toBeNull();
   });
 });
 
@@ -98,15 +90,27 @@ describe('chrome present on both surfaces', () => {
     expect(screen.getByRole('contentinfo')).toBeInTheDocument();
   });
 
-  it.each(['/', '/benchmark'])('the privacy link is reachable from %s', (path) => {
-    // Persistent on both surfaces per the spine. Added late, this is the kind of element
-    // that lands on one surface and not the other.
+  it.each(['/', '/benchmark'])('the privacy link is absent from %s for now', (path) => {
+    // It returns with 2.8, once 3.1 and 2.7 give it something true to describe. A notice
+    // that promises what the code does not do is worse than no notice at all.
     renderAt(path);
-    expect(screen.getByRole('link', { name: /privacy notice/i })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /privacy notice/i })).toBeNull();
   });
 
   it('the product title returns to the dashboard', () => {
     renderAt('/benchmark');
     expect(screen.getByRole('link', { name: 'ML Sandbox' })).toHaveAttribute('href', '/');
+  });
+});
+
+describe('the reading column', () => {
+  it('holds the dashboard to a readable width rather than the full page', () => {
+    // The 1440px content column is sized for the plot grid — panels two to four abreast.
+    // Prose and controls have no such requirement, and a line of text that wide is
+    // scanned rather than read.
+    renderAt('/');
+    const heading = screen.getByRole('heading', { level: 1 });
+    const column = heading.parentElement;
+    expect(column).toHaveStyle({ marginLeft: 'auto', marginRight: 'auto' });
   });
 });

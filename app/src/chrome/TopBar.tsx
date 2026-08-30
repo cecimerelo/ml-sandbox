@@ -1,8 +1,7 @@
 import AppBar from '@mui/material/AppBar';
-import Button from '@mui/material/Button';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
-import { Link as RouterLink, useLocation } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 
 import { chrome, spacing } from '../theme/tokens';
 import { SkipLink } from './SkipLink';
@@ -22,8 +21,6 @@ import { SkipLink } from './SkipLink';
  * drawer: two surfaces do not need navigation, they need a way back.
  */
 export function TopBar() {
-  const onBenchmark = useLocation().pathname === '/benchmark';
-
   return (
     <AppBar
       position="static"
@@ -51,16 +48,11 @@ export function TopBar() {
           ML Sandbox
         </Typography>
 
-        <Button
-          component={RouterLink}
-          to="/benchmark"
-          // On its own surface it is the current page, not somewhere to go. Announcing it
-          // as a link would send a screen-reader user to where they already are.
-          sx={{ color: 'common.white' }}
-          {...(onBenchmark ? { 'aria-current': 'page' as const } : {})}
-        >
-          Benchmark
-        </Button>
+        {/* The `Benchmark` link the spine specifies is not here yet: the surface it
+            points at is empty until Epic 6. A link to a blank page spends the user's
+            attention and returns nothing, which is worse than not offering it. It comes
+            back with the evidence it is meant to show, together with the recommendation
+            panel's `Where does this come from?` link to the same place. */}
       </Toolbar>
     </AppBar>
   );

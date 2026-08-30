@@ -21,6 +21,20 @@ warnings.filterwarnings("ignore")
 MANIFEST = PROJECT_ROOT / "config" / "collection.json"
 EXPORT_PATH = PROJECT_ROOT / "config" / "metafeatures.json"
 
+
+def bands() -> dict[str, list[str]]:
+    """Every value each meta-feature can take, read off the types themselves.
+
+    Exported because the frontend has to declare the same vocabulary and cannot import
+    Python. Derived from the `Literal` annotations rather than written out again, so the
+    export cannot fall behind the model it describes — which is the failure mode that would
+    let the form offer an answer the model never saw, and be answered rather than rejected.
+    """
+    from typing import get_args, get_type_hints
+
+    hints = get_type_hints(MetaFeatures)
+    return {field: list(get_args(hints[field])) for field in MetaFeatures.model_fields}
+
 FIELD_DOCS = {
     "task": "regression, binary or multiclass — three values, as FR-1.3 asks.",
     "rows": "Row band, not an exact count: the form cannot express more (D-027).",
@@ -56,7 +70,10 @@ def main() -> int:
     rows = compute(config)
 
     EXPORT_PATH.write_text(
-        json.dumps({"_fields": FIELD_DOCS, "datasets": rows}, indent=2) + "\n",
+        json.dumps(
+            {"_fields": FIELD_DOCS, "_bands": bands(), "datasets": rows}, indent=2
+        )
+        + "\n",
         encoding="utf-8",
     )
 
