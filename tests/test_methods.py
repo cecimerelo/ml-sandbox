@@ -106,7 +106,9 @@ def test_scaling_actually_changes_a_scaled_method():
 
 
 def test_a_method_refuses_a_task_it_does_not_support():
-    with pytest.raises(ValueError, match="continuous"):
+    # Matched on what the sentence has to convey, not on a particular word: the wording is
+    # copy and will be revised, while "it says you cannot use this here" is the contract.
+    with pytest.raises(ValueError, match="can't be used here"):
         build("lda", "regression")
 
 
