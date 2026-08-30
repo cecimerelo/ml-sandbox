@@ -71,3 +71,69 @@ def test_skipped_columns_are_named_in_the_response():
 
 def test_a_missing_file_is_rejected_by_the_framework():
     assert client.post("/api/dataset").status_code == 422
+
+
+# Detecting a dataset's properties
+
+
+def detect(target: str, name: str = "houses.csv"):
+    from mlsandbox.config import PROJECT_ROOT
+
+    content = (PROJECT_ROOT / "examples" / name).read_bytes()
+    return client.post(
+        "/api/dataset/detect",
+        files={"file": (name, content, "text/csv")},
+        data={"target": target},
+    )
+
+
+def test_a_numeric_target_is_read_as_regression():
+    body = detect("price").json()
+    assert body["task"] == "regression"
+    assert body["class_balance"] == "not applicable"
+
+
+def test_a_label_target_is_read_as_classification():
+    body = detect("city").json()
+    assert body["task"] == "multiclass classification"
+    assert body["n_classes"] == 4
+
+
+def test_the_response_carries_exact_counts_beside_their_bands():
+    """Both, because they answer different questions.
+
+    The counts let a user check the reading against their file; the bands are what the
+    engine consumes. Showing only the bands would ask them to do the banding themselves to
+    verify it.
+    """
+    body = detect("price").json()
+    assert body["n_rows"] == 388
+    assert body["rows"] == "<500"
+
+
+def test_rows_with_no_outcome_are_dropped_and_reported():
+    # houses.csv has twelve blank prices. They cannot be trained on, and a row count that
+    # still included them would describe a dataset that will not be used.
+    body = detect("price").json()
+    assert body["dropped_rows"] == 12
+    assert body["n_rows"] == 388
+
+
+def test_the_regime_is_not_sent():
+    """Derived from the row and feature bands, so the server computes it when the
+    recommendation is asked for. A second copy in the browser is how two paths come to
+    disagree about a derived value (D-028)."""
+    assert "regime" not in detect("price").json()
+
+
+def test_an_unpredictable_target_is_422_naming_the_column():
+    # A target that cannot be predicted is not a server error: the file is fine and the
+    # choice is not, and the user fixes it by picking another column.
+    response = detect("agent_note", "houses-with-notes.csv")
+    assert response.status_code == 422
+
+
+def test_a_target_that_is_not_a_column_says_so():
+    response = detect("nonexistent")
+    assert response.status_code == 422
+    assert "nonexistent" in response.json()["detail"]["message"]
