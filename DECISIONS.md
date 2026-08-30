@@ -1600,3 +1600,53 @@ That is partly a real finding — **the textbook's heuristics are coarser than t
 which is the study's own subject — and partly a presentation problem for the recommendation
 panel, which has to show that several methods are tied rather than implying a ranking it
 does not have. Recorded on #37 rather than papered over here.
+
+---
+
+## D-043 — No answer may be dead
+
+**Date:** 2026-08-30 · **Status:** accepted · **Extends:** D-039, D-042 · **Affects:** [#36](https://github.com/cecimerelo/ml-sandbox/issues/36)
+
+**Context.** The author, having found one question whose middle answer did nothing (D-042),
+asked for the obvious generalisation: make sure every answer has an effect. Auditing all
+eight questions rather than inspecting them found **three more collapses**, none of which
+had been noticed by anyone reading the code.
+
+| Question | Collapsed | Cause |
+|---|---|---|
+| How many columns | `10-50` ≡ `>50` | reached the rules only through `regime`, which maps nine band pairs onto three values — both landed on `moderate` |
+| What kind of columns | `categorical` ≡ `mixed` | fired one identical rule |
+| How much is missing | `some` ≡ `a lot` | fired one identical rule at one weight |
+
+The first is the interesting one. The feature band had no path to the rules except the
+regime, and the regime is deliberately coarse (D-028). A user answering *"more than 50
+columns"* rather than *"10 to 50"* changed nothing at all, which no amount of reading
+`applicable_rules` would reveal — the rule that consumes it is three functions away.
+
+**Decision.** Three additions, each a claim the textbook makes and the rules did not:
+
+- **`missing` is scaled** — `some` at half, `a lot` at full. Past about a tenth of the
+  cells, imputation stops patching the data and starts shaping it, which is the same
+  threshold the meta-feature bands on. A user with a third of their data missing was
+  getting the advice of a user with one blank column.
+- **All-categorical penalises distance-based methods.** `categorical` is not a stronger
+  `mixed`; it is a different problem. With no numeric column left, *"how far apart are
+  these two rows"* has no natural meaning, and the methods built on that question lose
+  their footing — which does not happen at all in a mixed dataset.
+- **Many columns favour shrinking or combining them**, reaching the rules directly rather
+  than only through the regime.
+
+**The invariant, stated precisely.** Every option must be able to change the recommendation
+**somewhere** — not everywhere. Two answers can legitimately lead to the same advice, and
+forcing a difference would mean inventing a distinction ISLR does not make. What is not
+acceptable is an option that cannot matter under **any** combination of the others: that is
+a question asked for nothing, and the user has no way to tell.
+
+Tested by sweeping every combination of all eight questions and requiring, for each pair of
+answers to each question, at least one context where they differ. It currently passes with
+no dead answers anywhere.
+
+**Why this keeps happening.** Four separate instances now (D-035, D-039, D-042, this). The
+common shape: the form is specified from the user's side, the rules are written from the
+textbook's side, and nothing checks that the two meet. The sweep is that check, and it is
+cheap enough to keep.

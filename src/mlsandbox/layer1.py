@@ -250,6 +250,36 @@ RULES: list[Rule] = [
 ]
 
 
+MISSING_STRENGTH: dict[str, float] = {"none": 0.0, "some": 0.5, "a lot": 1.0}
+"""How far the missing-value rule moves.
+
+`some` and `a lot` are not the same situation and must not produce the same advice. Past
+about a tenth of the cells, imputation stops patching the data and starts shaping it — the
+same threshold the meta-feature bands on — so the method that needs no imputation is worth
+more there than where a handful of cells are blank."""
+
+DISTANCE_BASED = ["knn", "svm_rbf"]
+"""Methods whose answer depends on how far apart two rows are."""
+
+DIMENSION_REDUCTION = ["pcr", "pls", "lasso", "ridge"]
+
+RULES += [
+    Rule(
+        name="all-categorical-penalises-distance-methods",
+        claim="When every column is a label, 'how far apart are these two rows' stops "
+        "having an obvious meaning, and methods built on that question lose their footing.",
+        methods=DISTANCE_BASED,
+        weight=-1.0,
+    ),
+    Rule(
+        name="many-features-favour-fewer-of-them",
+        claim="With a large number of columns, methods that shrink or combine them find "
+        "the few that carry the signal instead of giving weight to all of them.",
+        methods=DIMENSION_REDUCTION,
+        weight=1.0,
+    ),
+]
+
 INTERACTION_RULES = [
     Rule(
         name="interactions-favour-methods-that-find-them",
@@ -307,10 +337,24 @@ def applicable_rules(
         fired += names
         scaled.update(dict.fromkeys(names, interpretability))
 
-    if features.missing in ("some", "a lot"):
+    gaps = MISSING_STRENGTH[features.missing]
+    if gaps:
         fired.append("missing-values-favour-trees")
+        scaled["missing-values-favour-trees"] = gaps
+
     if features.feature_types in ("categorical", "mixed"):
         fired.append("categorical-features-favour-trees")
+    # `categorical` is not a stronger `mixed`, it is a different problem: with no numeric
+    # column left, distance between rows has no natural meaning at all. Without this the
+    # two answers produce identical advice, and the question stops being worth asking.
+    if features.feature_types == "categorical":
+        fired.append("all-categorical-penalises-distance-methods")
+
+    # Reaches the rules directly rather than only through the regime. The regime maps nine
+    # band pairs onto three values, so two feature bands can land on the same cell — and
+    # then answering "more than 50 columns" rather than "10 to 50" changes nothing.
+    if features.features == ">50":
+        fired.append("many-features-favour-fewer-of-them")
 
     for answer, names in (
         (

@@ -362,3 +362,93 @@ def test_all_three_explainability_answers_are_reachable():
 
     assert set(EXPLAINABILITY_STRENGTH) == {"not important", "somewhat", "critical"}
     assert len(set(EXPLAINABILITY_STRENGTH.values())) == 3
+
+
+# Every answer has to be able to change something
+
+
+ANSWERS: dict[str, list[str]] = {
+    "rows": ["<500", "500-10k", ">10k"],
+    "features": ["<10", "10-50", ">50"],
+    "feature_types": ["numeric", "categorical", "mixed"],
+    "missing": ["none", "some", "a lot"],
+    "class_balance": ["roughly equal", "one class dominates"],
+    "explainability": ["not important", "somewhat", "critical"],
+    "suspects_non_linearity": ["no", "unsure", "yes"],
+    "suspects_interactions": ["no", "unsure", "yes"],
+}
+"""Every option the no-dataset form offers, as the engine receives it."""
+
+BELIEFS = ("explainability", "suspects_non_linearity", "suspects_interactions")
+
+
+def ranked_for(answers: dict[str, str]) -> tuple:
+    from mlsandbox.metafeatures import band_regime
+
+    features = dict(answers)
+    beliefs = {key: features.pop(key) for key in BELIEFS}
+    features["regime"] = band_regime(features["rows"], features["features"])
+    ranking = recommend(
+        MetaFeatures(task="binary classification", **features), CLASSIFIERS, **beliefs
+    )
+    return tuple((r.method, round(r.score, 2)) for r in ranking)
+
+
+@pytest.mark.parametrize("field", sorted(ANSWERS))
+def test_no_answer_is_dead(field):
+    """Every option must be able to change the recommendation somewhere.
+
+    Not *always* change it — two answers can legitimately lead to the same advice, and
+    forcing a difference would mean inventing a distinction the textbook does not make.
+    What is not acceptable is an option that cannot matter in any circumstance: that is a
+    question asked for nothing, and the user has no way to tell.
+
+    This caught three. `10-50` and `>50` columns reached the rules only through the regime,
+    which maps nine band pairs onto three values, so both landed on `moderate` and the
+    answer did nothing. `categorical` and `mixed` fired one identical rule. `some` and
+    `a lot` missing did too — despite `a lot` being the point where imputation stops
+    patching the data and starts shaping it.
+    """
+    import itertools
+
+    others = [key for key in ANSWERS if key != field]
+    undistinguished = set(itertools.combinations(ANSWERS[field], 2))
+
+    for combination in itertools.product(*(ANSWERS[key] for key in others)):
+        base = dict(zip(others, combination, strict=True))
+        outcomes = {option: ranked_for({**base, field: option}) for option in ANSWERS[field]}
+        undistinguished = {
+            pair for pair in undistinguished if outcomes[pair[0]] == outcomes[pair[1]]
+        }
+        if not undistinguished:
+            return
+
+    pytest.fail(f"{field}: these answers never differ anywhere — {sorted(undistinguished)}")
+
+
+def test_a_lot_of_missing_data_counts_for_more_than_some():
+    """Past about a tenth of the cells, imputation shapes the data rather than patching it.
+
+    The two answers previously fired the same rule at the same weight, so a user with a
+    third of their data missing got the advice of a user with one blank column.
+    """
+    from mlsandbox.layer1 import MISSING_STRENGTH
+
+    assert MISSING_STRENGTH["a lot"] > MISSING_STRENGTH["some"] > MISSING_STRENGTH["none"]
+
+
+def test_all_categorical_is_not_merely_more_mixed():
+    """It is a different problem, not a stronger one.
+
+    With no numeric column left, "how far apart are these two rows" has no natural meaning,
+    so the methods built on that question lose their footing — which does not happen at all
+    in a mixed dataset.
+    """
+    from mlsandbox.layer1 import DISTANCE_BASED
+
+    fired = {r.name for r in applicable_rules(problem(feature_types="categorical"))}
+    assert "all-categorical-penalises-distance-methods" in fired
+    assert "all-categorical-penalises-distance-methods" not in {
+        r.name for r in applicable_rules(problem(feature_types="mixed"))
+    }
+    assert set(DISTANCE_BASED) == {"knn", "svm_rbf"}
