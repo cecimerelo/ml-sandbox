@@ -246,3 +246,29 @@ def test_an_empty_study_reports_zero_rather_than_dividing():
     from mlsandbox.session import summarise
 
     assert summarise([]).sessions == 0
+
+
+def test_the_store_has_a_configured_home(tmp_path):
+    """Not a path each caller invents.
+
+    A second caller computing it its own way is how the benchmark came to announce there
+    were no results while fourteen thousand rows sat on disk.
+    """
+    from mlsandbox.config import load_config
+    from mlsandbox.session import store_for
+
+    assert store_for(load_config()).path == load_config().paths.sessions
+
+
+def test_session_records_live_outside_the_study_artifacts():
+    """Different kind of data, different rules.
+
+    The datasets and results are study artifacts — reproducible, and safe to hand to
+    anyone checking the work. This is a record of what people did, and it is neither. It
+    must not sit where something sweeping the study's outputs would pick it up.
+    """
+    from mlsandbox.config import load_config
+
+    paths = load_config().paths
+    assert paths.sessions.parent != paths.datasets
+    assert not paths.sessions.is_relative_to(paths.datasets)

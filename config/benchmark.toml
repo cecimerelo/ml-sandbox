@@ -16,3 +16,9 @@ n_folds = 5
 # Relative to the project root. Gitignored — this is data, not source — but it is not
 # disposable: it is the snapshot the study's results are computed on. D-010 publishes it.
 datasets = "data/datasets"
+
+# Anonymised session records (FR-7.3). Gitignored like the rest of `data/`, but for a
+# different reason: not because it is large, because it is not ours to publish. The
+# datasets and results are study artifacts anyone checking the work may have; this is a
+# record of what people did.
+sessions = "data/sessions.db"

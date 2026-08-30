@@ -241,3 +241,13 @@ def summarise(records: list[SessionRecord]) -> Acceptance:
         answered=sum(r.would_use is not None for r in records),
         diversity=len(chosen),
     )
+
+
+def store_for(config) -> SessionStore:
+    """The store this configuration writes to.
+
+    Here rather than in whichever module first needs one, because a second caller computing
+    the path its own way is how the benchmark ended up announcing there were no results
+    while fourteen thousand sat on disk.
+    """
+    return SessionStore(config.paths.sessions)

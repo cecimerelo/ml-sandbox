@@ -41,13 +41,29 @@ class PathsConfig(StrictModel):
     on, and re-fetching them depends on an external service still serving the same bytes.
     """
 
+    sessions: Path = Path("data/sessions.db")
+    """Where anonymised session records live (FR-7.3).
+
+    **A different kind of thing from everything else under `data/`.** The datasets and the
+    results are study artifacts: reproducible, publishable, and safe to hand to anyone
+    checking the work. This is a record of what people did, and it is neither. It is
+    gitignored like the rest, but for a different reason — not because it is large, because
+    it is not ours to publish.
+
+    Kept out of `datasets.parent` on purpose, so nothing that sweeps the study's outputs
+    picks it up by accident.
+    """
+
     @model_validator(mode="after")
     def resolve_against_project_root(self) -> Self:
         # Paths in the TOML are relative so the config stays portable; everything
         # downstream wants them absolute.
-        if not self.datasets.is_absolute():
-            return self.model_copy(update={"datasets": PROJECT_ROOT / self.datasets})
-        return self
+        updates = {
+            field: PROJECT_ROOT / value
+            for field, value in ((f, getattr(self, f)) for f in ("datasets", "sessions"))
+            if not value.is_absolute()
+        }
+        return self.model_copy(update=updates) if updates else self
 
 
 class Config(StrictModel):
