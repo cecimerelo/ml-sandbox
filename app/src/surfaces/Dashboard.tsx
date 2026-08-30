@@ -5,7 +5,6 @@ import { useState } from 'react';
 
 import type { RecommendationRequest } from '../api/types';
 import { ProblemForm } from '../form/ProblemForm';
-import { Dropzone } from '../upload/Dropzone';
 import { spacing } from '../theme/tokens';
 
 /**
@@ -36,11 +35,13 @@ export function Dashboard() {
         behind it. You do not need to upload anything.
       </Typography>
 
-      {/* Above the form, because it is what decides the form's shape. Accepting a file
-          does not change that shape yet, so for now the dropzone reports what it read and
-          the questions stay as they are. It is the only thing that reports it: a second
-          alert repeating the row count adds noise and says nothing new. */}
-      <Dropzone onAccepted={() => undefined} />
+      {/* The upload control is built and tested and is not shown, because accepting a
+          file does not yet change anything a user would see: the questions still have to
+          be answered by hand until detection lands.
+
+          A control that takes someone's data and gives nothing back is worse than one
+          that is missing — it implies the file is being used. It belongs above the form
+          when it arrives, since it is what decides the form's shape. */}
 
       <ProblemForm onSubmit={setSubmitted} />
 

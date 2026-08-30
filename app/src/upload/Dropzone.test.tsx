@@ -217,3 +217,48 @@ describe('a failure after a success', () => {
     expect(alerts[0]).toHaveTextContent(/7 rows/i);
   });
 });
+
+describe('the zone after a file is accepted', () => {
+  it('shows the file name, not the invitation to drop one', async () => {
+    // Left unchanged, a control that has just taken someone's file still reads as empty,
+    // and the only confirmation is a sentence below it — easy to miss, and easy to
+    // mistake for being about a previous attempt.
+    respond(200, { columns: ['a', 'b'], rows: 12, skipped: [] });
+    const { user } = setup();
+    await user.upload(screen.getByLabelText(/upload a csv/i), csv('houses.csv'));
+
+    expect(await screen.findByText('houses.csv')).toBeInTheDocument();
+    expect(screen.queryByText(/drop a csv here/i)).toBeNull();
+  });
+
+  it('says "loaded" as well as showing a tick', async () => {
+    // The word carries the same meaning as the icon, so a reader who cannot see colour or
+    // the glyph is not left guessing.
+    respond(200, { columns: ['a'], rows: 3, skipped: [] });
+    const { user } = setup();
+    await user.upload(screen.getByLabelText(/upload a csv/i), csv('houses.csv'));
+    expect(await screen.findByText(/loaded/i)).toBeInTheDocument();
+  });
+
+  it('offers a different file rather than the same invitation', async () => {
+    respond(200, { columns: ['a'], rows: 3, skipped: [] });
+    const { user } = setup();
+    await user.upload(screen.getByLabelText(/upload a csv/i), csv('houses.csv'));
+    expect(await screen.findByRole('button', { name: /choose a different file/i })).toBeInTheDocument();
+  });
+
+  it('drops the name as soon as another file is tried', async () => {
+    // Leaving the previous name up while a new one is read says the wrong file was taken.
+    respond(200, { columns: ['a'], rows: 3, skipped: [] });
+    const { user } = setup();
+    await user.upload(screen.getByLabelText(/upload a csv/i), csv('first.csv'));
+    await screen.findByText('first.csv');
+
+    respond(422, { detail: { reason: 'no-rows', message: 'no data' } });
+    await user.upload(screen.getByLabelText(/upload a csv/i), csv('second.csv'));
+
+    await screen.findByRole('alert');
+    expect(screen.queryByText('first.csv')).toBeNull();
+    expect(screen.getByText(/drop a csv here/i)).toBeInTheDocument();
+  });
+});

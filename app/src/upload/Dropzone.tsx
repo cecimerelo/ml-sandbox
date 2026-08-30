@@ -1,3 +1,5 @@
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -44,11 +46,17 @@ export function Dropzone({
 }) {
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<DatasetSummary | null>(null);
+  const [name, setName] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const input = useRef<HTMLInputElement>(null);
+  const accepted = summary !== null && error === null;
 
   async function handle(file: File) {
     setError(null);
+    // Dropped as soon as another file is tried. Leaving the previous name on screen while
+    // a new one is being read says the wrong file was accepted.
+    setName(null);
+    setSummary(null);
 
     if (file.size > MAX_BYTES) {
       setError(tooLargeMessage(file.size));
@@ -80,6 +88,7 @@ export function Dropzone({
         return;
       }
       setSummary(payload as DatasetSummary);
+      setName(file.name);
       onAccepted(file, payload as DatasetSummary);
     } catch {
       // fetch only rejects when the request never completed.
@@ -94,7 +103,8 @@ export function Dropzone({
       <Box
         sx={{
           border: '1px dashed',
-          borderColor: 'divider',
+          // The border answers too, so the state is not carried by the icon alone.
+          borderColor: accepted ? 'success.main' : 'divider',
           borderRadius: 1,
           p: 3,
           textAlign: 'center',
@@ -106,10 +116,36 @@ export function Dropzone({
           if (file) void handle(file);
         }}
       >
-        <Typography gutterBottom>Have a dataset? Drop a CSV here.</Typography>
-        <Button variant="outlined" onClick={() => input.current?.click()} disabled={busy}>
-          {busy ? 'Reading…' : 'Choose a file'}
-        </Button>
+        {/* The zone itself changes, not only the message beneath it. Left unchanged, a
+            control that has just taken someone's file still reads as empty, and the only
+            confirmation is a sentence somewhere below — which is easy to miss and easy to
+            mistake for being about a previous attempt. */}
+        {accepted ? (
+          <>
+            <CheckCircleOutlineIcon color="success" fontSize="large" />
+            <Typography gutterBottom sx={{ mt: 1 }}>
+              {/* The icon carries the same meaning as the word, so a reader who cannot see
+                  colour or the glyph still gets it. */}
+              <Box component="span" sx={{ fontWeight: 700 }}>
+                {name}
+              </Box>{' '}
+              loaded.
+            </Typography>
+            <Button variant="outlined" onClick={() => input.current?.click()} disabled={busy}>
+              {busy ? 'Reading…' : 'Choose a different file'}
+            </Button>
+          </>
+        ) : (
+          <>
+            <UploadFileIcon color="action" fontSize="large" />
+            <Typography gutterBottom sx={{ mt: 1 }}>
+              Have a dataset? Drop a CSV here.
+            </Typography>
+            <Button variant="outlined" onClick={() => input.current?.click()} disabled={busy}>
+              {busy ? 'Reading…' : 'Choose a file'}
+            </Button>
+          </>
+        )}
         <input
           ref={input}
           type="file"
@@ -123,9 +159,11 @@ export function Dropzone({
             event.target.value = '';
           }}
         />
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-          Or answer the questions below without one.
-        </Typography>
+        {!accepted && (
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            Or answer the questions below without one.
+          </Typography>
+        )}
       </Box>
 
       {error && (
