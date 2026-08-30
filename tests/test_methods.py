@@ -380,8 +380,17 @@ def test_the_cost_grows_with_the_square_of_the_width():
 
     # Doubling the columns quadruples the work: least squares over p columns is O(n·p²).
     # Stated as a test so the budget cannot be re-derived as if it were linear.
-    rows, columns = 20_000, 2_000
-    assert rows * columns**2 > MAX_FIT_OPERATIONS
+    assert 100_000 * 2_000**2 > MAX_FIT_OPERATIONS
+
+
+def test_the_budget_does_not_refuse_fits_that_were_fast():
+    """Calibration, not a guess.
+
+    The first budget was ten times too tight and rejected `pumadyn32nh`, whose polynomial
+    fits had been taking 0.8 seconds. A guard that refuses work it could have done in under
+    a second is not protecting anything — it is deleting results.
+    """
+    assert grid()._affordable(32, 8_192) == [2]
 
 
 def test_nothing_affordable_returns_nothing():

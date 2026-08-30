@@ -98,23 +98,27 @@ Prevention, because the timeout cannot be relied on to catch it.
 **Necessary and not sufficient**, which took a stalled run to notice — see
 `MAX_FIT_OPERATIONS`."""
 
-MAX_FIT_OPERATIONS = 2_000_000_000
-"""Ceiling on the arithmetic one basis-expanded fit may cost.
+MAX_FIT_OPERATIONS = 100_000_000_000
+"""Ceiling on the arithmetic one basis-expanded fit may cost — `n · p²`, since least
+squares over `p` columns is quadratic in the width and linear in the rows.
 
-A width ceiling alone does not bound the work, and this is the lesson of a run that spent
-sixty-nine minutes inside a single method with a five-minute timeout that could not fire.
-**Least squares over `p` columns costs about `n · p²`, not `n · p`.** At the width ceiling
-and the row cap that is 20,000 × 2,000² = eighty billion operations per fit, and the inner
-cross-validation does five of them per outer fold.
+**A backstop, not the main guard.** The run that stalled for sixty-nine minutes was not
+let through by the width ceiling: at 115 encoded columns, degree 2 wants 6,786 columns and
+the ceiling refused it correctly. What let it through was the fallback that returned the
+smallest degree anyway when nothing fit. The ceiling was right; the escape hatch under it
+was not.
 
-Two ceilings were set independently and their product was never looked at. The width
-ceiling was right about what explodes; it was silent about what that costs to fit.
+This exists because the width ceiling is silent about rows. Two thousand columns is
+affordable on eight thousand rows and much less so on a hundred thousand, and nothing else
+in the pipeline notices the difference.
 
-Two billion is calibrated against the fits that did complete: it leaves degree 3 available
-on the narrow datasets where it is affordable, and pulls the wide ones down a degree rather
-than leaving them unbounded. It is a budget, not a law of the problem — a faster solver
-would justify a different number, and the number is here rather than in the code so that
-change is one line."""
+Calibrated against two fits that were actually measured — 2.6 billion operations in 0.8
+seconds, 921 billion in 501 — which agree on roughly 4×10⁻¹⁰ seconds per operation. A
+hundred billion is about forty seconds of work, comfortably inside the tightest timeout
+while leaving every fit that used to complete quickly still completing.
+
+A budget, not a property of the problem. A faster solver justifies a different number, and
+it is named here so that is one line."""
 
 MAX_CATEGORIES = 20
 """One-hot ceiling per categorical column. Beyond this the encoding adds more columns than
