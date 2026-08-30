@@ -309,17 +309,25 @@ def test_a_basis_expansion_drops_degrees_the_data_cannot_carry():
     from mlsandbox.methods import WidthAwareGrid
 
     grid = WidthAwareGrid(None, "poly__degree", [2, 3], scoring="r2")
-    assert grid._affordable(5) == [2, 3]
-    assert grid._affordable(40) == [2]
+    assert grid._affordable(5, 1_000) == [2, 3]
+    assert grid._affordable(40, 1_000) == [2]
 
 
-def test_the_smallest_degree_always_survives():
-    # A grid with nothing in it would fail rather than degrade, and a basis expansion that
-    # expands nothing is not one.
+def test_the_smallest_degree_does_not_always_survive():
+    """This test used to assert the opposite, and that is how the defect stayed.
+
+    "A grid with nothing in it would fail rather than degrade" sounds like a principle. It
+    was really a fallback that returned the smallest degree whatever it cost — and for a
+    polynomial the smallest degree is 2, so it handed back the very thing the budget had
+    just refused, at precisely the moment the budget mattered.
+
+    A run spent sixty-nine minutes inside one fit, under a five-minute timeout that could
+    not interrupt it, before anyone looked here.
+    """
     from mlsandbox.methods import WidthAwareGrid
 
     grid = WidthAwareGrid(None, "poly__degree", [2, 3], scoring="r2")
-    assert grid._affordable(5_000) == [2]
+    assert grid._affordable(5_000, 20_000) == []
 
 
 def test_polynomial_stays_fast_on_a_wide_dataset():
@@ -333,3 +341,87 @@ def test_polynomial_stays_fast_on_a_wide_dataset():
     started = time.perf_counter()
     build("polynomial", "regression", seed=1).fit(features, target)
     assert time.perf_counter() - started < 30
+
+
+# What a basis expansion is allowed to cost
+
+
+def grid():
+    from mlsandbox.methods import WidthAwareGrid
+
+    # The degrees polynomial actually offers. Degree 1 is not among them, and that is the
+    # point: a degree-1 polynomial is linear regression, which is already in the
+    # collection under its own name.
+    return WidthAwareGrid(None, "poly__degree", [2, 3], "r2")
+
+
+def test_a_narrow_dataset_still_gets_a_real_curve():
+    """The budget must not flatten every polynomial.
+
+    Six columns is where a cubic belongs, and a guard that removed it there would stop the
+    method existing rather than stop it being ruinous.
+    """
+    assert grid()._affordable(6, 20_000) == [2, 3]
+
+
+def test_width_alone_does_not_decide_it():
+    """The bug this fixes.
+
+    The same width is affordable on a small dataset and not on a large one, because the
+    cost is the rows multiplied by the square of the width. A ceiling on width alone was
+    silent about that, and a run spent sixty-nine minutes inside one method proving it.
+    """
+    wide = 43
+    assert grid()._affordable(wide, 2_000) != grid()._affordable(wide, 20_000)
+
+
+def test_the_cost_grows_with_the_square_of_the_width():
+    from mlsandbox.methods import MAX_FIT_OPERATIONS
+
+    # Doubling the columns quadruples the work: least squares over p columns is O(n·p²).
+    # Stated as a test so the budget cannot be re-derived as if it were linear.
+    rows, columns = 20_000, 2_000
+    assert rows * columns**2 > MAX_FIT_OPERATIONS
+
+
+def test_nothing_affordable_returns_nothing():
+    """Empty is a real answer, and the previous fallback was the bug.
+
+    Returning the smallest degree when nothing fit read as graceful degradation and was
+    not: for a polynomial the smallest degree is 2, so the fallback handed back the very
+    thing the budget had just refused. It bypassed the guard at precisely the moment the
+    guard mattered.
+    """
+    assert grid()._affordable(500, 100_000) == []
+
+
+def test_the_widest_data_refuses_rather_than_pretending():
+    """There is nothing to degrade to.
+
+    A degree-1 polynomial is linear regression, already in the collection under its own
+    name. Offering it here would score one method twice and call the second one a curve.
+    """
+    assert grid()._affordable(115, 20_000) == []
+
+
+def test_refusing_says_what_it_would_have_cost():
+    """A method absent for a reason, not a method that mysteriously failed."""
+    import numpy as np
+    import pytest
+
+    from mlsandbox.methods import WidthAwareGrid
+
+    wide = WidthAwareGrid(None, "poly__degree", [2, 3], "r2")
+    with pytest.raises(ValueError, match="too expensive"):
+        wide.fit(np.zeros((20_000, 115)), np.zeros(20_000))
+
+
+def test_the_chosen_degree_is_readable():
+    """Because a degree-1 polynomial is not a polynomial result.
+
+    Without this, "the polynomial did no better than the linear model" gets written about
+    a row where the two were the same model.
+    """
+    from mlsandbox.methods import WidthAwareGrid
+
+    assert hasattr(WidthAwareGrid, "chosen_degree")

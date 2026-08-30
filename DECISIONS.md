@@ -1650,3 +1650,55 @@ no dead answers anywhere.
 common shape: the form is specified from the user's side, the rules are written from the
 textbook's side, and nothing checks that the two meet. The sweep is that check, and it is
 cheap enough to keep.
+
+---
+
+## D-045 — A width ceiling is not a cost ceiling
+
+**Date:** 2026-08-30 · **Status:** accepted · **Amends:** D-032 · **Affects:** [#12](https://github.com/cecimerelo/ml-sandbox/issues/12)
+
+**Context.** A run spent **sixty-nine minutes inside a single method**, under a five-minute
+timeout that could not fire. D-032 exists to prevent exactly this, and it did not.
+
+**Two mistakes, and the second is the one worth remembering.**
+
+**The budget measured the wrong thing.** D-032 capped the *columns* a basis expansion may
+produce, because columns were what exploded. But solving least squares over `p` columns
+costs about **`n · p²`**, not `n · p`. At the 2,000-column ceiling and the 20,000-row cap
+(D-030) that is eighty billion operations per fit, and the inner cross-validation does five
+of them per outer fold. Two ceilings were set independently and **their product was never
+looked at**.
+
+**The fallback bypassed the guard.** The rule ended `... or [min(self.degrees)]`, on the
+reasoning that a grid with nothing in it fails rather than degrades. That reads as
+graceful. It is not: **polynomial's degrees are `[2, 3]`**, so the fallback returned degree
+2 — the very thing the budget had just refused — at precisely the moment the budget
+mattered. The guard was strongest where it was cheap and absent where it was needed.
+
+A test asserted this was correct, named `test_the_smallest_degree_always_survives`. **A
+test can hold a defect in place**, and a principle stated in a test name is not a principle.
+
+**Decision.** The degree is chosen by `n · p²` against `MAX_FIT_OPERATIONS`, and **an empty
+grid is a real answer**: the method refuses, with a message saying what it would have cost.
+
+**There is nothing to degrade to.** A degree-1 polynomial *is* linear regression, which is
+already in the collection under its own name. Offering it would score one method twice and
+call the second one a curve.
+
+**A refusal is a result.** The study's convention is that a method which cannot run is
+absent with a reason, never scored (D-031). *"This basis is not computable on data of this
+shape"* is worth reporting — it is a real limit of the method on real data, not a gap in
+the table.
+
+| | before | after |
+|---|---|---|
+| `fps_benchmark`, 20,000 × 115 | 501s for one fit, ~7h for the dataset | refuses in 0.2s |
+| six columns, 20,000 rows | degrees 2 and 3 | unchanged — degrees 2 and 3 |
+
+**Consequences.** All 600 existing `polynomial` rows across 25 datasets were deleted and
+recomputed, because the ones already recorded were chosen under the old rule and a table
+where one method means two different things is worse than one with holes in it. Previous
+results kept as `results-*.parquet.before-poly-budget`.
+
+`MAX_FIT_OPERATIONS` is a budget, not a property of the problem. A faster solver would
+justify a different number; it is a named constant so that change is one line.

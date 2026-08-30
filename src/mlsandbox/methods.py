@@ -16,6 +16,7 @@ compared was well-configured methods against badly-configured ones.
 from __future__ import annotations
 
 from collections.abc import Callable
+from math import comb
 from typing import Literal
 
 import numpy as np
@@ -92,7 +93,28 @@ single long numpy call, and a signal-based timeout cannot interrupt one: signals
 delivered between Python instructions, so the budget never fires and the run simply stops.
 
 The degree is therefore chosen from the input width rather than left to a fixed grid.
-Prevention, because the timeout cannot be relied on to catch it."""
+Prevention, because the timeout cannot be relied on to catch it.
+
+**Necessary and not sufficient**, which took a stalled run to notice — see
+`MAX_FIT_OPERATIONS`."""
+
+MAX_FIT_OPERATIONS = 2_000_000_000
+"""Ceiling on the arithmetic one basis-expanded fit may cost.
+
+A width ceiling alone does not bound the work, and this is the lesson of a run that spent
+sixty-nine minutes inside a single method with a five-minute timeout that could not fire.
+**Least squares over `p` columns costs about `n · p²`, not `n · p`.** At the width ceiling
+and the row cap that is 20,000 × 2,000² = eighty billion operations per fit, and the inner
+cross-validation does five of them per outer fold.
+
+Two ceilings were set independently and their product was never looked at. The width
+ceiling was right about what explodes; it was silent about what that costs to fit.
+
+Two billion is calibrated against the fits that did complete: it leaves degree 3 available
+on the narrow datasets where it is affordable, and pulls the wide ones down a degree rather
+than leaving them unbounded. It is a budget, not a law of the problem — a faster solver
+would justify a different number, and the number is here rather than in the code so that
+change is one line."""
 
 MAX_CATEGORIES = 20
 """One-hot ceiling per categorical column. Beyond this the encoding adds more columns than
@@ -713,25 +735,70 @@ class WidthAwareGrid(BaseEstimator):
         self.degrees = degrees
         self.scoring = scoring
 
-    def _affordable(self, n_features: int) -> list[int]:
+    def _affordable(self, n_features: int, n_rows: int) -> list[int]:
+        """Degrees this data can carry, by width *and* by what the fit will cost.
+
+        Width alone was not enough. A degree can sit under the column ceiling and still be
+        ruinous, because solving least squares over `p` columns costs about `n · p²` — so
+        doubling the width quadruples the work, and the row count multiplies all of it.
+
+        **Empty is a real answer.** This used to fall back to the smallest degree when
+        nothing fit, which read as graceful degradation and was not: for a polynomial the
+        smallest degree is 2, so the fallback returned the very thing the budget had just
+        refused. It bypassed the guard entirely at exactly the moment the guard mattered,
+        and a run spent sixty-nine minutes inside one fit proving it.
+
+        There is nothing to degrade *to*. A degree-1 polynomial is linear regression, which
+        is already in the collection under its own name — offering it here would score one
+        method twice and call the second one a curve.
+        """
         from math import comb
 
-        affordable = [d for d in self.degrees if comb(n_features + d, d) <= MAX_EXPANDED_FEATURES]
-        # Always keep the smallest degree: a basis expansion that expands nothing is not a
-        # basis expansion, and returning no grid at all would fail rather than degrade.
-        return affordable or [min(self.degrees)]
+        def affordable(degree: int) -> bool:
+            columns = comb(n_features + degree, degree)
+            if columns > MAX_EXPANDED_FEATURES:
+                return False
+            return n_rows * columns**2 <= MAX_FIT_OPERATIONS
+
+        return [d for d in self.degrees if affordable(d)]
 
     def fit(self, X, y=None):
         n_features = X.shape[1]
+        degrees = self._affordable(n_features, X.shape[0])
+        if not degrees:
+            # Refused rather than run. The study's convention is that a method which
+            # cannot run is absent with a reason, never scored (D-031) — and the reason is
+            # a finding: this basis is not computable on data of this shape, which is
+            # itself worth reporting.
+            raise ValueError(
+                f"Polynomial degrees {self.degrees} are all too expensive on "
+                f"{X.shape[0]:,} rows and {n_features} encoded columns. The smallest "
+                "would need "
+                f"{X.shape[0] * comb(n_features + min(self.degrees), min(self.degrees)) ** 2:,} "
+                f"operations against a budget of {MAX_FIT_OPERATIONS:,}."
+            )
+
         self.search_ = GridSearchCV(
             clone(self.estimator),
-            {self.parameter: self._affordable(n_features)},
+            {self.parameter: degrees},
             cv=5,
             n_jobs=1,
             scoring=self.scoring,
         )
         self.search_.fit(X, y)
         return self
+
+    @property
+    def chosen_degree(self) -> int:
+        """The degree that was actually fitted.
+
+        Worth reading before drawing a conclusion. Where the budget leaves only degree 1,
+        `polynomial` **is** linear regression — same basis, same fit — and its score is
+        evidence about a line, not about a curve. Reported rather than inferred, so the
+        analysis does not read "the polynomial did no better than the linear model" off a
+        row where the two were the same model.
+        """
+        return int(self.search_.best_params_[self.parameter])
 
     def predict(self, X):
         return self.search_.predict(X)
