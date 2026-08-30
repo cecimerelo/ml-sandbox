@@ -51,6 +51,22 @@ line — it pays variance for the privilege, but it gets there.
 Half rather than full, because a hedge that moves as much as a conviction is not a hedge,
 and `unsure` would then be indistinguishable from `yes`."""
 
+EXPLAINABILITY_STRENGTH: dict[Explainability, float] = {
+    "not important": 0.0,
+    "somewhat": 0.5,
+    "critical": 1.0,
+}
+"""How far the interpretability rules move for each answer.
+
+`somewhat` is half, on the same principle as `SUSPICION_STRENGTH`: a user who says it
+matters somewhat has said something, and an answer that changes nothing is a question that
+should not have been asked.
+
+This was missed when D-035 made the field three-valued. The field, the form and the
+constraint filter all took three levels; `applicable_rules` still asked
+`== "critical"`, so in the ranking the user actually sees, `somewhat` behaved exactly like
+`not important` — the defect D-035 exists to fix, left live in the one path that shows."""
+
 EXCLUDED_BY: dict[Explainability, tuple[str, ...]] = {
     "not important": (),
     "somewhat": ("opaque",),
@@ -285,8 +301,11 @@ def applicable_rules(
     if features.regime == "data-rich":
         fired.append("data-rich-affords-flexibility")
 
-    if explainability == "critical":
-        fired += ["interpretability-required", "interpretability-rules-out-black-boxes"]
+    interpretability = EXPLAINABILITY_STRENGTH[explainability]
+    if interpretability:
+        names = ("interpretability-required", "interpretability-rules-out-black-boxes")
+        fired += names
+        scaled.update(dict.fromkeys(names, interpretability))
 
     if features.missing in ("some", "a lot"):
         fired.append("missing-values-favour-trees")
@@ -345,6 +364,14 @@ def recommend(
         suspects_interactions=suspects_interactions,
     )
 
+    # The user's constraint is not a preference, so it is applied here rather than left to
+    # the caller. Without it the three explainability levels collapse to two in the
+    # ranking: scaling both interpretability rules by the same factor preserves the order
+    # between readable and opaque methods, so `somewhat` and `critical` are
+    # indistinguishable however far they move the weights. What actually separates them is
+    # *what each rules out* (D-035), and that has to reach the ordering to be visible.
+    blocked = set(excluded_by_constraints(candidates, explainability=explainability))
+
     scores = dict.fromkeys(candidates, 0.0)
     reasons: dict[str, list[str]] = {method: [] for method in candidates}
     for rule in rules:
@@ -353,10 +380,12 @@ def recommend(
                 scores[method] += rule.weight
                 reasons[method].append(rule.claim)
 
+    # Excluded methods are ranked last, never dropped. Withholding the best option
+    # silently leaves the user unable to see what their constraint cost them (D-035).
     return sorted(
         (
             Recommendation(method=method, score=score, reasons=reasons[method])
             for method, score in scores.items()
         ),
-        key=lambda r: (-r.score, r.method),
+        key=lambda r: (r.method in blocked, -r.score, r.method),
     )

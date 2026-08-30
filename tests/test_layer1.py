@@ -301,3 +301,64 @@ def test_the_two_beliefs_are_asked_and_answered_separately():
     curved = recommend(problem(), CLASSIFIERS, suspects_non_linearity="yes")
     joint = recommend(problem(), CLASSIFIERS, suspects_interactions="yes")
     assert [(r.method, r.score) for r in curved] != [(r.method, r.score) for r in joint]
+
+
+# The explainability levels, in the ranking a user actually sees
+
+
+def ranking(explainability, **kwargs):
+    ranked = recommend(problem(), CLASSIFIERS, explainability=explainability, **kwargs)
+    return [r.method for r in ranked]
+
+
+def test_somewhat_is_not_the_same_as_not_important():
+    """D-035 made the field three-valued and stopped short of the ranking.
+
+    `applicable_rules` still asked `== "critical"`, so in the one path the user sees, the
+    middle answer did nothing at all.
+    """
+    assert ranking("somewhat") != ranking("not important")
+
+
+def test_somewhat_moves_half_as_far_as_critical():
+    from mlsandbox.layer1 import EXPLAINABILITY_STRENGTH
+
+    mild = applicable_rules(problem(), explainability="somewhat")
+    strong = applicable_rules(problem(), explainability="critical")
+    for hedged, sure in zip(mild, strong, strict=True):
+        assert hedged.weight == pytest.approx(sure.weight * EXPLAINABILITY_STRENGTH["somewhat"])
+
+
+def test_the_two_levels_differ_when_a_costly_method_would_be_recommended():
+    """Where the distinction lives.
+
+    Scaling both interpretability rules by the same factor cannot reorder anything on its
+    own — readable methods rise and opaque ones fall whatever the factor. What separates
+    `somewhat` from `critical` is *what each rules out*, and that only shows when a method
+    it rules out would otherwise have been near the top.
+    """
+    # KNN can be explained by exhibiting its neighbours, so it is `with effort` — kept by
+    # `somewhat`, dropped by `critical`. Suspected non-linearity is what lifts it.
+    mild = ranking("somewhat", suspects_non_linearity="yes")
+    strict = ranking("critical", suspects_non_linearity="yes")
+    assert mild != strict
+    assert mild.index("knn") < strict.index("knn")
+
+
+def test_the_two_levels_agree_when_the_constraint_does_not_bind():
+    """Not a defect. If nothing costly was going to be recommended, ruling it out changes
+    nothing, and the two answers should agree rather than differ for the sake of it."""
+    assert ranking("somewhat") == ranking("critical")
+
+
+def test_excluded_methods_are_ranked_last_rather_than_dropped():
+    ranked = ranking("critical")
+    assert set(ranked) == set(CLASSIFIERS)
+    assert ranked.index("decision_tree") < ranked.index("random_forest")
+
+
+def test_all_three_explainability_answers_are_reachable():
+    from mlsandbox.layer1 import EXPLAINABILITY_STRENGTH
+
+    assert set(EXPLAINABILITY_STRENGTH) == {"not important", "somewhat", "critical"}
+    assert len(set(EXPLAINABILITY_STRENGTH.values())) == 3

@@ -1548,3 +1548,55 @@ the guess with a human as its alibi.
 
 `scripts/check_targets.py` checks the whole collection, since the failure is silent and a
 unit test cannot load sixty datasets.
+
+---
+
+## D-042 — The middle explainability level, in the ranking as well as the filter
+
+**Date:** 2026-08-30 · **Status:** accepted · **Completes:** D-035 · **Affects:** [#36](https://github.com/cecimerelo/ml-sandbox/issues/36)
+
+**Context.** Found by the author trying to answer their own form: *"I don't get how these
+questions affect anything."* They were right, and about the worst possible person to have
+to ask — if the person who specified the question cannot see its effect, nobody can.
+
+**Two faults, one introduced by a partial fix.**
+
+D-035 made explainability three-valued and added `excluded_by_constraints`. The field, the
+form and the filter all took three levels. **`applicable_rules` still asked
+`== "critical"`.** So in the ranking the user actually sees, `somewhat` behaved exactly
+like `not important` — the defect D-035 exists to fix, left alive in the one path that
+shows. That is the third appearance of this pattern, and the first I caused.
+
+The second is subtler and only visible by looking. **Scaling both interpretability rules
+by the same factor cannot reorder anything**: readable methods rise and opaque ones fall
+whatever the factor, so `somewhat` and `critical` produce identical orderings however far
+apart their weights sit. Making the middle level "half strength" fixes nothing on its own.
+
+**Decision.** `EXPLAINABILITY_STRENGTH = {not important: 0.0, somewhat: 0.5, critical: 1.0}`,
+**and** `recommend` applies the constraint filter itself rather than leaving it to the
+caller.
+
+What actually separates the two levels is **what each rules out**, not how hard it pushes:
+`somewhat` drops the opaque, `critical` also drops what takes effort. That distinction has
+to reach the ordering to exist at all.
+
+```
+suspected non-linearity, which lifts KNN — a `with effort` method
+  somewhat   decision_tree · knn · lasso · naive_bayes
+  critical   decision_tree · lasso · naive_bayes · ridge
+```
+
+**They still agree when the constraint does not bind**, and that is correct rather than a
+remaining defect: if nothing costly was going to be recommended, ruling it out changes
+nothing. Tested both ways, so neither the agreement nor the difference can quietly go away.
+
+**Excluded methods are ranked last, never dropped** — withholding the best option silently
+leaves the user unable to see what their constraint cost them.
+
+**What this does not fix.** The other two questions still rarely move the visible top three:
+a "yes" on non-linearity lifts six methods by the same amount, and the alphabetical
+tie-break then returns the same leaders. The engine did something; the user cannot see it.
+That is partly a real finding — **the textbook's heuristics are coarser than they look**,
+which is the study's own subject — and partly a presentation problem for the recommendation
+panel, which has to show that several methods are tied rather than implying a ranking it
+does not have. Recorded on #37 rather than papered over here.
