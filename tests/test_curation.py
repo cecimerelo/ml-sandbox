@@ -266,3 +266,19 @@ def test_every_manifest_field_is_documented():
     # source and revision repeat per dataset; they are documented at the top level.
     dataset_keys -= {"datasets[].source", "datasets[].revision"}
     assert dataset_keys <= documented, f"undocumented: {sorted(dataset_keys - documented)}"
+
+
+def test_every_regression_dataset_declares_a_numeric_outcome():
+    """A regression target that arrives as strings is the shape of the target bug.
+
+    Checked against the manifest rather than by loading sixty datasets, so it runs in CI.
+    The manifest records the task; `scripts/check_targets.py` verifies the actual columns
+    against the sources, which needs the data and does not belong in a unit test.
+    """
+    import json
+
+    from mlsandbox.config import PROJECT_ROOT
+
+    manifest = json.loads((PROJECT_ROOT / "config" / "collection.json").read_text())
+    tasks = {entry["task"] for entry in manifest["datasets"]}
+    assert tasks <= {"classification", "regression"}
