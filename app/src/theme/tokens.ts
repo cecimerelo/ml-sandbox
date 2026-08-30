@@ -107,6 +107,14 @@ export const spacing = {
   appBarHeight: 64,
   /** The content column is centred and never exceeds this. */
   contentMax: 1440,
+  /**
+   * The reading column, for blocks that are prose and controls rather than charts.
+   *
+   * `contentMax` is sized for the plot grid — two to four panels abreast at 320px each.
+   * A form has no such requirement, and a line of text 1440px wide is not read, it is
+   * scanned and lost. This is roughly the measure the explanations already cap at.
+   */
+  readingMax: 760,
   pageMargin: 32,
   pageMarginCompact: 16,
   /** Between major blocks — the largest gap in the system. It says a new idea started. */

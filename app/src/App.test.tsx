@@ -110,3 +110,15 @@ describe('chrome present on both surfaces', () => {
     expect(screen.getByRole('link', { name: 'ML Sandbox' })).toHaveAttribute('href', '/');
   });
 });
+
+describe('the reading column', () => {
+  it('holds the dashboard to a readable width rather than the full page', () => {
+    // The 1440px content column is sized for the plot grid — panels two to four abreast.
+    // Prose and controls have no such requirement, and a line of text that wide is
+    // scanned rather than read.
+    renderAt('/');
+    const heading = screen.getByRole('heading', { level: 1 });
+    const column = heading.parentElement;
+    expect(column).toHaveStyle({ marginLeft: 'auto', marginRight: 'auto' });
+  });
+});
