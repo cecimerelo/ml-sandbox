@@ -1712,3 +1712,58 @@ results kept as `results-*.parquet.before-poly-budget`.
 
 `MAX_FIT_OPERATIONS` is a budget, not a property of the problem. A faster solver would
 justify a different number; it is a named constant so that change is one line.
+
+---
+
+## D-046 — Powers and products are two methods, not one
+
+**Date:** 2026-08-30 · **Status:** accepted · **Extends:** D-045 · **Affects:** [#12](https://github.com/cecimerelo/ml-sandbox/issues/12), [#16](https://github.com/cecimerelo/ml-sandbox/issues/16)
+
+**Context.** D-045 left `polynomial` refused on three wide datasets, and the author asked
+whether a method the textbook discusses could be left out of the study. Looking at *why* it
+was uncomputable turned out to answer a different question.
+
+`PolynomialFeatures(degree=2)` builds **every product between predictors** as well as every
+square. That is not what *An Introduction to Statistical Learning* calls polynomial
+regression: chapter 7 extends the linear model by raising **each predictor** to a power.
+Products between different predictors are interaction terms, introduced in chapter 3 with
+the linear model, and they answer a different question about the data.
+
+**We had conflated them, and the conflation was also what made the method uncomputable.**
+
+| predictors, degree 2 | as powers | as products |
+|---|---|---|
+| 32 | 64 | 561 |
+| 71 | 142 | 2,628 |
+| 115 | **230** | **6,786** |
+
+**Decision.** Two methods. `polynomial` raises each predictor to a power; interactions.
+
+`polynomial_interactions` keeps the full expansion.
+
+**Why both rather than replacing one with the other.** Folded together, *"the polynomial
+did badly"* cannot be told apart from *"the interactions did badly"* — and the form asks
+the user about interactions as its own question, so the study should be able to say whether
+answering it truthfully leads anywhere. Separated, the pair is a direct measurement of
+whether the products earn their cost.
+
+**Consequences.**
+
+`polynomial` now fits on every dataset in the collection: 1.5 seconds at 20,000 × 115,
+where the full expansion needs 501 and is refused. The gap D-045 opened is closed for the
+method ISLR actually describes, and stays open for the one it does not.
+
+The width guard had to be told **which basis it is guarding**. Powers grow as `p · d`,
+products as `C(p+d, d)`, and judging the first by the second refused `polynomial`
+everywhere — which is how the split failed to fix anything on the first attempt.
+
+**`run_key` no longer includes the method catalogue.** Adding a method changed the key and
+would have discarded seventeen thousand evaluations of the other twenty-one. Seed, fold
+count and missingness rates belong in the key because they make two results incomparable —
+the same row would have come out differently. The catalogue does not: every row records
+which method produced it, so an existing result is exactly as valid after the catalogue
+grows. Keying on it was not caution, it was a bill.
+
+All 690 existing `polynomial` rows were deleted: they were computed with the full
+expansion, which is now a different method under a different name, and a column meaning two
+things is worse than a column with holes.

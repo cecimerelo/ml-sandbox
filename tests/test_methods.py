@@ -449,3 +449,69 @@ def test_the_chosen_degree_is_readable():
     from mlsandbox.methods import WidthAwareGrid
 
     assert hasattr(WidthAwareGrid, "chosen_degree")
+
+
+# Powers and products are different bases, and the guard has to know which
+
+
+def powers_grid():
+    from mlsandbox.methods import WidthAwareGrid
+
+    return WidthAwareGrid(None, "poly__degree", [2, 3], "r2", width="powers")
+
+
+def test_powers_grow_linearly_where_products_grow_combinatorially():
+    """The whole reason for the split.
+
+    115 predictors at degree 2 is 230 columns as powers and 6,786 as products. Judging the
+    first by the second refuses a fit that takes a second and a half.
+    """
+    assert powers_grid()._affordable(115, 20_000) == [2, 3]
+    assert grid()._affordable(115, 20_000) == []
+
+
+def test_the_guard_is_told_which_basis_it_is_guarding():
+    # Not inferred from the estimator: the transformer is buried in a pipeline, and a guard
+    # that guesses at what it is protecting is the guard that refused polynomial everywhere.
+    from mlsandbox.methods import METHODS, build
+
+    assert "polynomial" in METHODS
+    assert "polynomial_interactions" in METHODS
+    assert build("polynomial", "regression").steps[-1][1].width == "powers"
+    assert build("polynomial_interactions", "regression").steps[-1][1].width == "combinations"
+
+
+def test_power_features_raises_each_column_without_mixing_them():
+    """What ISLR calls polynomial regression: x, x², x³ — no products between predictors.
+
+    Those are interaction terms, which that book introduces with the linear model rather
+    than with the non-linear ones, and which the form asks about as a separate question.
+    """
+    import numpy as np
+
+    from mlsandbox.methods import PowerFeatures
+
+    assert np.array_equal(PowerFeatures(3).transform([[2, 3]]), [[2, 3, 4, 9, 8, 27]])
+
+
+def test_power_features_keeps_the_original_columns():
+    # Degree 1 is the data itself, so a polynomial can always fall back to the line it
+    # extends rather than losing it.
+    import numpy as np
+
+    from mlsandbox.methods import PowerFeatures
+
+    assert np.array_equal(PowerFeatures(1).transform([[5, 7]]), [[5, 7]])
+
+
+def test_the_two_polynomials_are_separate_methods():
+    """So the study can say whether the products were worth their cost.
+
+    Folded into one method, "polynomial did badly" cannot be told apart from "the
+    interactions did badly", and the collection loses the comparison the form's own
+    interaction question is about.
+    """
+    from mlsandbox.methods import METHODS
+
+    assert METHODS["polynomial"].family == METHODS["polynomial_interactions"].family
+    assert METHODS["polynomial"].tasks == ["regression"]

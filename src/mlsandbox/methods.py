@@ -20,7 +20,7 @@ from math import comb
 from typing import Literal
 
 import numpy as np
-from sklearn.base import BaseEstimator, clone
+from sklearn.base import BaseEstimator, TransformerMixin, clone
 from sklearn.compose import ColumnTransformer, make_column_selector
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.decomposition import PCA
@@ -228,14 +228,21 @@ class Method(StrictModel):
         )
 
 
-def _basis_grid(estimator: BaseEstimator, parameter: str, degrees: list[int]) -> BaseEstimator:
+def _basis_grid(
+    estimator: BaseEstimator,
+    parameter: str,
+    degrees: list[int],
+    width: str = "combinations",
+) -> BaseEstimator:
     """A polynomial or spline search whose degree is bounded by the data's width.
 
     The grid cannot be fixed in advance: the same degree that is reasonable on eight
     features is ruinous on forty. `WidthAwareGrid` reads the width at fit time, which is
     the only point where it is known — the pipeline is built before any data is seen.
     """
-    return WidthAwareGrid(estimator, parameter, degrees, scoring=SCORING["regression"])
+    return WidthAwareGrid(
+        estimator, parameter, degrees, scoring=SCORING["regression"], width=width
+    )
 
 
 def _grid(estimator: BaseEstimator, params: dict, task: Task) -> GridSearchCV:
@@ -306,6 +313,14 @@ ESTIMATORS: dict[str, dict[Task, Callable[[], BaseEstimator]]] = {
         ),
     },
     "polynomial": {
+        "regression": lambda: _basis_grid(
+            Pipeline([("poly", PowerFeatures()), ("model", LinearRegression())]),
+            "poly__degree",
+            [2, 3],
+            width="powers",
+        ),
+    },
+    "polynomial_interactions": {
         "regression": lambda: _basis_grid(
             Pipeline([("poly", PolynomialFeatures()), ("model", LinearRegression())]),
             "poly__degree",
@@ -490,6 +505,22 @@ METHODS: dict[str, Method] = {
             implementation="sklearn",
             rationale="The simplest way out of linearity, and the least controlled: high "
             "degrees oscillate wildly at the edges of the data.",
+        ),
+        Method(
+            name="polynomial_interactions",
+            label="Polynomial with Interactions",
+            family="non-linear",
+            tasks=["regression"],
+            needs_scaling=True,
+            handles_nan=False,
+            explainability="with effort",
+            tuning="internal-cv",
+            implementation="sklearn",
+            rationale="Every predictor squared and every pair multiplied. Separated from "
+            "polynomial regression because they answer different questions — one asks "
+            "whether a relationship curves, the other whether two variables only matter "
+            "together — and because the products are what make the basis uncomputable on "
+            "wide data.",
         ),
         Method(
             name="splines",
@@ -726,6 +757,32 @@ def available(task: Task, *, implementation: Implementation | None = "sklearn") 
     ]
 
 
+class PowerFeatures(BaseEstimator, TransformerMixin):
+    """Each predictor raised to a power, and nothing multiplied by anything else.
+
+    This is what *An Introduction to Statistical Learning* calls polynomial regression:
+    the linear model extended by adding x², x³ and so on for a predictor. Products between
+    different predictors are a separate idea in that book — interaction terms, introduced
+    with the linear model rather than with the non-linear ones — and they answer a
+    different question about the data.
+
+    `PolynomialFeatures` generates both at once, which conflates them. It is also what made
+    the method uncomputable on wide data: powers grow as `p · d`, cross-products as
+    `C(p+d, d)`. At 115 predictors and degree 2 that is 230 columns against 6,786.
+    """
+
+    def __init__(self, degree: int = 2) -> None:
+        self.degree = degree
+
+    def fit(self, X, y=None):  # noqa: ARG002 — the interface requires it
+        return self
+
+    def transform(self, X):
+        values = np.asarray(X, dtype=float)
+        # Degree 1 is the original columns, so the stack starts there and adds powers.
+        return np.hstack([values**power for power in range(1, self.degree + 1)])
+
+
 class WidthAwareGrid(BaseEstimator):
     """A grid search that drops basis degrees too large for the data in front of it.
 
@@ -739,11 +796,26 @@ class WidthAwareGrid(BaseEstimator):
     timeout.
     """
 
-    def __init__(self, estimator, parameter: str, degrees: list[int], scoring: str) -> None:
+    def __init__(
+        self,
+        estimator,
+        parameter: str,
+        degrees: list[int],
+        scoring: str,
+        width: str = "combinations",
+    ) -> None:
         self.estimator = estimator
         self.parameter = parameter
         self.degrees = degrees
         self.scoring = scoring
+        self.width = width
+        """How the basis grows: `combinations` for every product, `powers` for each
+        predictor raised to a power.
+
+        The guard has to know which. Judging powers by the combination formula refuses
+        `polynomial` on data it could handle comfortably — 115 predictors at degree 2 is
+        230 columns as powers and 6,786 as products, and treating the first as the second
+        was how the split failed to fix anything the first time it was tried."""
 
     def _affordable(self, n_features: int, n_rows: int) -> list[int]:
         """Degrees this data can carry, by width *and* by what the fit will cost.
@@ -762,10 +834,13 @@ class WidthAwareGrid(BaseEstimator):
         is already in the collection under its own name — offering it here would score one
         method twice and call the second one a curve.
         """
-        from math import comb
+        def columns_at(degree: int) -> int:
+            if self.width == "powers":
+                return n_features * degree
+            return comb(n_features + degree, degree)
 
         def affordable(degree: int) -> bool:
-            columns = comb(n_features + degree, degree)
+            columns = columns_at(degree)
             if columns > MAX_EXPANDED_FEATURES:
                 return False
             return n_rows * columns**2 <= MAX_FIT_OPERATIONS
@@ -780,12 +855,18 @@ class WidthAwareGrid(BaseEstimator):
             # cannot run is absent with a reason, never scored (D-031) — and the reason is
             # a finding: this basis is not computable on data of this shape, which is
             # itself worth reporting.
+            smallest = min(self.degrees)
+            widest = (
+                n_features * smallest
+                if self.width == "powers"
+                else comb(n_features + smallest, smallest)
+            )
             raise ValueError(
-                f"Polynomial degrees {self.degrees} are all too expensive on "
-                f"{X.shape[0]:,} rows and {n_features} encoded columns. The smallest "
-                "would need "
-                f"{X.shape[0] * comb(n_features + min(self.degrees), min(self.degrees)) ** 2:,} "
-                f"operations against a budget of {MAX_FIT_OPERATIONS:,}."
+                f"Degrees {self.degrees} are all too expensive on {X.shape[0]:,} rows and "
+                f"{n_features} encoded columns: degree {smallest} would build {widest:,} "
+                f"columns, costing {X.shape[0] * widest**2:,} operations against a budget "
+                f"of {MAX_FIT_OPERATIONS:,} and a ceiling of {MAX_EXPANDED_FEATURES:,} "
+                "columns."
             )
 
         self.search_ = GridSearchCV(

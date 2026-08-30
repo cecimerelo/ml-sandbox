@@ -111,7 +111,7 @@ class ResultStore:
         return pd.read_parquet(self.path) if self.path.exists() else pd.DataFrame()
 
 
-def store_for(config, *, rates, methods) -> ResultStore:
+def store_for(config, *, rates, methods=None) -> ResultStore:
     """The store a run with these settings reads and writes.
 
     Here rather than in the script that runs the benchmark, because a second caller — the
@@ -120,6 +120,13 @@ def store_for(config, *, rates, methods) -> ResultStore:
     out the rates and the method list, looked for a file that had never existed, and
     announced there were no results while fourteen thousand of them sat on disk.
     """
+    # The method catalogue is deliberately **not** in the key. Seed, fold count and
+    # missingness rates make two results incomparable: the same row would have come out
+    # differently. Adding a method does not — every row records which method produced it,
+    # so an existing result is exactly as valid after the catalogue grows as before.
+    #
+    # Keying on it meant that adding one method discarded seventeen thousand evaluations
+    # of the other twenty-one, which is not caution, it is a bill.
     return ResultStore(
         config.paths.datasets.parent / "results",
         run_key(
@@ -127,7 +134,6 @@ def store_for(config, *, rates, methods) -> ResultStore:
                 "seed": config.run.seed,
                 "n_folds": config.cv.n_folds,
                 "rates": sorted(rates),
-                "methods": sorted(methods),
             }
         ),
     )
