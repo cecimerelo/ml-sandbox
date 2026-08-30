@@ -136,3 +136,22 @@ describe('the dataset upload', () => {
     expect(screen.queryByLabelText(/upload a csv/i)).toBeNull();
   });
 });
+
+describe('what the interface says', () => {
+  it('never shows our issue numbers', () => {
+    // This shipped once: an upload reported "filling them in from the file is 3.2".
+    // Scaffolding copy gets written for whoever is building the thing and then stays,
+    // and a reader has no way to know 3.2 is not something about their data.
+    renderAt('/');
+    const text = document.body.textContent ?? '';
+    expect(text).not.toMatch(/\b[1-6]\.\d{1,2}\b/);
+  });
+
+  it('does not name the epics or the tickets', () => {
+    renderAt('/');
+    const text = document.body.textContent ?? '';
+    for (const word of [/\bepic\b/i, /\bissue #/i, /\bFR-\d/, /\bTODO\b/]) {
+      expect(text).not.toMatch(word);
+    }
+  });
+});

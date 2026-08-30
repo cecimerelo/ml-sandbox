@@ -6,7 +6,6 @@ import { useState } from 'react';
 import type { RecommendationRequest } from '../api/types';
 import { ProblemForm } from '../form/ProblemForm';
 import { Dropzone } from '../upload/Dropzone';
-import type { DatasetSummary } from '../upload/Dropzone';
 import { spacing } from '../theme/tokens';
 
 /**
@@ -19,7 +18,6 @@ import { spacing } from '../theme/tokens';
  */
 export function Dashboard() {
   const [submitted, setSubmitted] = useState<RecommendationRequest | null>(null);
-  const [dataset, setDataset] = useState<DatasetSummary | null>(null);
 
   return (
     // Centred in a reading column rather than filling the page. Text stays left-aligned
@@ -39,25 +37,22 @@ export function Dashboard() {
       </Typography>
 
       {/* Above the form, because it is what decides the form's shape. Accepting a file
-          does not change that shape yet — Shape A is 3.2 and the switching is 3.3 — so
-          for now it reports what was read and the questions stay as they are. */}
-      <Dropzone onAccepted={(_file, summary) => setDataset(summary)} />
+          does not change that shape yet, so for now the dropzone reports what it read and
+          the questions stay as they are. It is the only thing that reports it: a second
+          alert repeating the row count adds noise and says nothing new. */}
+      <Dropzone onAccepted={() => undefined} />
 
       <ProblemForm onSubmit={setSubmitted} />
 
-      {dataset && (
-        <Alert severity="info" sx={{ mt: 2 }}>
-          Read {dataset.rows.toLocaleString()} rows. The questions below still have to be
-          answered by hand — filling them in from the file is 3.2.
-        </Alert>
-      )}
-
+      {/* Stands in for the recommendation panel until the engine is reachable over HTTP.
+          Marked as scaffolding in the copy rather than dressed up as a result — and with
+          no issue numbers, which are ours and mean nothing to anyone using this. */}
       {submitted && (
         <Alert severity="info" sx={{ mt: 4 }}>
-          Ready to send. The recommendation panel arrives with 2.4.
-          <pre style={{ margin: 0, overflowX: 'auto' }}>
+          Your answers are ready to send. The recommendation itself is still being built.
+          <Box component="pre" sx={{ m: 0, mt: 1, overflowX: 'auto', fontSize: '0.75rem' }}>
             {JSON.stringify(submitted, null, 2)}
-          </pre>
+          </Box>
         </Alert>
       )}
     </Box>

@@ -183,3 +183,37 @@ describe('the control', () => {
     expect(screen.getByText(/without one/i)).toBeInTheDocument();
   });
 });
+
+describe('a failure after a success', () => {
+  it('does not leave the earlier summary on screen', async () => {
+    // Two alerts at once, one saying the file was read and one saying it was refused, is
+    // the interface contradicting itself. The user cannot tell which is about the file
+    // they just dropped.
+    respond(200, { columns: ['a', 'b'], rows: 200, skipped: [] });
+    const { user } = setup();
+    await user.upload(screen.getByLabelText(/upload a csv/i), csv('good.csv'));
+    expect(await screen.findByRole('alert')).toHaveTextContent(/200 rows/i);
+
+    respond(422, { detail: { reason: 'no-rows', message: 'This file has a header row but no data.' } });
+    await user.upload(screen.getByLabelText(/upload a csv/i), csv('bad.csv'));
+
+    const alerts = await screen.findAllByRole('alert');
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0]).toHaveTextContent(/no data/i);
+    expect(alerts[0]).not.toHaveTextContent(/200 rows/i);
+  });
+
+  it('clears the error once a later file is accepted', async () => {
+    respond(422, { detail: { reason: 'no-rows', message: 'no data' } });
+    const { user } = setup();
+    await user.upload(screen.getByLabelText(/upload a csv/i), csv('bad.csv'));
+    await screen.findByRole('alert');
+
+    respond(200, { columns: ['a', 'b'], rows: 7, skipped: [] });
+    await user.upload(screen.getByLabelText(/upload a csv/i), csv('good.csv'));
+
+    const alerts = await screen.findAllByRole('alert');
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0]).toHaveTextContent(/7 rows/i);
+  });
+});
