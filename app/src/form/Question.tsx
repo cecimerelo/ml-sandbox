@@ -42,7 +42,10 @@ export function Question<T extends string>({
 
   return (
     <FormControl sx={{ mb: `${spacing.fieldGap}px`, display: 'block' }}>
-      <FormLabel id={`${id}-label`} sx={{ color: 'text.primary', fontWeight: 500 }}>
+      {/* Bold rather than medium. The label and its explanation sit four pixels apart so
+          they read as one unit, and at 500 the question did not separate from the prose
+          under it — the eye had nothing to anchor each block to when scanning down. */}
+      <FormLabel id={`${id}-label`} sx={{ color: 'text.primary', fontWeight: 700 }}>
         {label}
       </FormLabel>
       <RadioGroup
