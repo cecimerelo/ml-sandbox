@@ -148,3 +148,23 @@ def test_the_frame_holds_only_the_usable_columns():
 def test_every_refusal_carries_a_message(reason):
     # A reason code is for the log; the message is for the person.
     assert Rejected(reason=reason, message="x").message
+
+
+def test_the_browser_and_the_server_agree_on_the_size_limit():
+    """The one limit that has to exist twice.
+
+    Every other refusal is the server's, which keeps each limit beside the sentence that
+    explains it. Size is different: the point is that an oversized file **never crosses
+    the wire**, and a check that runs after the upload is not that check.
+
+    So the number lives in two languages, and this compares them. A duplicated constant
+    that nothing compares is a divergence waiting for someone to notice it in production.
+    """
+    import re
+
+    from mlsandbox.config import PROJECT_ROOT
+
+    source = (PROJECT_ROOT / "app" / "src" / "upload" / "limits.ts").read_text()
+    match = re.search(r"MAX_BYTES\s*=\s*([\d\s*]+);", source)
+    assert match, "app/src/upload/limits.ts no longer declares MAX_BYTES"
+    assert eval(match.group(1)) == MAX_BYTES  # noqa: S307 — a literal arithmetic expression

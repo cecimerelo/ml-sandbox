@@ -5,6 +5,8 @@ import { useState } from 'react';
 
 import type { RecommendationRequest } from '../api/types';
 import { ProblemForm } from '../form/ProblemForm';
+import { Dropzone } from '../upload/Dropzone';
+import type { DatasetSummary } from '../upload/Dropzone';
 import { spacing } from '../theme/tokens';
 
 /**
@@ -17,6 +19,7 @@ import { spacing } from '../theme/tokens';
  */
 export function Dashboard() {
   const [submitted, setSubmitted] = useState<RecommendationRequest | null>(null);
+  const [dataset, setDataset] = useState<DatasetSummary | null>(null);
 
   return (
     // Centred in a reading column rather than filling the page. Text stays left-aligned
@@ -35,7 +38,19 @@ export function Dashboard() {
         behind it. You do not need to upload anything.
       </Typography>
 
+      {/* Above the form, because it is what decides the form's shape. Accepting a file
+          does not change that shape yet — Shape A is 3.2 and the switching is 3.3 — so
+          for now it reports what was read and the questions stay as they are. */}
+      <Dropzone onAccepted={(_file, summary) => setDataset(summary)} />
+
       <ProblemForm onSubmit={setSubmitted} />
+
+      {dataset && (
+        <Alert severity="info" sx={{ mt: 2 }}>
+          Read {dataset.rows.toLocaleString()} rows. The questions below still have to be
+          answered by hand — filling them in from the file is 3.2.
+        </Alert>
+      )}
 
       {submitted && (
         <Alert severity="info" sx={{ mt: 4 }}>
