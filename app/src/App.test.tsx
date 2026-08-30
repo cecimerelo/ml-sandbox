@@ -8,7 +8,7 @@
  */
 
 import { ThemeProvider } from '@mui/material/styles';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
@@ -190,6 +190,53 @@ describe('replacing a dataset that fails', () => {
     await screen.findByRole('alert');
 
     expect(screen.queryByRole('combobox', { name: /predict/i })).toBeNull();
+    vi.unstubAllGlobals();
+  });
+});
+
+describe('removing a dataset', () => {
+  it('takes the target picker and the detected answers with it', async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ columns: ['a', 'b'], rows: 5, skipped: [] }),
+      }),
+    );
+    renderAt('/');
+    await user.upload(screen.getByLabelText(/upload a csv/i), file('good.csv'));
+    await screen.findByText('good.csv');
+    expect(screen.getByRole('combobox', { name: /predict/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /^remove$/i }));
+
+    expect(screen.queryByRole('combobox', { name: /predict/i })).toBeNull();
+    expect(screen.queryByText(/in your file/)).toBeNull();
+    vi.unstubAllGlobals();
+  });
+
+  it('keeps the answers the user gave themselves', async () => {
+    // Explainability, non-linearity and interactions were never the file's to fill in, and
+    // removing a CSV is no reason to make someone say again what they need.
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ columns: ['a', 'b'], rows: 5, skipped: [] }),
+      }),
+    );
+    renderAt('/');
+    const explain = screen.getByRole('radiogroup', { name: /explain individual predictions/i });
+    await user.click(within(explain).getByRole('radio', { name: 'Critical' }));
+
+    await user.upload(screen.getByLabelText(/upload a csv/i), file('good.csv'));
+    await screen.findByText('good.csv');
+    await user.click(screen.getByRole('button', { name: /^remove$/i }));
+
+    const after = screen.getByRole('radiogroup', { name: /explain individual predictions/i });
+    expect(within(after).getByRole('radio', { name: 'Critical' })).toBeChecked();
     vi.unstubAllGlobals();
   });
 });
