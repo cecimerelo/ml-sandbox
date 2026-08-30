@@ -123,12 +123,50 @@ describe('a file the server accepts', () => {
   });
 });
 
-describe('a network failure', () => {
-  it('is a message, not a blank screen', async () => {
+describe('an unreachable server', () => {
+  it('does not blame the file', async () => {
+    // This is not hypothetical: the first real use of this control ran against a stale
+    // dev server whose proxy was gone, and every file — all of them valid — was reported
+    // as unreadable. That sends someone to inspect data that is perfectly fine.
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
     const { user } = setup();
     await user.upload(screen.getByLabelText(/upload a csv/i), csv());
-    expect(await screen.findByRole('alert')).toHaveTextContent(/couldn't read that file/i);
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(/couldn't reach the server/i);
+    expect(alert).not.toHaveTextContent(/that file/i);
+  });
+
+  it('says the file has not been looked at yet', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+    const { user } = setup();
+    await user.upload(screen.getByLabelText(/upload a csv/i), csv());
+    expect(await screen.findByRole('alert')).toHaveTextContent(/haven't looked at your file/i);
+  });
+
+  it('treats a non-JSON response the same way', async () => {
+    // The dev server's HTML fallback answers with 200 and a page. That is not this
+    // endpoint replying, and reading it as a verdict on the file would be a fiction.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => {
+          throw new SyntaxError('Unexpected token <');
+        },
+      }),
+    );
+    const { onAccepted, user } = setup();
+    await user.upload(screen.getByLabelText(/upload a csv/i), csv());
+    expect(await screen.findByRole('alert')).toHaveTextContent(/couldn't reach the server/i);
+    expect(onAccepted).not.toHaveBeenCalled();
+  });
+
+  it('does not invent a reason when a refusal carries no message', async () => {
+    respond(422, {});
+    const { user } = setup();
+    await user.upload(screen.getByLabelText(/upload a csv/i), csv());
+    expect(await screen.findByRole('alert')).toHaveTextContent(/couldn't reach the server/i);
   });
 });
 

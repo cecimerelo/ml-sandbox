@@ -7,6 +7,18 @@ import { useRef, useState } from 'react';
 
 import { MAX_BYTES, tooLargeMessage } from './limits';
 
+/**
+ * Distinct from every message about the file itself.
+ *
+ * Saying "we couldn't read that file" when the server was unreachable sends someone to
+ * inspect a file that is perfectly fine — which is exactly what happened the first time
+ * this control was used against a stale dev server. The two failures look identical from
+ * inside the `catch`, so they are told apart before reaching it.
+ */
+const UNREACHABLE =
+  "We couldn't reach the server, so we haven't looked at your file yet. If you're running " +
+  'this locally, check the API is up.';
+
 export interface DatasetSummary {
   columns: string[];
   rows: number;
@@ -48,16 +60,30 @@ export function Dropzone({
       const body = new FormData();
       body.append('file', file);
       const response = await fetch('/api/dataset', { method: 'POST', body });
-      const payload = await response.json();
 
-      if (!response.ok) {
-        setError(payload?.detail?.message ?? 'Something went wrong reading that file.');
+      let payload: { detail?: { message?: string } } | DatasetSummary | null = null;
+      try {
+        payload = await response.json();
+      } catch {
+        // A response that is not JSON is not this endpoint answering. In development it is
+        // usually the dev server's HTML fallback, which means the API is unreachable and
+        // the file is blameless.
+        setError(UNREACHABLE);
         return;
       }
-      setSummary(payload);
-      onAccepted(file, payload);
+
+      if (!response.ok) {
+        const message = (payload as { detail?: { message?: string } })?.detail?.message;
+        // A refusal without our message is not our refusal — say so rather than inventing
+        // a reason the file might have been rejected for.
+        setError(message ?? UNREACHABLE);
+        return;
+      }
+      setSummary(payload as DatasetSummary);
+      onAccepted(file, payload as DatasetSummary);
     } catch {
-      setError("We couldn't read that file. Try again.");
+      // fetch only rejects when the request never completed.
+      setError(UNREACHABLE);
     } finally {
       setBusy(false);
     }
