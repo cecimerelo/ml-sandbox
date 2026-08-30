@@ -168,3 +168,51 @@ def test_the_browser_and_the_server_agree_on_the_size_limit():
     match = re.search(r"MAX_BYTES\s*=\s*([\d\s*]+);", source)
     assert match, "app/src/upload/limits.ts no longer declares MAX_BYTES"
     assert eval(match.group(1)) == MAX_BYTES  # noqa: S307 — a literal arithmetic expression
+
+
+# The example files, checked against what they claim to demonstrate
+
+
+EXPECTED_EXAMPLES = {
+    "houses.csv": None,
+    "houses-with-notes.csv": None,
+    "too-many-columns.csv": "too-many-features",
+    "header-only.csv": "no-rows",
+    "one-column.csv": "no-features",
+    "all-unsupported.csv": "all-unsupported",
+    "not-a-csv.png": "not-a-csv",
+}
+"""What each file in `examples/` is for. `None` means it should be accepted.
+
+`too-large.csv` is absent: it is generated rather than committed, and its refusal happens
+in the browser before any upload begins, so there is nothing here to check it against.
+"""
+
+
+@pytest.mark.parametrize(("name", "reason"), sorted(EXPECTED_EXAMPLES.items()))
+def test_each_example_demonstrates_what_it_claims(name, reason):
+    """Otherwise the examples drift from the rules and quietly stop being examples."""
+    from mlsandbox.config import PROJECT_ROOT
+
+    path = PROJECT_ROOT / "examples" / name
+    if not path.exists():
+        pytest.skip(f"{name} not generated — run scripts/make_examples.py")
+
+    result = read(path.read_bytes(), filename=name)
+    if reason is None:
+        assert isinstance(result, Dataset), f"{name} should be accepted"
+    else:
+        assert isinstance(result, Rejected), f"{name} should be refused"
+        assert result.reason == reason
+
+
+def test_the_example_with_notes_skips_them_rather_than_being_refused():
+    from mlsandbox.config import PROJECT_ROOT
+
+    path = PROJECT_ROOT / "examples" / "houses-with-notes.csv"
+    if not path.exists():
+        pytest.skip("not generated")
+
+    result = read(path.read_bytes(), filename=path.name)
+    assert isinstance(result, Dataset)
+    assert sorted(result.skipped) == ["agent_note", "listed_on"]
