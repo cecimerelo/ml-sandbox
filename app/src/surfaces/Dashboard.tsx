@@ -23,10 +23,14 @@ export function Dashboard() {
     // inside it: a centred paragraph gives every line a different starting point, and the
     // eye has to hunt for each one.
     <Box sx={{ maxWidth: spacing.readingMax, mx: 'auto' }}>
-      <Typography variant="h4" component="h1" gutterBottom>
+      {/* The heading and its one-line intro are centred; the questions below are not.
+          A heading is a landmark and reads fine centred, but centring the explanations
+          would give every line a different starting point, and the eye has to hunt for
+          each one. */}
+      <Typography variant="h4" component="h1" align="center" gutterBottom>
         Describe your problem
       </Typography>
-      <Typography color="text.secondary" sx={{ mb: 4 }}>
+      <Typography color="text.secondary" align="center" sx={{ mb: 5 }}>
         Answer what you can about your data and we will suggest a method, with the reasoning
         behind it. You do not need to upload anything.
       </Typography>
