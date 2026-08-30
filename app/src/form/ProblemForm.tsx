@@ -137,29 +137,33 @@ export function ProblemForm({ onSubmit }: { onSubmit: (request: RecommendationRe
       {question('form.non-linearity', SUSPICION, 'suspects_non_linearity')}
       {question('form.interactions', SUSPICION, 'suspects_interactions')}
 
-      <Tooltip
-        title={complete ? '' : `${missing.length} question${missing.length === 1 ? '' : 's'} left`}
-        // Describes, never labels. Left to its default, MUI makes the tooltip text the
-        // button's accessible name, so a screen reader announces "8 questions left" where
-        // the button says "Get Recommendation" — the reason replacing the thing.
-        describeChild
-      >
-        {/* `aria-disabled`, not `disabled`: a disabled button is unfocusable, so the
-            tooltip explaining why it is inert would be unreachable by exactly the people
-            who most need it. */}
-        <Button
-          type="submit"
-          variant="contained"
-          size="large"
-          aria-disabled={!complete}
-          onClick={(event: React.MouseEvent) => {
-            if (!complete) event.preventDefault();
-          }}
-          sx={{ opacity: complete ? 1 : 0.5 }}
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+        <Tooltip
+          title={
+            complete ? '' : `${missing.length} question${missing.length === 1 ? '' : 's'} left`
+          }
+          // Describes, never labels. Left to its default, MUI makes the tooltip text the
+          // button's accessible name, so a screen reader announces "8 questions left"
+          // where the button says "Get Recommendation" — the reason replacing the thing.
+          describeChild
         >
-          Get Recommendation
-        </Button>
-      </Tooltip>
+          {/* `aria-disabled`, not `disabled`: a disabled button is unfocusable, so the
+              tooltip explaining why it is inert would be unreachable by exactly the people
+              who most need it. */}
+          <Button
+            type="submit"
+            variant="contained"
+            size="large"
+            aria-disabled={!complete}
+            onClick={(event: React.MouseEvent) => {
+              if (!complete) event.preventDefault();
+            }}
+            sx={{ opacity: complete ? 1 : 0.5 }}
+          >
+            Get Recommendation
+          </Button>
+        </Tooltip>
+      </Box>
     </Box>
   );
 }
