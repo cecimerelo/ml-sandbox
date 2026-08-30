@@ -47,6 +47,7 @@ export function DetectedFields({
       <DetectedField
         label="How many rows"
         detail={`${detection.n_rows.toLocaleString()} rows · ${detection.rows}`}
+        detected={false}
         uncertain={false}
         confirmed
         onConfirm={() => undefined}
@@ -63,6 +64,7 @@ export function DetectedFields({
       <DetectedField
         label="How many columns to predict from"
         detail={`${detection.n_features.toLocaleString()} columns · ${detection.features}`}
+        detected={false}
         uncertain={false}
         confirmed
         onConfirm={() => undefined}

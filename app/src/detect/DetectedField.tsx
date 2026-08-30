@@ -1,9 +1,10 @@
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 
-import { spacing } from '../theme/tokens';
+import { chrome, spacing } from '../theme/tokens';
 
 /**
  * One reading taken from the file, with how much it should be trusted.
@@ -20,6 +21,7 @@ import { spacing } from '../theme/tokens';
 export function DetectedField({
   label,
   detail,
+  detected = true,
   uncertain,
   confirmed,
   onConfirm,
@@ -27,6 +29,8 @@ export function DetectedField({
 }: {
   label: string;
   detail: string;
+  /** Whether this value was read from the file rather than answered by the user. */
+  detected?: boolean;
   uncertain: boolean;
   confirmed: boolean;
   onConfirm: () => void;
@@ -39,18 +43,25 @@ export function DetectedField({
       <Typography sx={{ fontWeight: 700 }}>{label}</Typography>
       {children}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-        {flagged && (
-          <WarningAmberIcon
-            color="warning"
-            fontSize="small"
-            // The icon repeats what the caption says rather than replacing it.
-            aria-hidden
-          />
+        {flagged ? (
+          // The icon repeats what the caption says rather than replacing it, so the state
+          // survives a reader who cannot see the difference between amber and grey.
+          <WarningAmberIcon fontSize="small" aria-hidden sx={{ color: chrome.unsure.hex }} />
+        ) : (
+          detected && (
+            <AutoAwesomeIcon fontSize="small" aria-hidden sx={{ color: chrome.detected.hex }} />
+          )
         )}
         <Typography
           variant="body2"
-          color={flagged ? 'warning.main' : 'text.secondary'}
           component="span"
+          sx={{
+            color: flagged
+              ? chrome.unsure.hex
+              : detected
+                ? chrome.detected.hex
+                : 'text.secondary',
+          }}
         >
           {flagged ? "We're not sure about this one — please check it." : detail}
         </Typography>

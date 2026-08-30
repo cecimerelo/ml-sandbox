@@ -210,3 +210,24 @@ describe('the counts', () => {
     }
   });
 });
+
+describe('where a value came from', () => {
+  it('marks a detected reading with words as well as colour', async () => {
+    // Colour alone says nothing to a reader who cannot see the difference. The caption
+    // carries the meaning; the colour only makes it quicker to find.
+    respond(200, DETECTION);
+    const { user } = setup();
+    await pick(user, 'price');
+    expect(await screen.findAllByText(/detected from your file/i)).not.toHaveLength(0);
+  });
+
+  it('does not mark a fact about the file as a detection', async () => {
+    // A row count is not a reading that could have gone another way, so it is not
+    // presented as one.
+    respond(200, DETECTION);
+    const { user } = setup();
+    await pick(user, 'price');
+    const rows = await screen.findByText(/388 rows · <500/);
+    expect(rows).not.toHaveTextContent(/detected/i);
+  });
+});
