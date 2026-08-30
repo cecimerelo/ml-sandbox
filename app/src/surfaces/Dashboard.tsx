@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import type { RecommendationRequest } from '../api/types';
 import { ProblemForm } from '../form/ProblemForm';
+import { Dropzone } from '../upload/Dropzone';
 import { spacing } from '../theme/tokens';
 
 /**
@@ -35,13 +36,14 @@ export function Dashboard() {
         behind it. You do not need to upload anything.
       </Typography>
 
-      {/* The upload control is built and tested and is not shown, because accepting a
-          file does not yet change anything a user would see: the questions still have to
-          be answered by hand until detection lands.
+      {/* Above the form, because it is what decides the form's shape.
 
-          A control that takes someone's data and gives nothing back is worse than one
-          that is missing — it implies the file is being used. It belongs above the form
-          when it arrives, since it is what decides the form's shape. */}
+          Accepting a file does not change that shape yet — the questions still have to be
+          answered by hand until detection lands. It is shown anyway so the control can be
+          exercised, and that is a real cost worth naming: someone who uploads a file and
+          then answers the same questions by hand has been given the impression the file
+          was used. Detection is what closes it. */}
+      <Dropzone onAccepted={() => undefined} />
 
       <ProblemForm onSubmit={setSubmitted} />
 

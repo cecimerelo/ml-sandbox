@@ -116,14 +116,23 @@ describe('the reading column', () => {
 });
 
 describe('the dataset upload', () => {
-  it.each(['/', '/benchmark'])('is not offered on %s yet', (path) => {
-    // Built and tested, and deliberately not shown: accepting a file does not yet change
-    // anything a user would see. A control that takes someone's data and gives nothing
-    // back is worse than one that is missing — it implies the file is being used.
-    //
-    // The same judgement as the Benchmark link and the privacy notice. This test is what
-    // makes the omission deliberate rather than something that quietly stayed missing.
-    renderAt(path);
+  it('sits above the questions, since it is what decides their shape', () => {
+    renderAt('/');
+    const dropzone = screen.getByLabelText(/upload a csv/i);
+    const firstQuestion = screen.getAllByRole('radiogroup')[0];
+    expect(dropzone.compareDocumentPosition(firstQuestion!)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+  });
+
+  it('does not imply the form needs one', () => {
+    // Advice-only is the product, not a fallback for people without data.
+    renderAt('/');
+    expect(screen.getByText(/without one/i)).toBeInTheDocument();
+  });
+
+  it('is not offered on the benchmark surface', () => {
+    renderAt('/benchmark');
     expect(screen.queryByLabelText(/upload a csv/i)).toBeNull();
   });
 });
