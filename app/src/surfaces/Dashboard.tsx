@@ -26,7 +26,7 @@ export function Dashboard() {
       <Typography variant="h4" component="h1" gutterBottom>
         Describe your problem
       </Typography>
-      <Typography color="text.secondary" sx={{ mb: 4, maxWidth: '60ch' }}>
+      <Typography color="text.secondary" sx={{ mb: 4 }}>
         Answer what you can about your data and we will suggest a method, with the reasoning
         behind it. You do not need to upload anything.
       </Typography>

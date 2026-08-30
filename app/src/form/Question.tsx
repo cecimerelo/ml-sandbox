@@ -65,7 +65,7 @@ export function Question<T extends string>({
         id={explanationId}
         variant="body2"
         color="text.secondary"
-        sx={{ mt: 0.5, maxWidth: '60ch' }}
+        sx={{ mt: 0.5 }}
       >
         {renderCopy(explanation)}
       </Typography>

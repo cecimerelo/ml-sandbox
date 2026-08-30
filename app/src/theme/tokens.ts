@@ -112,9 +112,14 @@ export const spacing = {
    *
    * `contentMax` is sized for the plot grid — two to four panels abreast at 320px each.
    * A form has no such requirement, and a line of text 1440px wide is not read, it is
-   * scanned and lost. This is roughly the measure the explanations already cap at.
+   * scanned and lost.
+   *
+   * **This is the only width the reading column has.** It was 760 with the explanations
+   * separately capped at 60ch, which meant two competing limits: the column centred, the
+   * text stopped short of its right edge, and the whole block read as pushed to the left
+   * of a box nobody could see. One measure, applied once.
    */
-  readingMax: 760,
+  readingMax: 640,
   pageMargin: 32,
   pageMarginCompact: 16,
   /** Between major blocks — the largest gap in the system. It says a new idea started. */
