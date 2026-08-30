@@ -57,19 +57,11 @@ describe('focus order', () => {
 });
 
 describe('the Benchmark link', () => {
-  it('is marked as the current page on its own surface', () => {
-    renderAt('/benchmark');
-    expect(screen.getByRole('link', { name: 'Benchmark' })).toHaveAttribute(
-      'aria-current',
-      'page',
-    );
-  });
-
-  it('is not marked current from the dashboard', () => {
-    // Announcing it as current elsewhere would tell a screen-reader user they are already
-    // where the link goes.
-    renderAt('/');
-    expect(screen.getByRole('link', { name: 'Benchmark' })).not.toHaveAttribute('aria-current');
+  it.each(['/', '/benchmark'])('is absent from %s while the surface is empty', (path) => {
+    // The spine specifies it, and it returns with Epic 6. A link to a blank page spends
+    // the user's attention and returns nothing, which is worse than not offering it.
+    renderAt(path);
+    expect(screen.queryByRole('link', { name: 'Benchmark' })).toBeNull();
   });
 });
 
