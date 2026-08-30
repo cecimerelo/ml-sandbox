@@ -117,6 +117,12 @@ seconds, 921 billion in 501 — which agree on roughly 4×10⁻¹⁰ seconds per
 hundred billion is about forty seconds of work, comfortably inside the tightest timeout
 while leaving every fit that used to complete quickly still completing.
 
+**It does not bind in this study, and saying so is the point.** The row cap is 20,000
+(D-030) and the width ceiling 2,000, so the most any fit here can cost is 8×10¹⁰ — under
+this budget. It fires only if one of those two moves, which is exactly when a guard is
+needed and least likely to be thought about. A backstop that currently catches nothing is
+worth keeping and not worth pretending about.
+
 A budget, not a property of the problem. A faster solver justifies a different number, and
 it is named here so that is one line."""
 

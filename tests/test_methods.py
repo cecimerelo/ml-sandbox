@@ -365,14 +365,29 @@ def test_a_narrow_dataset_still_gets_a_real_curve():
 
 
 def test_width_alone_does_not_decide_it():
-    """The bug this fixes.
+    """The same width is affordable on a small dataset and not on a very large one.
 
-    The same width is affordable on a small dataset and not on a large one, because the
-    cost is the rows multiplied by the square of the width. A ceiling on width alone was
-    silent about that, and a run spent sixty-nine minutes inside one method proving it.
+    Rows above the study's cap, deliberately: the cost budget does not bind under the
+    current caps — 20,000 rows against 2,000 columns is 8×10¹⁰, below it — so this shows
+    where it *would*, rather than pretending it is doing work today.
     """
-    wide = 43
-    assert grid()._affordable(wide, 2_000) != grid()._affordable(wide, 20_000)
+    wide = 60
+    assert grid()._affordable(wide, 20_000) == [2]
+    assert grid()._affordable(wide, 200_000) == []
+
+
+def test_the_cost_budget_does_not_bind_under_the_current_caps():
+    """Stated rather than discovered later.
+
+    A guard that never fires is easy to mistake for a guard that is working. This one is
+    insurance against the row cap or the width ceiling moving, and it should be read that
+    way — the fix for the stall was removing the fallback beneath the width ceiling, not
+    this.
+    """
+    from mlsandbox.benchmark import EVALUATION_ROW_CAP
+    from mlsandbox.methods import MAX_EXPANDED_FEATURES, MAX_FIT_OPERATIONS
+
+    assert EVALUATION_ROW_CAP * MAX_EXPANDED_FEATURES**2 < MAX_FIT_OPERATIONS
 
 
 def test_the_cost_grows_with_the_square_of_the_width():
