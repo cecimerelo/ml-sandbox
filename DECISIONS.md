@@ -1651,6 +1651,60 @@ common shape: the form is specified from the user's side, the rules are written 
 textbook's side, and nothing checks that the two meet. The sweep is that check, and it is
 cheap enough to keep.
 
+## D-044 — The interface must not manufacture the result the thesis tests
+
+**Date:** 2026-08-30 · **Status:** accepted · **Closes:** [#40](https://github.com/cecimerelo/ml-sandbox/issues/40) · **Affects:** FR-2.4, FR-7.3
+
+**Context.** Three of the thesis's metrics are read out of user interactions, which makes
+the product an instrument as well as a tool. The experience spine records that one of them
+was specified wrong and filed as *"not a gap"*, and that **that was wrong**.
+
+**The fabricated metric.** FR-8.4 auto-trains up to five methods ordered by fit score. The
+recommended method is rank 1 **by construction**, so it is always trained. Any metric
+shaped like *"did the user run the recommended method?"* therefore reads 100% every session
+and measures nothing. It would have been reported as a headline result.
+
+**Decision.** Record what the system did separately from what the user chose, everywhere,
+and store the distinction rather than reconstruct it. It cannot be reconstructed: a trained
+method leaves the same trace whichever way it got there.
+
+| Origin | Counts as a choice |
+|---|---|
+| `system` — clicked `Get Recommendation` | **never**, for any method in the batch, the recommended one included |
+| `user` — toggled chips, ran a comparison | yes, but only the chips toggled in that run |
+| `retry` — `Try again` after a timeout | no. A user rescuing a failed run has decided nothing new |
+
+**Two acceptance arms, as two properties rather than one field.**
+
+*Arm A* is the user naming the recommended method in the FR-5.5 control. *Arm B* is the
+session ending with no other method named — which includes everyone who never engaged with
+the alternatives at all, and is therefore much weaker evidence.
+
+They are separate properties and `Acceptance` is a model rather than a dict, because a
+single "acceptance rate" would be the weaker of the two wearing the name of the stronger,
+and nothing in the output would say so. The summary also reports **how many sessions
+answered at all**, which is what tells a reader how much of Arm B rests on silence.
+
+**The control is never pre-filled.** Pre-selecting the recommendation would fabricate the
+metric a second time, having already fabricated it once by auto-training. `None` is an
+answer state, not a missing value.
+
+**The selector is a logged covariate.** Three methods sit one click away and the rest are
+behind an accordion, so it is a funnel. Without recording where a method was picked from, a
+method's popularity cannot be told apart from its position.
+
+**Diversity counts only deliberate selections.** A recommender that always says the same
+thing can score well on acceptance while being useless, and that is what the counter-metric
+catches — but only if auto-trained methods stay out of it, in both directions.
+
+**Privacy.** Interactions are stored as a **count**, never the column names, in any form —
+not hashed either (D-035). The record's field set is asserted structurally in the tests, so
+a field added later that could carry a name fails there rather than being noticed in a
+database.
+
+**Storage.** SQLite, one row per session, the record as JSON. Saving replaces rather than
+appends: a session is edited as it goes — trained, then compared, then answered — and
+keeping every intermediate state would make the analysis count one session several times.
 ---
 
 ## D-045 — A width ceiling is not a cost ceiling
