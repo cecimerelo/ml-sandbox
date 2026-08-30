@@ -20,6 +20,15 @@ import {
   toEngineBand,
 } from './options';
 import type { ClassBalanceAnswer } from './options';
+import type { Detection } from '../detect/types';
+
+/** Form field to the name the detector uses when it flags one as uncertain. */
+const DETECTED_FIELD: Partial<Record<keyof Answers, string>> = {
+  task: 'task',
+  feature_types: 'feature_types',
+  missing: 'missing',
+  class_balance: 'class_balance',
+};
 
 /**
  * Block 1 in advice-only mode: every answer manual and banded (FR-1.3).
@@ -61,8 +70,61 @@ const EMPTY: Answers = {
 
 const copy = Object.fromEntries(FORM_QUESTIONS.map((q) => [q.id, q]));
 
-export function ProblemForm({ onSubmit }: { onSubmit: (request: RecommendationRequest) => void }) {
+export function ProblemForm({
+  onSubmit,
+  detection,
+}: {
+  onSubmit: (request: RecommendationRequest) => void;
+  /**
+   * What was read from an uploaded file, when there is one.
+   *
+   * The answers arrive filled in and the questions stay where they were. Rendering the
+   * detections as their own block put two controls for each question on the page and left
+   * the user to work out which one counted.
+   */
+  detection?: Detection | null;
+}) {
   const [answers, setAnswers] = useState<Answers>(EMPTY);
+  const [confirmed, setConfirmed] = useState<Set<string>>(new Set());
+  const [filledFrom, setFilledFrom] = useState<Detection | null>(null);
+
+  // A new reading replaces the answers it covers; the three always-asked questions are
+  // untouched, because the file has nothing to say about what the user needs.
+  if (detection && detection !== filledFrom) {
+    setFilledFrom(detection);
+    setConfirmed(new Set());
+    setAnswers((current) => ({
+      ...current,
+      task: detection.task,
+      rows: detection.rows,
+      features: detection.features,
+      feature_types: detection.feature_types,
+      missing: detection.missing,
+      class_balance:
+        detection.class_balance === 'not applicable'
+          ? ''
+          : (detection.class_balance as ClassBalanceAnswer),
+    }));
+  }
+  if (!detection && filledFrom) {
+    // The readings go with the file they came from. Left behind, they are answers the
+    // user never gave, with nothing on screen saying where they came from — and the
+    // caption that used to explain them has gone with the detection.
+    //
+    // The three always-asked questions survive: they were the user's own answers, and a
+    // file failing to load is no reason to make someone say again what they need.
+    setFilledFrom(null);
+    setConfirmed(new Set());
+    setAnswers((current) => ({
+      ...current,
+      task: '',
+      rows: '',
+      features: '',
+      feature_types: '',
+      missing: '',
+      class_balance: '',
+    }));
+  }
   const set = <K extends keyof Answers>(key: K) => (value: Answers[K]) =>
     setAnswers((current) => ({ ...current, [key]: value }));
 
@@ -106,24 +168,54 @@ export function ProblemForm({ onSubmit }: { onSubmit: (request: RecommendationRe
     });
   };
 
-  const question = (id: string, options: { value: string; label: string }[], key: keyof Answers) => (
-    <Question
-      id={id}
-      label={copy[id]?.label ?? id}
-      explanation={copy[id]?.explanation ?? ''}
-      options={options}
-      value={answers[key]}
-      onChange={set(key)}
-    />
-  );
+  const question = (
+    id: string,
+    options: { value: string; label: string }[],
+    key: keyof Answers,
+    detail?: string,
+  ) => {
+    const field = DETECTED_FIELD[key];
+    const unsure = Boolean(field && detection?.uncertain.includes(field) && !confirmed.has(key));
+    return (
+      <Question
+        id={id}
+        label={copy[id]?.label ?? id}
+        explanation={copy[id]?.explanation ?? ''}
+        options={options}
+        value={answers[key]}
+        onChange={(value) => {
+          // Editing a flagged answer is itself a confirmation: the user has looked.
+          setConfirmed((current) => new Set(current).add(key));
+          set(key)(value);
+        }}
+        {...(detection && detail ? { detected: detail } : {})}
+        {...(unsure ? { uncertain: true, onConfirm: () => setConfirmed((c) => new Set(c).add(key)) } : {})}
+      />
+    );
+  };
 
   return (
     <Box component="form" onSubmit={(e) => { e.preventDefault(); submit(); }} noValidate>
-      {question('form.prediction-type', TASKS, 'task')}
-      {question('form.rows', ROWS, 'rows')}
-      {question('form.features', FEATURES, 'features')}
-      {question('form.feature-types', FEATURE_TYPES, 'feature_types')}
-      {question('form.missing', MISSING, 'missing')}
+      {question('form.prediction-type', TASKS, 'task', 'detected from your file')}
+      {question(
+        'form.rows',
+        ROWS,
+        'rows',
+        detection ? `${detection.n_rows.toLocaleString()} rows in your file` : undefined,
+      )}
+      {question(
+        'form.features',
+        FEATURES,
+        'features',
+        detection ? `${detection.n_features.toLocaleString()} columns in your file` : undefined,
+      )}
+      {question('form.feature-types', FEATURE_TYPES, 'feature_types', 'detected from your file')}
+      {question(
+        'form.missing',
+        MISSING,
+        'missing',
+        detection ? `${(detection.missing_rate * 100).toFixed(1)}% of cells are blank` : undefined,
+      )}
 
       {/* Rendered only for categories. The answer survives being hidden. */}
       {classificationAsked &&
@@ -131,6 +223,7 @@ export function ProblemForm({ onSubmit }: { onSubmit: (request: RecommendationRe
           'form.class-balance',
           classBalanceOptions(answers.task as Task),
           'class_balance',
+          detection?.n_classes ? `${detection.n_classes} categories in your file` : undefined,
         )}
 
       {question('form.explainability', EXPLAINABILITY, 'explainability')}

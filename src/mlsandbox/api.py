@@ -12,9 +12,9 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 
-from mlsandbox import upload
+from mlsandbox import detection, upload
 from mlsandbox.base import StrictModel
 from mlsandbox.methods import METHODS
 
@@ -51,7 +51,7 @@ class DatasetSummary(StrictModel):
 
     columns: list[str]
     rows: int
-    skipped: list[str] = []
+    skipped: list[upload.Skipped] = []
 
 
 @app.post("/api/dataset")
@@ -75,3 +75,73 @@ async def describe_dataset(file: Annotated[UploadFile, File()]) -> DatasetSummar
             status_code=422, detail={"reason": result.reason, "message": result.message}
         )
     return DatasetSummary(columns=result.columns, rows=result.rows, skipped=result.skipped)
+
+
+class DetectionResult(StrictModel):
+    """What the file says about itself, once a target is chosen.
+
+    Exact counts *and* their bands. The counts are facts about the file and read-only; the
+    bands are what the engine consumes, and showing both means a user can check the
+    reading without being asked to do the banding themselves.
+    """
+
+    task: str
+    rows: str
+    features: str
+    feature_types: str
+    missing: str
+    class_balance: str
+
+    n_rows: int
+    n_features: int
+    n_classes: int | None = None
+    missing_rate: float = 0.0
+    dropped_rows: int = 0
+
+    uncertain: list[str] = []
+
+
+@app.post("/api/dataset/detect")
+async def detect_dataset(
+    file: Annotated[UploadFile, File()], target: Annotated[str, Form()]
+) -> DetectionResult:
+    """Read a dataset's properties, given which column is the outcome.
+
+    The file is sent again rather than remembered between requests: the server keeps it for
+    the length of one call and no longer, which is what FR-7.2 promises and what the
+    privacy notice will say.
+
+    Refusals are 422 with a message naming the column. A target that cannot be predicted is
+    not a server error — the file is fine and the choice is not — and the user fixes it by
+    picking a different column.
+    """
+    parsed = upload.read(await file.read(), filename=file.filename or "")
+    if isinstance(parsed, upload.Rejected):
+        raise HTTPException(
+            status_code=422, detail={"reason": parsed.reason, "message": parsed.message}
+        )
+
+    result = detection.detect(parsed.frame, target)
+    if isinstance(result, detection.Unpredictable):
+        raise HTTPException(
+            status_code=422, detail={"reason": result.problem, "message": result.message}
+        )
+
+    # `regime` is deliberately not sent. It is derived from the row and feature bands
+    # (D-028), so the server computes it when the recommendation is asked for; sending it
+    # would put a second copy in the browser, and two copies of a derived value are how
+    # the two paths come to disagree.
+    bands = {
+        field: value
+        for field, value in result.features.as_row().items()
+        if field != "regime"
+    }
+    return DetectionResult(
+        **bands,
+        n_rows=result.n_rows,
+        n_features=result.n_features,
+        n_classes=result.n_classes,
+        missing_rate=result.missing_rate,
+        dropped_rows=result.dropped_rows,
+        uncertain=result.uncertain,
+    )

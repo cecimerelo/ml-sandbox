@@ -105,3 +105,26 @@ describe('the series slots are distinct values', () => {
     expect(series.other.hex).not.toBe(chrome.textDisabled.hex);
   });
 });
+
+describe('the provenance colours', () => {
+  it('are readable as body text, which the stock MUI roles are not', () => {
+    // They sit on 14px captions, not on a filled Alert where the surface does the work.
+    // MUI's warning.main is 3.11:1 and info.main 3.86:1 on white — both fine behind a
+    // coloured background and neither readable as text. Choosing them would have shipped
+    // an unreadable warning to exactly the people a warning is for.
+    expect(contrast(chrome.detected.hex, WHITE)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(chrome.unsure.hex, WHITE)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('do not reuse the chrome colour', () => {
+    // The bar is the same family of dark orange. Chrome and a caption about the user's
+    // data should not be the same value, whatever they look like side by side.
+    expect(chrome.unsure.hex).not.toBe(chrome.topBar.hex);
+  });
+
+  it('are distinguishable from ordinary secondary text', () => {
+    // Otherwise the colour carries nothing and the marking is decoration.
+    expect(chrome.detected.hex).not.toBe(chrome.textSecondary.hex);
+    expect(chrome.unsure.hex).not.toBe(chrome.textSecondary.hex);
+  });
+});

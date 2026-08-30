@@ -31,10 +31,25 @@ const UNREACHABLE =
   "We couldn't reach the server, so we haven't looked at your file yet. If you're running " +
   'this locally, check the API is up.';
 
+export interface SkippedColumn {
+  column: string;
+  reason: 'date' | 'free-text';
+  /** Why, in the words the user is shown. */
+  message: string;
+}
+
 export interface DatasetSummary {
   columns: string[];
   rows: number;
-  skipped: string[];
+  /**
+   * Columns that cannot be used, each with its reason.
+   *
+   * Carried rather than counted, because the target picker shows them **disabled with the
+   * reason** rather than hiding them — the same rule FR-8.3 sets for methods that do not
+   * apply. A column that silently vanishes leaves someone hunting for it and teaches them
+   * nothing.
+   */
+  skipped: SkippedColumn[];
 }
 
 /**
@@ -51,8 +66,18 @@ export interface DatasetSummary {
  */
 export function Dropzone({
   onAccepted,
+  onCleared,
 }: {
   onAccepted: (file: File, summary: DatasetSummary) => void;
+  /**
+   * No dataset is loaded any more — a new file was tried and could not be read.
+   *
+   * Reported because the page holds the readings, and the zone already forgets the
+   * previous file the moment another is dropped. Without this the two disagree: the
+   * control says nothing is loaded while the form still shows the last file's properties,
+   * and a recommendation could be asked for about a dataset the user has replaced.
+   */
+  onCleared: () => void;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<DatasetSummary | null>(null);
@@ -64,12 +89,19 @@ export function Dropzone({
   function handleDropped(files: FileList | null) {
     if (!files || files.length === 0) return;
     if (files.length > 1) {
-      setError(ONE_AT_A_TIME);
       setName(null);
       setSummary(null);
+      fail(ONE_AT_A_TIME);
       return;
     }
     void handle(files[0]!);
+  }
+
+  function fail(message: string) {
+    setError(message);
+    // Whatever was loaded is gone with it. A dataset the user tried to replace is not
+    // still the dataset, and keeping it risks a recommendation about the wrong file.
+    onCleared();
   }
 
   async function handle(file: File) {
@@ -78,9 +110,10 @@ export function Dropzone({
     // a new one is being read says the wrong file was accepted.
     setName(null);
     setSummary(null);
+    onCleared();
 
     if (file.size > MAX_BYTES) {
-      setError(tooLargeMessage(file.size));
+      fail(tooLargeMessage(file.size));
       return;
     }
 
@@ -97,7 +130,7 @@ export function Dropzone({
         // A response that is not JSON is not this endpoint answering. In development it is
         // usually the dev server's HTML fallback, which means the API is unreachable and
         // the file is blameless.
-        setError(UNREACHABLE);
+        fail(UNREACHABLE);
         return;
       }
 
@@ -105,7 +138,7 @@ export function Dropzone({
         const message = (payload as { detail?: { message?: string } })?.detail?.message;
         // A refusal without our message is not our refusal — say so rather than inventing
         // a reason the file might have been rejected for.
-        setError(message ?? UNREACHABLE);
+        fail(message ?? UNREACHABLE);
         return;
       }
       setSummary(payload as DatasetSummary);
@@ -113,7 +146,7 @@ export function Dropzone({
       onAccepted(file, payload as DatasetSummary);
     } catch {
       // fetch only rejects when the request never completed.
-      setError(UNREACHABLE);
+      fail(UNREACHABLE);
     } finally {
       setBusy(false);
     }
@@ -199,7 +232,7 @@ export function Dropzone({
               {' '}
               {/* Named on hover rather than listed: a user with forty skipped columns needs
                   to know it happened, not to read forty names. But they must be able to. */}
-              <Tooltip title={summary.skipped.join(', ')}>
+              <Tooltip title={summary.skipped.map((s) => s.column).join(', ')}>
                 <Box component="span" sx={{ borderBottom: '1px dotted', cursor: 'help' }}>
                   {summary.skipped.length} column{summary.skipped.length === 1 ? '' : 's'} skipped
                 </Box>

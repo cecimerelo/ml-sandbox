@@ -59,6 +59,18 @@ export const chrome = {
   backgroundDefault: t('#fafafa', 1.03),
   backgroundPaper: t('#ffffff', 1.0),
   divider: t('#e0e0e0', 1.28),
+
+  /**
+   * Where a value came from, and how much to trust it. Two provenance colours, both
+   * darker than MUI's stock roles for one reason: **they are used on 14px captions.**
+   *
+   * `warning.main` is 3.11:1 and `info.main` 3.86:1 on white. Both are fine on a filled
+   * Alert, where the surface does the work, and neither clears 4.5:1 as text — which is
+   * what these are. The stock roles were the obvious choice and would have shipped an
+   * unreadable warning to exactly the people a warning is for.
+   */
+  detected: t('#01579b', 7.4),
+  unsure: t('#8a5000', 6.51),
 } as const;
 
 /**

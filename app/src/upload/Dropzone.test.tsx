@@ -13,12 +13,13 @@ import { theme } from '../theme/theme';
 
 function setup() {
   const onAccepted = vi.fn();
+  const onCleared = vi.fn();
   render(
     <ThemeProvider theme={theme}>
-      <Dropzone onAccepted={onAccepted} />
+      <Dropzone onAccepted={onAccepted} onCleared={onCleared} />
     </ThemeProvider>,
   );
-  return { onAccepted, user: userEvent.setup() };
+  return { onAccepted, onCleared, user: userEvent.setup() };
 }
 
 function csv(name = 'data.csv', size?: number): File {
@@ -328,5 +329,51 @@ describe('more than one file at once', () => {
     setup();
     drop([csv('one.csv')]);
     expect(await screen.findByRole('alert')).toHaveTextContent(/5 rows/i);
+  });
+});
+
+describe('a failed file after a good one', () => {
+  it('tells the page that nothing is loaded any more', async () => {
+    // The zone already forgets the previous file the moment another is dropped. Without
+    // saying so, the two disagree: the control shows no file while the form still holds
+    // the last one's properties, and a recommendation could be asked for about a dataset
+    // the user has replaced.
+    respond(200, { columns: ['a', 'b'], rows: 5, skipped: [] });
+    const { onCleared, user } = setup();
+    await user.upload(screen.getByLabelText(/upload a csv/i), csv('good.csv'));
+    await screen.findByText('good.csv');
+    onCleared.mockClear();
+
+    respond(422, { detail: { reason: 'no-rows', message: 'header row but no data' } });
+    await user.upload(screen.getByLabelText(/upload a csv/i), csv('bad.csv'));
+    await screen.findByRole('alert');
+
+    expect(onCleared).toHaveBeenCalled();
+    expect(screen.queryByText('good.csv')).toBeNull();
+  });
+
+  it('clears on an oversized file too, which never reaches the server', async () => {
+    vi.stubGlobal('fetch', vi.fn());
+    const { onCleared, user } = setup();
+    await user.upload(screen.getByLabelText(/upload a csv/i), csv('big.csv', MAX_BYTES + 1));
+    await screen.findByRole('alert');
+    expect(onCleared).toHaveBeenCalled();
+  });
+
+  it('clears when two files are dropped at once', async () => {
+    vi.stubGlobal('fetch', vi.fn());
+    const { onCleared } = setup();
+    drop([csv('a.csv'), csv('b.csv')]);
+    await screen.findByRole('alert');
+    expect(onCleared).toHaveBeenCalled();
+  });
+
+  it('clears while a new file is still being read', async () => {
+    // Not only on failure. Between dropping a file and hearing back, the previous
+    // readings describe a dataset the user is in the middle of replacing.
+    respond(200, { columns: ['a'], rows: 3, skipped: [] });
+    const { onCleared, user } = setup();
+    await user.upload(screen.getByLabelText(/upload a csv/i), csv('one.csv'));
+    expect(onCleared).toHaveBeenCalled();
   });
 });

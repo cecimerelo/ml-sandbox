@@ -5,7 +5,10 @@ import { useState } from 'react';
 
 import type { RecommendationRequest } from '../api/types';
 import { ProblemForm } from '../form/ProblemForm';
+import { DatasetPanel } from '../detect/DatasetPanel';
+import type { Detection } from '../detect/types';
 import { Dropzone } from '../upload/Dropzone';
+import type { DatasetSummary } from '../upload/Dropzone';
 import { spacing } from '../theme/tokens';
 
 /**
@@ -18,6 +21,8 @@ import { spacing } from '../theme/tokens';
  */
 export function Dashboard() {
   const [submitted, setSubmitted] = useState<RecommendationRequest | null>(null);
+  const [dataset, setDataset] = useState<{ file: File; summary: DatasetSummary } | null>(null);
+  const [detection, setDetection] = useState<Detection | null>(null);
 
   return (
     // Centred in a reading column rather than filling the page. Text stays left-aligned
@@ -43,9 +48,33 @@ export function Dashboard() {
           exercised, and that is a real cost worth naming: someone who uploads a file and
           then answers the same questions by hand has been given the impression the file
           was used. Detection is what closes it. */}
-      <Dropzone onAccepted={() => undefined} />
+      <Dropzone
+        onAccepted={(file, summary) => {
+          setDataset({ file, summary });
+          // A new file invalidates the old reading. Leaving it would fill the questions
+          // with properties of a dataset nobody uploaded.
+          setDetection(null);
+        }}
+        onCleared={() => {
+          setDataset(null);
+          setDetection(null);
+        }}
+      />
 
-      <ProblemForm onSubmit={setSubmitted} />
+      {/* Choosing the outcome comes before anything else the file can say, because every
+          other reading depends on it. The questions below still have to be answered by
+          hand — carrying the detections into them is the shape switch, which is its own
+          task. */}
+      {dataset && (
+        <DatasetPanel
+          file={dataset.file}
+          columns={dataset.summary.columns}
+          unusable={dataset.summary.skipped}
+          onDetected={setDetection}
+        />
+      )}
+
+      <ProblemForm onSubmit={setSubmitted} detection={detection} />
 
       {/* Stands in for the recommendation panel until the engine is reachable over HTTP.
           Marked as scaffolding in the copy rather than dressed up as a result — and with
