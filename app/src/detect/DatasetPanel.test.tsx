@@ -79,9 +79,11 @@ describe('the target', () => {
     expect(await screen.findAllByRole('option')).toHaveLength(3);
   });
 
-  it('shows nothing below it until one is chosen', () => {
+  it('reads nothing until one is chosen', () => {
+    const fetched = vi.fn();
+    vi.stubGlobal('fetch', fetched);
     setup();
-    expect(screen.queryByText(/how many rows/i)).toBeNull();
+    expect(fetched).not.toHaveBeenCalled();
   });
 });
 
@@ -98,13 +100,15 @@ describe('a target that cannot be predicted', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(/invoice/);
   });
 
-  it('reads nothing from the file', async () => {
+  it('reports nothing readable upward', async () => {
+    // `null` rather than nothing: the previous reading has to be cleared, or the form
+    // keeps showing properties of a target the user has moved on from.
     respond(422, { detail: { reason: 'single-value', message: 'nothing to predict' } });
     const { onDetected, user } = setup();
     await pick(user, 'city');
     await screen.findByRole('alert');
-    expect(onDetected).not.toHaveBeenCalled();
-    expect(screen.queryByText(/how many rows/i)).toBeNull();
+    expect(onDetected).toHaveBeenCalledWith(null);
+    expect(onDetected).not.toHaveBeenCalledWith(expect.objectContaining({ n_rows: 388 }));
   });
 
   it('lets the user pick another column', async () => {
@@ -116,118 +120,19 @@ describe('a target that cannot be predicted', () => {
     respond(200, DETECTION);
     await pick(user, 'price');
     await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
-    expect(screen.getByText(/388 rows/)).toBeInTheDocument();
   });
 });
 
-describe('what the file said', () => {
-  it('shows the exact count beside its band', async () => {
-    // Both, because they answer different questions: the count lets a user check the
-    // reading against their file, the band is what the engine consumes.
-    respond(200, DETECTION);
-    const { user } = setup();
-    await pick(user, 'price');
-    expect(await screen.findByText(/388 rows · <500/)).toBeInTheDocument();
-  });
-
-  it('explains rows that were left out rather than hiding them', async () => {
-    // A row count that still included them would describe a dataset that will not be used.
-    respond(200, DETECTION);
-    const { user } = setup();
-    await pick(user, 'price');
-    expect(await screen.findByText(/12 rows left out/i)).toBeInTheDocument();
-  });
-
-  it('says nothing about dropped rows when none were', async () => {
-    respond(200, { ...DETECTION, dropped_rows: 0 });
-    const { user } = setup();
-    await pick(user, 'price');
-    await screen.findByText(/388 rows/);
-    expect(screen.queryByText(/left out/i)).toBeNull();
-  });
-
-  it('reports what was read upward', async () => {
+describe('what it reports', () => {
+  it('hands the reading to the form rather than showing it itself', async () => {
+    // A second block showing the same six answers put two controls for each on the page,
+    // and left the user to work out which one counted.
     respond(200, DETECTION);
     const { onDetected, user } = setup();
     await pick(user, 'price');
-    await waitFor(() => expect(onDetected).toHaveBeenCalled());
-    expect(onDetected.mock.calls[0]?.[1]).toMatchObject({ task: 'regression' });
-  });
-});
-
-describe('a reading the file does not settle', () => {
-  it('flags the field, not the page', async () => {
-    // "Some of this might be wrong" tells a reader to re-check everything, which gets
-    // re-checked by nobody. Naming the field turns a warning into a task with an end.
-    respond(200, { ...DETECTION, uncertain: ['task'] });
-    const { user } = setup();
-    await pick(user, 'price');
-    expect(await screen.findByText(/we're not sure about this one/i)).toBeInTheDocument();
-  });
-
-  it('does not rely on colour alone', async () => {
-    respond(200, { ...DETECTION, uncertain: ['task'] });
-    const { user } = setup();
-    await pick(user, 'price');
-    // The words carry the same meaning as the amber, so the flag survives being unable to
-    // see the difference.
-    expect(await screen.findByText(/please check it/i)).toBeInTheDocument();
-  });
-
-  it('clears only when the user says so', async () => {
-    // A warning that clears itself has been accepted on the user's behalf, which is the
-    // outcome FR-8.2 exists to prevent.
-    respond(200, { ...DETECTION, uncertain: ['task'] });
-    const { user } = setup();
-    await pick(user, 'price');
-    await screen.findByText(/we're not sure/i);
-
-    await user.click(screen.getByRole('button', { name: /looks right/i }));
-    expect(screen.queryByText(/we're not sure/i)).toBeNull();
-  });
-
-  it('leaves confident readings unflagged', async () => {
-    respond(200, DETECTION);
-    const { user } = setup();
-    await pick(user, 'price');
-    await screen.findByText(/388 rows/);
-    expect(screen.queryByText(/we're not sure/i)).toBeNull();
-  });
-});
-
-describe('the counts', () => {
-  it('are not offered as something to disagree with', async () => {
-    // A person cannot meaningfully disagree that their file has 388 rows, and offering
-    // them the chance implies the reading is a matter of taste.
-    respond(200, DETECTION);
-    const { user } = setup();
-    await pick(user, 'price');
-    await screen.findByText(/388 rows/);
-    const groups = screen.queryAllByRole('radiogroup');
-    expect(groups.length).toBeGreaterThan(0);
-    for (const group of groups) {
-      expect(group).not.toHaveAccessibleName(/how many rows/i);
-    }
-  });
-});
-
-describe('where a value came from', () => {
-  it('marks a detected reading with words as well as colour', async () => {
-    // Colour alone says nothing to a reader who cannot see the difference. The caption
-    // carries the meaning; the colour only makes it quicker to find.
-    respond(200, DETECTION);
-    const { user } = setup();
-    await pick(user, 'price');
-    expect(await screen.findAllByText(/detected from your file/i)).not.toHaveLength(0);
-  });
-
-  it('does not mark a fact about the file as a detection', async () => {
-    // A row count is not a reading that could have gone another way, so it is not
-    // presented as one.
-    respond(200, DETECTION);
-    const { user } = setup();
-    await pick(user, 'price');
-    const rows = await screen.findByText(/388 rows · <500/);
-    expect(rows).not.toHaveTextContent(/detected/i);
+    await waitFor(() =>
+      expect(onDetected).toHaveBeenCalledWith(expect.objectContaining({ task: 'regression' })),
+    );
+    expect(screen.queryByText(/388 rows/)).toBeNull();
   });
 });

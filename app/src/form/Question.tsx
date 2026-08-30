@@ -5,9 +5,14 @@ import Radio from '@mui/material/Radio';
 import RadioGroup from '@mui/material/RadioGroup';
 import Typography from '@mui/material/Typography';
 
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+
 import { renderCopy } from '../copy/render';
 import type { Option } from './options';
-import { spacing } from '../theme/tokens';
+import { chrome, spacing } from '../theme/tokens';
 
 interface Props<T extends string> {
   id: string;
@@ -16,6 +21,18 @@ interface Props<T extends string> {
   options: Option<T>[];
   value: T | '';
   onChange: (value: T) => void;
+
+  /**
+   * What the file said, when there is one.
+   *
+   * The answer is filled in and the question stays where it was. Showing a detected value
+   * beside the question it answers would put two controls for one thing on the page, and
+   * the user would have to work out which one counts.
+   */
+  detected?: string;
+  /** The file did not settle this one (FR-8.2). Cleared by editing or by saying so. */
+  uncertain?: boolean;
+  onConfirm?: () => void;
 }
 
 /**
@@ -37,6 +54,9 @@ export function Question<T extends string>({
   options,
   value,
   onChange,
+  detected,
+  uncertain = false,
+  onConfirm,
 }: Props<T>) {
   const explanationId = `${id}-explanation`;
 
@@ -64,6 +84,32 @@ export function Question<T extends string>({
           />
         ))}
       </RadioGroup>
+      {/* Provenance sits above the explanation, because it changes how the explanation
+          should be read: a question already answered from the file is being checked, not
+          answered. */}
+      {uncertain && (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+          <WarningAmberIcon fontSize="small" aria-hidden sx={{ color: chrome.unsure.hex }} />
+          <Typography variant="body2" component="span" sx={{ color: chrome.unsure.hex }}>
+            We&apos;re not sure about this one — please check it.
+          </Typography>
+          {onConfirm && (
+            <Button size="small" onClick={onConfirm}>
+              Looks right
+            </Button>
+          )}
+        </Box>
+      )}
+
+      {detected && !uncertain && (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+          <AutoAwesomeIcon fontSize="small" aria-hidden sx={{ color: chrome.detected.hex }} />
+          <Typography variant="body2" component="span" sx={{ color: chrome.detected.hex }}>
+            {detected}
+          </Typography>
+        </Box>
+      )}
+
       <Typography
         id={explanationId}
         variant="body2"

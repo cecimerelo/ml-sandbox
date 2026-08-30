@@ -165,3 +165,102 @@ describe('the explanations', () => {
     expect(screen.getAllByRole('radio')[0]).toHaveFocus();
   });
 });
+
+const DETECTION = {
+  task: 'regression' as const,
+  rows: '500-10k' as const,
+  features: '10-50' as const,
+  feature_types: 'mixed' as const,
+  missing: 'some' as const,
+  class_balance: 'not applicable' as const,
+  n_rows: 8412,
+  n_features: 21,
+  n_classes: null,
+  missing_rate: 0.032,
+  dropped_rows: 0,
+  uncertain: [] as string[],
+};
+
+function withDetection(detection = DETECTION) {
+  const onSubmit = vi.fn();
+  render(
+    <ThemeProvider theme={theme}>
+      <ProblemForm onSubmit={onSubmit} detection={detection} />
+    </ThemeProvider>,
+  );
+  return { onSubmit, user: userEvent.setup() };
+}
+
+describe('when a file has been read', () => {
+  it('fills the questions that already exist rather than adding new ones', async () => {
+    // The readings used to render as their own block, which put two controls for each
+    // question on the page and left the user to work out which one counted.
+    withDetection();
+    const groups = screen.getAllByRole('radiogroup');
+    expect(groups).toHaveLength(8);
+
+    const kind = screen.getByRole('radiogroup', { name: /what are you trying to predict/i });
+    expect(within(kind).getByRole('radio', { name: 'A number' })).toBeChecked();
+  });
+
+  it('says what the file said, beside the question it answers', async () => {
+    withDetection();
+    expect(screen.getByText(/8,412 rows in your file/)).toBeInTheDocument();
+    expect(screen.getByText(/21 columns in your file/)).toBeInTheDocument();
+    expect(screen.getByText(/3\.2% of cells are blank/)).toBeInTheDocument();
+  });
+
+  it('leaves the questions the file cannot answer alone', async () => {
+    // Explainability, non-linearity and interactions are about what the user needs and
+    // believes. A file has nothing to say about either.
+    withDetection();
+    for (const group of [/explain individual predictions/i, /straight line/i, /combination/i]) {
+      const control = screen.getByRole('radiogroup', { name: group });
+      for (const radio of within(control).getAllByRole('radio')) {
+        expect(radio).not.toBeChecked();
+      }
+    }
+  });
+
+  it('is still answerable by hand — a detection is a starting point, not a verdict', async () => {
+    const { user } = withDetection();
+    const kind = screen.getByRole('radiogroup', { name: /what are you trying to predict/i });
+    await user.click(within(kind).getByRole('radio', { name: 'One of two categories' }));
+    expect(within(kind).getByRole('radio', { name: 'One of two categories' })).toBeChecked();
+  });
+
+  it('flags a reading the file did not settle', async () => {
+    withDetection({ ...DETECTION, uncertain: ['task'] });
+    expect(screen.getByText(/we're not sure about this one/i)).toBeInTheDocument();
+  });
+
+  it('clears the flag when the user edits the answer', async () => {
+    // Editing is itself a confirmation: they have looked at it.
+    const { user } = withDetection({ ...DETECTION, uncertain: ['task'] });
+    const kind = screen.getByRole('radiogroup', { name: /what are you trying to predict/i });
+    await user.click(within(kind).getByRole('radio', { name: 'One of two categories' }));
+    expect(screen.queryByText(/we're not sure/i)).toBeNull();
+  });
+
+  it('clears the flag on an explicit Looks right', async () => {
+    const { user } = withDetection({ ...DETECTION, uncertain: ['task'] });
+    await user.click(screen.getByRole('button', { name: /looks right/i }));
+    expect(screen.queryByText(/we're not sure/i)).toBeNull();
+  });
+
+  it('does not flag a confident reading', async () => {
+    withDetection();
+    expect(screen.queryByText(/we're not sure/i)).toBeNull();
+  });
+
+  it('needs only the three questions the file cannot answer', async () => {
+    const { user, onSubmit } = withDetection();
+    await answer(user, /explain individual predictions/i, 'Not important');
+    await answer(user, /straight line/i, "I don't know");
+    await answer(user, /only matter in combination/i, 'No');
+
+    await user.click(screen.getByRole('button', { name: /get recommendation/i }));
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(onSubmit.mock.calls[0]?.[0]).toMatchObject({ rows: '500-10k', missing: 'some' });
+  });
+});
