@@ -3,7 +3,7 @@
  */
 
 import { ThemeProvider } from '@mui/material/styles';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -260,5 +260,73 @@ describe('the zone after a file is accepted', () => {
     await screen.findByRole('alert');
     expect(screen.queryByText('first.csv')).toBeNull();
     expect(screen.getByText(/drop a csv here/i)).toBeInTheDocument();
+  });
+});
+
+/**
+ * Only reachable by dragging: the input has no `multiple`, so the file dialog cannot hand
+ * over two. That is exactly why it is easy to miss — the path the tests exercise most is
+ * the one that cannot reach it.
+ */
+function drop(files: File[]) {
+  fireEvent.drop(screen.getByText(/drop a csv here|loaded/i).closest('div')!, {
+    dataTransfer: { files },
+  });
+}
+
+describe('more than one file at once', () => {
+  it('refuses instead of silently taking the first', async () => {
+    // The tempting version takes files[0] and drops the rest. It is silent: the user sees
+    // one file accepted, cannot tell which, and never learns the others were discarded.
+    const fetched = vi.fn();
+    vi.stubGlobal('fetch', fetched);
+
+    setup();
+    drop([csv('a.csv'), csv('b.csv')]);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/one file at a time/i);
+    expect(fetched).not.toHaveBeenCalled();
+  });
+
+  it('does not report either file as accepted', async () => {
+    vi.stubGlobal('fetch', vi.fn());
+    const { onAccepted } = setup();
+    drop([csv('a.csv'), csv('b.csv')]);
+    await screen.findByRole('alert');
+    expect(onAccepted).not.toHaveBeenCalled();
+  });
+
+  it('clears a file that had already been accepted', async () => {
+    // Otherwise the zone shows the old file as loaded beside an error about the new drop,
+    // and the two cannot be told apart.
+    respond(200, { columns: ['a'], rows: 3, skipped: [] });
+    const { user } = setup();
+    await user.upload(screen.getByLabelText(/upload a csv/i), csv('first.csv'));
+    await screen.findByText('first.csv');
+
+    drop([csv('a.csv'), csv('b.csv')]);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/one file at a time/i);
+    expect(screen.queryByText('first.csv')).toBeNull();
+  });
+
+  it('recovers when a single file is dropped next', async () => {
+    vi.stubGlobal('fetch', vi.fn());
+    const { user } = setup();
+    drop([csv('a.csv'), csv('b.csv')]);
+    await screen.findByRole('alert');
+
+    respond(200, { columns: ['a', 'b'], rows: 9, skipped: [] });
+    await user.upload(screen.getByLabelText(/upload a csv/i), csv('good.csv'));
+
+    const alerts = await screen.findAllByRole('alert');
+    expect(alerts).toHaveLength(1);
+    expect(alerts[0]).toHaveTextContent(/9 rows/i);
+  });
+
+  it('takes a single dropped file normally', async () => {
+    respond(200, { columns: ['a', 'b'], rows: 5, skipped: [] });
+    setup();
+    drop([csv('one.csv')]);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/5 rows/i);
   });
 });

@@ -17,6 +17,16 @@ import { MAX_BYTES, tooLargeMessage } from './limits';
  * this control was used against a stale dev server. The two failures look identical from
  * inside the `catch`, so they are told apart before reaching it.
  */
+/**
+ * Dropping several files at once is easy to do by accident and easy to handle wrongly.
+ *
+ * Taking the first and ignoring the rest is the tempting version, and it is silent: the
+ * user sees one file accepted and has no way to know which one, or that the others were
+ * discarded. Refusing and saying so costs them one more drag and tells them the truth.
+ */
+const ONE_AT_A_TIME =
+  'Drop one file at a time — we can only work with a single dataset.';
+
 const UNREACHABLE =
   "We couldn't reach the server, so we haven't looked at your file yet. If you're running " +
   'this locally, check the API is up.';
@@ -50,6 +60,17 @@ export function Dropzone({
   const [busy, setBusy] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const accepted = summary !== null && error === null;
+
+  function handleDropped(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    if (files.length > 1) {
+      setError(ONE_AT_A_TIME);
+      setName(null);
+      setSummary(null);
+      return;
+    }
+    void handle(files[0]!);
+  }
 
   async function handle(file: File) {
     setError(null);
@@ -112,8 +133,7 @@ export function Dropzone({
         onDragOver={(event) => event.preventDefault()}
         onDrop={(event) => {
           event.preventDefault();
-          const file = event.dataTransfer.files[0];
-          if (file) void handle(file);
+          handleDropped(event.dataTransfer.files);
         }}
       >
         {/* The zone itself changes, not only the message beneath it. Left unchanged, a
@@ -153,8 +173,7 @@ export function Dropzone({
           hidden
           aria-label="Upload a CSV"
           onChange={(event) => {
-            const file = event.target.files?.[0];
-            if (file) void handle(file);
+            handleDropped(event.target.files);
             // Cleared so choosing the same file twice still fires a change.
             event.target.value = '';
           }}
