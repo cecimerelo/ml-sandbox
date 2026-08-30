@@ -203,6 +203,23 @@
       }
     },
     {
+      "name": "polynomial_interactions",
+      "label": "Polynomial with Interactions",
+      "family": "non-linear",
+      "tasks": [
+        "regression"
+      ],
+      "needs_scaling": true,
+      "handles_nan": false,
+      "explainability": "with effort",
+      "tuning": "internal-cv",
+      "implementation": "sklearn",
+      "rationale": "Every predictor squared and every pair multiplied. Separated from polynomial regression because they answer different questions \u2014 one asks whether a relationship curves, the other whether two variables only matter together \u2014 and because the products are what make the basis uncomputable on wide data.",
+      "incompatibility": {
+        "classification": "Polynomial with Interactions can't be used here \u2014 you're sorting things into categories, and this method only predicts numbers."
+      }
+    },
+    {
       "name": "splines",
       "label": "Regression Splines",
       "family": "non-linear",

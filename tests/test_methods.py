@@ -309,17 +309,25 @@ def test_a_basis_expansion_drops_degrees_the_data_cannot_carry():
     from mlsandbox.methods import WidthAwareGrid
 
     grid = WidthAwareGrid(None, "poly__degree", [2, 3], scoring="r2")
-    assert grid._affordable(5) == [2, 3]
-    assert grid._affordable(40) == [2]
+    assert grid._affordable(5, 1_000) == [2, 3]
+    assert grid._affordable(40, 1_000) == [2]
 
 
-def test_the_smallest_degree_always_survives():
-    # A grid with nothing in it would fail rather than degrade, and a basis expansion that
-    # expands nothing is not one.
+def test_the_smallest_degree_does_not_always_survive():
+    """This test used to assert the opposite, and that is how the defect stayed.
+
+    "A grid with nothing in it would fail rather than degrade" sounds like a principle. It
+    was really a fallback that returned the smallest degree whatever it cost — and for a
+    polynomial the smallest degree is 2, so it handed back the very thing the budget had
+    just refused, at precisely the moment the budget mattered.
+
+    A run spent sixty-nine minutes inside one fit, under a five-minute timeout that could
+    not interrupt it, before anyone looked here.
+    """
     from mlsandbox.methods import WidthAwareGrid
 
     grid = WidthAwareGrid(None, "poly__degree", [2, 3], scoring="r2")
-    assert grid._affordable(5_000) == [2]
+    assert grid._affordable(5_000, 20_000) == []
 
 
 def test_polynomial_stays_fast_on_a_wide_dataset():
@@ -333,3 +341,177 @@ def test_polynomial_stays_fast_on_a_wide_dataset():
     started = time.perf_counter()
     build("polynomial", "regression", seed=1).fit(features, target)
     assert time.perf_counter() - started < 30
+
+
+# What a basis expansion is allowed to cost
+
+
+def grid():
+    from mlsandbox.methods import WidthAwareGrid
+
+    # The degrees polynomial actually offers. Degree 1 is not among them, and that is the
+    # point: a degree-1 polynomial is linear regression, which is already in the
+    # collection under its own name.
+    return WidthAwareGrid(None, "poly__degree", [2, 3], "r2")
+
+
+def test_a_narrow_dataset_still_gets_a_real_curve():
+    """The budget must not flatten every polynomial.
+
+    Six columns is where a cubic belongs, and a guard that removed it there would stop the
+    method existing rather than stop it being ruinous.
+    """
+    assert grid()._affordable(6, 20_000) == [2, 3]
+
+
+def test_width_alone_does_not_decide_it():
+    """The same width is affordable on a small dataset and not on a very large one.
+
+    Rows above the study's cap, deliberately: the cost budget does not bind under the
+    current caps — 20,000 rows against 2,000 columns is 8×10¹⁰, below it — so this shows
+    where it *would*, rather than pretending it is doing work today.
+    """
+    wide = 60
+    assert grid()._affordable(wide, 20_000) == [2]
+    assert grid()._affordable(wide, 200_000) == []
+
+
+def test_the_cost_budget_does_not_bind_under_the_current_caps():
+    """Stated rather than discovered later.
+
+    A guard that never fires is easy to mistake for a guard that is working. This one is
+    insurance against the row cap or the width ceiling moving, and it should be read that
+    way — the fix for the stall was removing the fallback beneath the width ceiling, not
+    this.
+    """
+    from mlsandbox.benchmark import EVALUATION_ROW_CAP
+    from mlsandbox.methods import MAX_EXPANDED_FEATURES, MAX_FIT_OPERATIONS
+
+    assert EVALUATION_ROW_CAP * MAX_EXPANDED_FEATURES**2 < MAX_FIT_OPERATIONS
+
+
+def test_the_cost_grows_with_the_square_of_the_width():
+    from mlsandbox.methods import MAX_FIT_OPERATIONS
+
+    # Doubling the columns quadruples the work: least squares over p columns is O(n·p²).
+    # Stated as a test so the budget cannot be re-derived as if it were linear.
+    assert 100_000 * 2_000**2 > MAX_FIT_OPERATIONS
+
+
+def test_the_budget_does_not_refuse_fits_that_were_fast():
+    """Calibration, not a guess.
+
+    The first budget was ten times too tight and rejected `pumadyn32nh`, whose polynomial
+    fits had been taking 0.8 seconds. A guard that refuses work it could have done in under
+    a second is not protecting anything — it is deleting results.
+    """
+    assert grid()._affordable(32, 8_192) == [2]
+
+
+def test_nothing_affordable_returns_nothing():
+    """Empty is a real answer, and the previous fallback was the bug.
+
+    Returning the smallest degree when nothing fit read as graceful degradation and was
+    not: for a polynomial the smallest degree is 2, so the fallback handed back the very
+    thing the budget had just refused. It bypassed the guard at precisely the moment the
+    guard mattered.
+    """
+    assert grid()._affordable(500, 100_000) == []
+
+
+def test_the_widest_data_refuses_rather_than_pretending():
+    """There is nothing to degrade to.
+
+    A degree-1 polynomial is linear regression, already in the collection under its own
+    name. Offering it here would score one method twice and call the second one a curve.
+    """
+    assert grid()._affordable(115, 20_000) == []
+
+
+def test_refusing_says_what_it_would_have_cost():
+    """A method absent for a reason, not a method that mysteriously failed."""
+    import numpy as np
+    import pytest
+
+    from mlsandbox.methods import WidthAwareGrid
+
+    wide = WidthAwareGrid(None, "poly__degree", [2, 3], "r2")
+    with pytest.raises(ValueError, match="too expensive"):
+        wide.fit(np.zeros((20_000, 115)), np.zeros(20_000))
+
+
+def test_the_chosen_degree_is_readable():
+    """Because a degree-1 polynomial is not a polynomial result.
+
+    Without this, "the polynomial did no better than the linear model" gets written about
+    a row where the two were the same model.
+    """
+    from mlsandbox.methods import WidthAwareGrid
+
+    assert hasattr(WidthAwareGrid, "chosen_degree")
+
+
+# Powers and products are different bases, and the guard has to know which
+
+
+def powers_grid():
+    from mlsandbox.methods import WidthAwareGrid
+
+    return WidthAwareGrid(None, "poly__degree", [2, 3], "r2", width="powers")
+
+
+def test_powers_grow_linearly_where_products_grow_combinatorially():
+    """The whole reason for the split.
+
+    115 predictors at degree 2 is 230 columns as powers and 6,786 as products. Judging the
+    first by the second refuses a fit that takes a second and a half.
+    """
+    assert powers_grid()._affordable(115, 20_000) == [2, 3]
+    assert grid()._affordable(115, 20_000) == []
+
+
+def test_the_guard_is_told_which_basis_it_is_guarding():
+    # Not inferred from the estimator: the transformer is buried in a pipeline, and a guard
+    # that guesses at what it is protecting is the guard that refused polynomial everywhere.
+    from mlsandbox.methods import METHODS, build
+
+    assert "polynomial" in METHODS
+    assert "polynomial_interactions" in METHODS
+    assert build("polynomial", "regression").steps[-1][1].width == "powers"
+    assert build("polynomial_interactions", "regression").steps[-1][1].width == "combinations"
+
+
+def test_power_features_raises_each_column_without_mixing_them():
+    """What ISLR calls polynomial regression: x, x², x³ — no products between predictors.
+
+    Those are interaction terms, which that book introduces with the linear model rather
+    than with the non-linear ones, and which the form asks about as a separate question.
+    """
+    import numpy as np
+
+    from mlsandbox.methods import PowerFeatures
+
+    assert np.array_equal(PowerFeatures(3).transform([[2, 3]]), [[2, 3, 4, 9, 8, 27]])
+
+
+def test_power_features_keeps_the_original_columns():
+    # Degree 1 is the data itself, so a polynomial can always fall back to the line it
+    # extends rather than losing it.
+    import numpy as np
+
+    from mlsandbox.methods import PowerFeatures
+
+    assert np.array_equal(PowerFeatures(1).transform([[5, 7]]), [[5, 7]])
+
+
+def test_the_two_polynomials_are_separate_methods():
+    """So the study can say whether the products were worth their cost.
+
+    Folded into one method, "polynomial did badly" cannot be told apart from "the
+    interactions did badly", and the collection loses the comparison the form's own
+    interaction question is about.
+    """
+    from mlsandbox.methods import METHODS
+
+    assert METHODS["polynomial"].family == METHODS["polynomial_interactions"].family
+    assert METHODS["polynomial"].tasks == ["regression"]

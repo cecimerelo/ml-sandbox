@@ -16,10 +16,11 @@ compared was well-configured methods against badly-configured ones.
 from __future__ import annotations
 
 from collections.abc import Callable
+from math import comb
 from typing import Literal
 
 import numpy as np
-from sklearn.base import BaseEstimator, clone
+from sklearn.base import BaseEstimator, TransformerMixin, clone
 from sklearn.compose import ColumnTransformer, make_column_selector
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.decomposition import PCA
@@ -92,7 +93,38 @@ single long numpy call, and a signal-based timeout cannot interrupt one: signals
 delivered between Python instructions, so the budget never fires and the run simply stops.
 
 The degree is therefore chosen from the input width rather than left to a fixed grid.
-Prevention, because the timeout cannot be relied on to catch it."""
+Prevention, because the timeout cannot be relied on to catch it.
+
+**Necessary and not sufficient**, which took a stalled run to notice — see
+`MAX_FIT_OPERATIONS`."""
+
+MAX_FIT_OPERATIONS = 100_000_000_000
+"""Ceiling on the arithmetic one basis-expanded fit may cost — `n · p²`, since least
+squares over `p` columns is quadratic in the width and linear in the rows.
+
+**A backstop, not the main guard.** The run that stalled for sixty-nine minutes was not
+let through by the width ceiling: at 115 encoded columns, degree 2 wants 6,786 columns and
+the ceiling refused it correctly. What let it through was the fallback that returned the
+smallest degree anyway when nothing fit. The ceiling was right; the escape hatch under it
+was not.
+
+This exists because the width ceiling is silent about rows. Two thousand columns is
+affordable on eight thousand rows and much less so on a hundred thousand, and nothing else
+in the pipeline notices the difference.
+
+Calibrated against two fits that were actually measured — 2.6 billion operations in 0.8
+seconds, 921 billion in 501 — which agree on roughly 4×10⁻¹⁰ seconds per operation. A
+hundred billion is about forty seconds of work, comfortably inside the tightest timeout
+while leaving every fit that used to complete quickly still completing.
+
+**It does not bind in this study, and saying so is the point.** The row cap is 20,000
+(D-030) and the width ceiling 2,000, so the most any fit here can cost is 8×10¹⁰ — under
+this budget. It fires only if one of those two moves, which is exactly when a guard is
+needed and least likely to be thought about. A backstop that currently catches nothing is
+worth keeping and not worth pretending about.
+
+A budget, not a property of the problem. A faster solver justifies a different number, and
+it is named here so that is one line."""
 
 MAX_CATEGORIES = 20
 """One-hot ceiling per categorical column. Beyond this the encoding adds more columns than
@@ -196,14 +228,21 @@ class Method(StrictModel):
         )
 
 
-def _basis_grid(estimator: BaseEstimator, parameter: str, degrees: list[int]) -> BaseEstimator:
+def _basis_grid(
+    estimator: BaseEstimator,
+    parameter: str,
+    degrees: list[int],
+    width: str = "combinations",
+) -> BaseEstimator:
     """A polynomial or spline search whose degree is bounded by the data's width.
 
     The grid cannot be fixed in advance: the same degree that is reasonable on eight
     features is ruinous on forty. `WidthAwareGrid` reads the width at fit time, which is
     the only point where it is known — the pipeline is built before any data is seen.
     """
-    return WidthAwareGrid(estimator, parameter, degrees, scoring=SCORING["regression"])
+    return WidthAwareGrid(
+        estimator, parameter, degrees, scoring=SCORING["regression"], width=width
+    )
 
 
 def _grid(estimator: BaseEstimator, params: dict, task: Task) -> GridSearchCV:
@@ -274,6 +313,14 @@ ESTIMATORS: dict[str, dict[Task, Callable[[], BaseEstimator]]] = {
         ),
     },
     "polynomial": {
+        "regression": lambda: _basis_grid(
+            Pipeline([("poly", PowerFeatures()), ("model", LinearRegression())]),
+            "poly__degree",
+            [2, 3],
+            width="powers",
+        ),
+    },
+    "polynomial_interactions": {
         "regression": lambda: _basis_grid(
             Pipeline([("poly", PolynomialFeatures()), ("model", LinearRegression())]),
             "poly__degree",
@@ -458,6 +505,22 @@ METHODS: dict[str, Method] = {
             implementation="sklearn",
             rationale="The simplest way out of linearity, and the least controlled: high "
             "degrees oscillate wildly at the edges of the data.",
+        ),
+        Method(
+            name="polynomial_interactions",
+            label="Polynomial with Interactions",
+            family="non-linear",
+            tasks=["regression"],
+            needs_scaling=True,
+            handles_nan=False,
+            explainability="with effort",
+            tuning="internal-cv",
+            implementation="sklearn",
+            rationale="Every predictor squared and every pair multiplied. Separated from "
+            "polynomial regression because they answer different questions — one asks "
+            "whether a relationship curves, the other whether two variables only matter "
+            "together — and because the products are what make the basis uncomputable on "
+            "wide data.",
         ),
         Method(
             name="splines",
@@ -694,6 +757,32 @@ def available(task: Task, *, implementation: Implementation | None = "sklearn") 
     ]
 
 
+class PowerFeatures(BaseEstimator, TransformerMixin):
+    """Each predictor raised to a power, and nothing multiplied by anything else.
+
+    This is what *An Introduction to Statistical Learning* calls polynomial regression:
+    the linear model extended by adding x², x³ and so on for a predictor. Products between
+    different predictors are a separate idea in that book — interaction terms, introduced
+    with the linear model rather than with the non-linear ones — and they answer a
+    different question about the data.
+
+    `PolynomialFeatures` generates both at once, which conflates them. It is also what made
+    the method uncomputable on wide data: powers grow as `p · d`, cross-products as
+    `C(p+d, d)`. At 115 predictors and degree 2 that is 230 columns against 6,786.
+    """
+
+    def __init__(self, degree: int = 2) -> None:
+        self.degree = degree
+
+    def fit(self, X, y=None):  # noqa: ARG002 — the interface requires it
+        return self
+
+    def transform(self, X):
+        values = np.asarray(X, dtype=float)
+        # Degree 1 is the original columns, so the stack starts there and adds powers.
+        return np.hstack([values**power for power in range(1, self.degree + 1)])
+
+
 class WidthAwareGrid(BaseEstimator):
     """A grid search that drops basis degrees too large for the data in front of it.
 
@@ -707,31 +796,100 @@ class WidthAwareGrid(BaseEstimator):
     timeout.
     """
 
-    def __init__(self, estimator, parameter: str, degrees: list[int], scoring: str) -> None:
+    def __init__(
+        self,
+        estimator,
+        parameter: str,
+        degrees: list[int],
+        scoring: str,
+        width: str = "combinations",
+    ) -> None:
         self.estimator = estimator
         self.parameter = parameter
         self.degrees = degrees
         self.scoring = scoring
+        self.width = width
+        """How the basis grows: `combinations` for every product, `powers` for each
+        predictor raised to a power.
 
-    def _affordable(self, n_features: int) -> list[int]:
-        from math import comb
+        The guard has to know which. Judging powers by the combination formula refuses
+        `polynomial` on data it could handle comfortably — 115 predictors at degree 2 is
+        230 columns as powers and 6,786 as products, and treating the first as the second
+        was how the split failed to fix anything the first time it was tried."""
 
-        affordable = [d for d in self.degrees if comb(n_features + d, d) <= MAX_EXPANDED_FEATURES]
-        # Always keep the smallest degree: a basis expansion that expands nothing is not a
-        # basis expansion, and returning no grid at all would fail rather than degrade.
-        return affordable or [min(self.degrees)]
+    def _affordable(self, n_features: int, n_rows: int) -> list[int]:
+        """Degrees this data can carry, by width *and* by what the fit will cost.
+
+        Width alone was not enough. A degree can sit under the column ceiling and still be
+        ruinous, because solving least squares over `p` columns costs about `n · p²` — so
+        doubling the width quadruples the work, and the row count multiplies all of it.
+
+        **Empty is a real answer.** This used to fall back to the smallest degree when
+        nothing fit, which read as graceful degradation and was not: for a polynomial the
+        smallest degree is 2, so the fallback returned the very thing the budget had just
+        refused. It bypassed the guard entirely at exactly the moment the guard mattered,
+        and a run spent sixty-nine minutes inside one fit proving it.
+
+        There is nothing to degrade *to*. A degree-1 polynomial is linear regression, which
+        is already in the collection under its own name — offering it here would score one
+        method twice and call the second one a curve.
+        """
+        def columns_at(degree: int) -> int:
+            if self.width == "powers":
+                return n_features * degree
+            return comb(n_features + degree, degree)
+
+        def affordable(degree: int) -> bool:
+            columns = columns_at(degree)
+            if columns > MAX_EXPANDED_FEATURES:
+                return False
+            return n_rows * columns**2 <= MAX_FIT_OPERATIONS
+
+        return [d for d in self.degrees if affordable(d)]
 
     def fit(self, X, y=None):
         n_features = X.shape[1]
+        degrees = self._affordable(n_features, X.shape[0])
+        if not degrees:
+            # Refused rather than run. The study's convention is that a method which
+            # cannot run is absent with a reason, never scored (D-031) — and the reason is
+            # a finding: this basis is not computable on data of this shape, which is
+            # itself worth reporting.
+            smallest = min(self.degrees)
+            widest = (
+                n_features * smallest
+                if self.width == "powers"
+                else comb(n_features + smallest, smallest)
+            )
+            raise ValueError(
+                f"Degrees {self.degrees} are all too expensive on {X.shape[0]:,} rows and "
+                f"{n_features} encoded columns: degree {smallest} would build {widest:,} "
+                f"columns, costing {X.shape[0] * widest**2:,} operations against a budget "
+                f"of {MAX_FIT_OPERATIONS:,} and a ceiling of {MAX_EXPANDED_FEATURES:,} "
+                "columns."
+            )
+
         self.search_ = GridSearchCV(
             clone(self.estimator),
-            {self.parameter: self._affordable(n_features)},
+            {self.parameter: degrees},
             cv=5,
             n_jobs=1,
             scoring=self.scoring,
         )
         self.search_.fit(X, y)
         return self
+
+    @property
+    def chosen_degree(self) -> int:
+        """The degree that was actually fitted.
+
+        Worth reading before drawing a conclusion. Where the budget leaves only degree 1,
+        `polynomial` **is** linear regression — same basis, same fit — and its score is
+        evidence about a line, not about a curve. Reported rather than inferred, so the
+        analysis does not read "the polynomial did no better than the linear model" off a
+        row where the two were the same model.
+        """
+        return int(self.search_.best_params_[self.parameter])
 
     def predict(self, X):
         return self.search_.predict(X)

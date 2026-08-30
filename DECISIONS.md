@@ -1650,3 +1650,120 @@ no dead answers anywhere.
 common shape: the form is specified from the user's side, the rules are written from the
 textbook's side, and nothing checks that the two meet. The sweep is that check, and it is
 cheap enough to keep.
+
+---
+
+## D-045 — A width ceiling is not a cost ceiling
+
+**Date:** 2026-08-30 · **Status:** accepted · **Amends:** D-032 · **Affects:** [#12](https://github.com/cecimerelo/ml-sandbox/issues/12)
+
+**Context.** A run spent **sixty-nine minutes inside a single method**, under a five-minute
+timeout that could not fire. D-032 exists to prevent exactly this, and it did not.
+
+**The diagnosis took two attempts, and the first was wrong.**
+
+The obvious reading was that the width ceiling let it through, because a cost is `n · p²`
+and D-032 only capped `p`. That is a true statement about cost and **it was not what
+happened**: at 115 encoded columns, degree 2 wants 6,786 columns, and the ceiling refused
+it correctly.
+
+**The fallback bypassed the guard.** The rule ended `... or [min(self.degrees)]`, on the
+reasoning that a grid with nothing in it fails rather than degrades. That reads as
+graceful. It is not: **polynomial's degrees are `[2, 3]`**, so the fallback returned degree
+2 — the very thing the budget had just refused — at precisely the moment the budget
+mattered. The guard was strongest where it was cheap and absent where it was needed.
+
+A test asserted this was correct, named `test_the_smallest_degree_always_survives`. **A
+test can hold a defect in place**, and a principle stated in a test name is not a principle.
+
+**Decision.** **An empty grid is a real answer**: the method refuses, with a message saying
+what it would have cost. That is the fix.
+
+A cost budget, `n · p²` against `MAX_FIT_OPERATIONS`, is added as a backstop — and it
+**does not bind in this study**. The row cap is 20,000 and the width ceiling 2,000, so the
+most any fit here can cost is 8×10¹⁰, under the budget. It fires only if one of those moves,
+which is exactly when a guard is needed and least likely to be thought about. Recorded as
+non-binding, and asserted in a test, because a guard that never fires is easy to mistake
+for a guard that is working.
+
+Its first value was ten times too tight and refused `pumadyn32nh`, whose polynomial fits
+took 0.8 seconds. A guard that rejects work it could have done in under a second is not
+protecting anything; it is deleting results. Recalibrated against two measured fits that
+agree on 4×10⁻¹⁰ seconds per operation.
+
+**There is nothing to degrade to.** A degree-1 polynomial *is* linear regression, which is
+already in the collection under its own name. Offering it would score one method twice and
+call the second one a curve.
+
+**A refusal is a result.** The study's convention is that a method which cannot run is
+absent with a reason, never scored (D-031). *"This basis is not computable on data of this
+shape"* is worth reporting — it is a real limit of the method on real data, not a gap in
+the table.
+
+| | before | after |
+|---|---|---|
+| `fps_benchmark`, 20,000 × 115 | 501s for one fit, ~7h for the dataset | refuses in 0.2s |
+| six columns, 20,000 rows | degrees 2 and 3 | unchanged — degrees 2 and 3 |
+
+**Consequences.** All 600 existing `polynomial` rows across 25 datasets were deleted and
+recomputed, because the ones already recorded were chosen under the old rule and a table
+where one method means two different things is worse than one with holes in it. Previous
+results kept as `results-*.parquet.before-poly-budget`.
+
+`MAX_FIT_OPERATIONS` is a budget, not a property of the problem. A faster solver would
+justify a different number; it is a named constant so that change is one line.
+
+---
+
+## D-046 — Powers and products are two methods, not one
+
+**Date:** 2026-08-30 · **Status:** accepted · **Extends:** D-045 · **Affects:** [#12](https://github.com/cecimerelo/ml-sandbox/issues/12), [#16](https://github.com/cecimerelo/ml-sandbox/issues/16)
+
+**Context.** D-045 left `polynomial` refused on three wide datasets, and the author asked
+whether a method the textbook discusses could be left out of the study. Looking at *why* it
+was uncomputable turned out to answer a different question.
+
+`PolynomialFeatures(degree=2)` builds **every product between predictors** as well as every
+square. That is not what *An Introduction to Statistical Learning* calls polynomial
+regression: chapter 7 extends the linear model by raising **each predictor** to a power.
+Products between different predictors are interaction terms, introduced in chapter 3 with
+the linear model, and they answer a different question about the data.
+
+**We had conflated them, and the conflation was also what made the method uncomputable.**
+
+| predictors, degree 2 | as powers | as products |
+|---|---|---|
+| 32 | 64 | 561 |
+| 71 | 142 | 2,628 |
+| 115 | **230** | **6,786** |
+
+**Decision.** Two methods. `polynomial` raises each predictor to a power; interactions.
+
+`polynomial_interactions` keeps the full expansion.
+
+**Why both rather than replacing one with the other.** Folded together, *"the polynomial
+did badly"* cannot be told apart from *"the interactions did badly"* — and the form asks
+the user about interactions as its own question, so the study should be able to say whether
+answering it truthfully leads anywhere. Separated, the pair is a direct measurement of
+whether the products earn their cost.
+
+**Consequences.**
+
+`polynomial` now fits on every dataset in the collection: 1.5 seconds at 20,000 × 115,
+where the full expansion needs 501 and is refused. The gap D-045 opened is closed for the
+method ISLR actually describes, and stays open for the one it does not.
+
+The width guard had to be told **which basis it is guarding**. Powers grow as `p · d`,
+products as `C(p+d, d)`, and judging the first by the second refused `polynomial`
+everywhere — which is how the split failed to fix anything on the first attempt.
+
+**`run_key` no longer includes the method catalogue.** Adding a method changed the key and
+would have discarded seventeen thousand evaluations of the other twenty-one. Seed, fold
+count and missingness rates belong in the key because they make two results incomparable —
+the same row would have come out differently. The catalogue does not: every row records
+which method produced it, so an existing result is exactly as valid after the catalogue
+grows. Keying on it was not caution, it was a bill.
+
+All 690 existing `polynomial` rows were deleted: they were computed with the full
+expansion, which is now a different method under a different name, and a column meaning two
+things is worse than a column with holes.
