@@ -90,11 +90,11 @@ describe('chrome present on both surfaces', () => {
     expect(screen.getByRole('contentinfo')).toBeInTheDocument();
   });
 
-  it.each(['/', '/benchmark'])('the privacy link is reachable from %s', (path) => {
-    // Persistent on both surfaces per the spine. Added late, this is the kind of element
-    // that lands on one surface and not the other.
+  it.each(['/', '/benchmark'])('the privacy link is absent from %s for now', (path) => {
+    // It returns with 2.8, once 3.1 and 2.7 give it something true to describe. A notice
+    // that promises what the code does not do is worse than no notice at all.
     renderAt(path);
-    expect(screen.getByRole('link', { name: /privacy notice/i })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /privacy notice/i })).toBeNull();
   });
 
   it('the product title returns to the dashboard', () => {
