@@ -1431,3 +1431,71 @@ product term in by hand.
 a curved relationship in one variable is not a joint effect between two, and splines bend
 while remaining additive. Passing a boolean now raises rather than being silently coerced —
 `True` is not an answer the user could have given.
+
+---
+
+## D-041 — The outcome is declared, never guessed
+
+**Date:** 2026-08-30 · **Status:** accepted · **Affects:** [#12](https://github.com/cecimerelo/ml-sandbox/issues/12), [#16](https://github.com/cecimerelo/ml-sandbox/issues/16), [#43](https://github.com/cecimerelo/ml-sandbox/issues/43)
+
+**Context.** `split_target` fell back to the last column when none was named `target`, on
+a comment that read *"PMLB names every outcome `target`; OpenML puts it last."* The second
+half is false. OpenML declares `default_target_attribute`, and **five of the forty OpenML
+datasets put the outcome somewhere else.**
+
+| dataset | real outcome | what was used |
+|---|---|---|
+| `kings_county` | `price` | `date_day` |
+| `cps88wages` | `wage` | `parttime` |
+| `diamonds` | `price` | `z` |
+| `fifa` | `wage_eur` | `goalkeeping_reflexes` |
+| `space_ga` | `ln_votes_pop` | `ycoord` |
+
+**It did not fail.** Every method on `kings_county` scored R² between 0.00 and 0.04, which
+reads as a hard dataset. The bug surfaced only because KNN happened to raise — it stores
+its training targets and averages them at prediction time, so a categorical target became
+`str / int`. Every other method coerced or scored around it silently.
+
+`space_ga` shows how well it hid: the false target `ycoord` is a spatial coordinate,
+partly predictable from the other coordinates, so it produced R² around 0.5. A plausible
+number is a better disguise than a bad one.
+
+**Decision.** `load_any` renames OpenML's declared target to `target`, and `split_target`
+**raises** when no such column exists.
+
+**No fallback, deliberately.** A guess that is usually right is worse than an error here,
+because nothing downstream can tell a wrongly-chosen target from a genuinely difficult
+problem. The study reports the second when it has the first.
+
+**What it cost.** 1,350 rows deleted and recomputed — `kings_county`, `fifa`, `space_ga`.
+`cps88wages` and `diamonds` were still queued and were never computed wrongly, because the
+run was stopped. The previous results are kept as
+`results-*.parquet.before-target-fix` for the comparison below.
+
+**The correction on `space_ga`, at 0% missingness:**
+
+| method | wrong target | right target |
+|---|---|---|
+| mlp | 0.000 | **0.663** |
+| svm_rbf | 0.000 | **0.688** |
+| svm_linear | 0.000 | **0.571** |
+| boosting | 0.548 | 0.710 |
+| linear_regression | 0.032 | 0.326 |
+
+**The ranking changed, not only the level.** Before: boosting > random forest > KNN. After:
+boosting > SVM-RBF > splines. The winner set differs, so every hit rate in #16 was computed
+against the wrong answer on these datasets.
+
+**A signal that was there and was not read.** Three methods scoring *exactly* 0.000 is not
+a result — R² is floored at zero (D-018), so three exact zeros mean three methods did worse
+than predicting the mean. Worth treating as a symptom rather than a row in a table.
+
+**Consequence for the application.** FR-1.2 already has the user pick the target, and the
+spine makes it the form's only sequential dependency. That requirement now rests on
+evidence rather than instinct: **the half of the system that guessed is the half that
+broke.** Recorded on #43, with the sharper corollary — the target control must not come
+pre-filled, because a suggested default is confirmed without being read, which reintroduces
+the guess with a human as its alibi.
+
+`scripts/check_targets.py` checks the whole collection, since the failure is silent and a
+unit test cannot load sixty datasets.
