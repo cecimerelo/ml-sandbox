@@ -114,3 +114,44 @@ describe('the reading column', () => {
     expect(column).toHaveStyle({ marginLeft: 'auto', marginRight: 'auto' });
   });
 });
+
+describe('the dataset upload', () => {
+  it('sits above the questions, since it is what decides their shape', () => {
+    renderAt('/');
+    const dropzone = screen.getByLabelText(/upload a csv/i);
+    const firstQuestion = screen.getAllByRole('radiogroup')[0];
+    expect(dropzone.compareDocumentPosition(firstQuestion!)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+  });
+
+  it('does not imply the form needs one', () => {
+    // Advice-only is the product, not a fallback for people without data.
+    renderAt('/');
+    expect(screen.getByText(/without one/i)).toBeInTheDocument();
+  });
+
+  it('is not offered on the benchmark surface', () => {
+    renderAt('/benchmark');
+    expect(screen.queryByLabelText(/upload a csv/i)).toBeNull();
+  });
+});
+
+describe('what the interface says', () => {
+  it('never shows our issue numbers', () => {
+    // This shipped once: an upload reported "filling them in from the file is 3.2".
+    // Scaffolding copy gets written for whoever is building the thing and then stays,
+    // and a reader has no way to know 3.2 is not something about their data.
+    renderAt('/');
+    const text = document.body.textContent ?? '';
+    expect(text).not.toMatch(/\b[1-6]\.\d{1,2}\b/);
+  });
+
+  it('does not name the epics or the tickets', () => {
+    renderAt('/');
+    const text = document.body.textContent ?? '';
+    for (const word of [/\bepic\b/i, /\bissue #/i, /\bFR-\d/, /\bTODO\b/]) {
+      expect(text).not.toMatch(word);
+    }
+  });
+});

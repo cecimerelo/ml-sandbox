@@ -28,3 +28,4 @@ node_modules/
 app/dist/
 app/tsconfig.tsbuildinfo
 app/.vite/
+examples/too-large.csv

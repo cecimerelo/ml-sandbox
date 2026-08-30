@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import type { RecommendationRequest } from '../api/types';
 import { ProblemForm } from '../form/ProblemForm';
+import { Dropzone } from '../upload/Dropzone';
 import { spacing } from '../theme/tokens';
 
 /**
@@ -35,14 +36,26 @@ export function Dashboard() {
         behind it. You do not need to upload anything.
       </Typography>
 
+      {/* Above the form, because it is what decides the form's shape.
+
+          Accepting a file does not change that shape yet — the questions still have to be
+          answered by hand until detection lands. It is shown anyway so the control can be
+          exercised, and that is a real cost worth naming: someone who uploads a file and
+          then answers the same questions by hand has been given the impression the file
+          was used. Detection is what closes it. */}
+      <Dropzone onAccepted={() => undefined} />
+
       <ProblemForm onSubmit={setSubmitted} />
 
+      {/* Stands in for the recommendation panel until the engine is reachable over HTTP.
+          Marked as scaffolding in the copy rather than dressed up as a result — and with
+          no issue numbers, which are ours and mean nothing to anyone using this. */}
       {submitted && (
         <Alert severity="info" sx={{ mt: 4 }}>
-          Ready to send. The recommendation panel arrives with 2.4.
-          <pre style={{ margin: 0, overflowX: 'auto' }}>
+          Your answers are ready to send. The recommendation itself is still being built.
+          <Box component="pre" sx={{ m: 0, mt: 1, overflowX: 'auto', fontSize: '0.75rem' }}>
             {JSON.stringify(submitted, null, 2)}
-          </pre>
+          </Box>
         </Alert>
       )}
     </Box>
