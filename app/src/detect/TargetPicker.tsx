@@ -5,6 +5,9 @@ import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import Typography from '@mui/material/Typography';
 
+import Box from '@mui/material/Box';
+
+import type { SkippedColumn } from '../upload/Dropzone';
 import { spacing } from '../theme/tokens';
 
 /**
@@ -22,11 +25,21 @@ import { spacing } from '../theme/tokens';
  */
 export function TargetPicker({
   columns,
+  unusable = [],
   value,
   error,
   onChange,
 }: {
   columns: string[];
+  /**
+   * Columns that cannot be predicted, shown greyed out with why.
+   *
+   * Disabled rather than hidden, the same rule FR-8.3 sets for methods that do not apply.
+   * A column that is simply absent leaves someone scrolling for it and wondering whether
+   * they uploaded the right file; one shown with its reason answers the question before it
+   * is asked, and teaches them something about their data on the way past.
+   */
+  unusable?: SkippedColumn[];
   value: string;
   error: string | null;
   onChange: (column: string) => void;
@@ -45,6 +58,17 @@ export function TargetPicker({
           {columns.map((column) => (
             <MenuItem key={column} value={column}>
               {column}
+            </MenuItem>
+          ))}
+
+          {unusable.map((skipped) => (
+            <MenuItem key={skipped.column} value={skipped.column} disabled>
+              <Box>
+                <Typography component="span">{skipped.column}</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'normal' }}>
+                  {skipped.message}
+                </Typography>
+              </Box>
             </MenuItem>
           ))}
         </Select>

@@ -2,6 +2,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Box from '@mui/material/Box';
 import { useState } from 'react';
 
+import type { SkippedColumn } from '../upload/Dropzone';
 import { TargetPicker } from './TargetPicker';
 import type { Detection } from './types';
 
@@ -16,10 +17,12 @@ import type { Detection } from './types';
 export function DatasetPanel({
   file,
   columns,
+  unusable,
   onDetected,
 }: {
   file: File;
   columns: string[];
+  unusable: SkippedColumn[];
   onDetected: (detection: Detection | null) => void;
 }) {
   const [target, setTarget] = useState('');
@@ -58,7 +61,13 @@ export function DatasetPanel({
 
   return (
     <Box>
-      <TargetPicker columns={columns} value={target} error={error} onChange={choose} />
+      <TargetPicker
+        columns={columns}
+        unusable={unusable}
+        value={target}
+        error={error}
+        onChange={choose}
+      />
 
       {busy && (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>

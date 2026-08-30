@@ -11,10 +11,14 @@ import { ThemeProvider } from '@mui/material/styles';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { App } from './App';
 import { theme } from './theme/theme';
+
+function file(name: string): File {
+  return new File(['a,b\n1,2\n'], name, { type: 'text/csv' });
+}
 
 function renderAt(path: string) {
   return render(
@@ -153,5 +157,39 @@ describe('what the interface says', () => {
     for (const word of [/\bepic\b/i, /\bissue #/i, /\bFR-\d/, /\bTODO\b/]) {
       expect(text).not.toMatch(word);
     }
+  });
+});
+
+describe('replacing a dataset that fails', () => {
+  it('does not leave the previous file driving the form', async () => {
+    // The page holds the readings, so a failure in the control has to reach it. Otherwise
+    // the zone says nothing is loaded while the questions still hold the last file's
+    // properties, and a recommendation could be asked for about a dataset the user
+    // replaced.
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ columns: ['a', 'b'], rows: 5, skipped: [] }),
+      }),
+    );
+    renderAt('/');
+    await user.upload(screen.getByLabelText(/upload a csv/i), file('good.csv'));
+    await screen.findByText('good.csv');
+    expect(screen.getByRole('combobox', { name: /predict/i })).toBeInTheDocument();
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        json: async () => ({ detail: { reason: 'no-rows', message: 'no data' } }),
+      }),
+    );
+    await user.upload(screen.getByLabelText(/upload a csv/i), file('bad.csv'));
+    await screen.findByRole('alert');
+
+    expect(screen.queryByRole('combobox', { name: /predict/i })).toBeNull();
+    vi.unstubAllGlobals();
   });
 });

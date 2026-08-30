@@ -106,7 +106,25 @@ export function ProblemForm({
           : (detection.class_balance as ClassBalanceAnswer),
     }));
   }
-  if (!detection && filledFrom) setFilledFrom(null);
+  if (!detection && filledFrom) {
+    // The readings go with the file they came from. Left behind, they are answers the
+    // user never gave, with nothing on screen saying where they came from — and the
+    // caption that used to explain them has gone with the detection.
+    //
+    // The three always-asked questions survive: they were the user's own answers, and a
+    // file failing to load is no reason to make someone say again what they need.
+    setFilledFrom(null);
+    setConfirmed(new Set());
+    setAnswers((current) => ({
+      ...current,
+      task: '',
+      rows: '',
+      features: '',
+      feature_types: '',
+      missing: '',
+      class_balance: '',
+    }));
+  }
   const set = <K extends keyof Answers>(key: K) => (value: Answers[K]) =>
     setAnswers((current) => ({ ...current, [key]: value }));
 

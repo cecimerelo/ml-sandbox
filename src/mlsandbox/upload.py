@@ -32,9 +32,36 @@ UNSUPPORTED = ("datetime64[ns]", "timedelta64[ns]")
 """Column types no method here accepts. Excluded from the feature set rather than being
 grounds for rejection — see `read`."""
 
+DATE_SAMPLE = 50
+"""How many values to try parsing as dates before deciding.
+
+A CSV has no types: `read_csv` hands back `2024-01-01` as a string, so a date column looks
+exactly like text unless someone tries. Sampled rather than parsed in full, because the
+answer is the same after fifty rows and the cost is not."""
+
+DATE_SHARE = 0.9
+"""How much of the sample must parse. Below this it is text that happens to contain a few
+dates, which is a different thing and should be described as one."""
+
 Refusal = Literal[
     "not-a-csv", "too-large", "too-many-features", "no-rows", "no-features", "all-unsupported"
 ]
+
+SkipReason = Literal["date", "free-text"]
+
+
+class Skipped(StrictModel):
+    """A column that cannot be used, and why — in the words a user is shown.
+
+    The reason travels with the column because the interface shows these **disabled rather
+    than hidden**, the same rule FR-8.3 sets for methods that do not apply. A column that
+    silently vanishes leaves someone hunting for it, and teaches them nothing; one shown
+    greyed out with a reason answers the question before it is asked.
+    """
+
+    column: str
+    reason: SkipReason
+    message: str
 
 
 class Rejected(StrictModel):
@@ -49,12 +76,12 @@ class Dataset(StrictModel):
 
     columns: list[str]
     rows: int
-    skipped: list[str] = []
-    """Columns excluded because no method here can read them — dates, free text.
+    skipped: list[Skipped] = []
+    """Columns excluded because no method here can read them, each with its reason.
 
-    Named so the interface can say which. Rejecting a whole file over one date column
-    would be hostile, and silently dropping it would be worse: the user would wonder where
-    their column went.
+    Rejecting a whole file over one date column would be hostile, and silently dropping it
+    would be worse: the user would wonder where their column went. Shown disabled with the
+    reason instead.
     """
 
     frame: object
@@ -111,8 +138,11 @@ def read(content: bytes, *, filename: str = "") -> Dataset | Rejected:
 
     # Dates and free text are excluded, not fatal. A whole file refused over one date
     # column is a tool that makes the user do the work it exists to save them.
-    skipped = [column for column in frame.columns if _is_unsupported(frame[column])]
-    kept = [column for column in frame.columns if column not in skipped]
+    skipped = [
+        note for column in frame.columns if (note := _unsupported(frame[column], column))
+    ]
+    excluded = {note.column for note in skipped}
+    kept = [column for column in frame.columns if column not in excluded]
     if not kept:
         return _reject(
             "all-unsupported",
@@ -124,16 +154,42 @@ def read(content: bytes, *, filename: str = "") -> Dataset | Rejected:
     )
 
 
-def _is_unsupported(column: pd.Series) -> bool:
-    """Dates, and text that is not a category.
+def _unsupported(values: pd.Series, name: str) -> Skipped | None:
+    """Why this column cannot be used, or `None` if it can.
 
-    Free text is judged by how repetitive it is: a column where nearly every value is
-    different is a note or an identifier, not something to learn from. A column of city
-    names repeats, and is kept.
+    Free text is told from labels by how repetitive it is: a column where nearly every
+    value is different is a note or a reference, not something to learn from. A column of
+    city names repeats, and is kept.
     """
-    if str(column.dtype) in UNSUPPORTED:
-        return True
-    if pd.api.types.is_numeric_dtype(column):
+    if str(values.dtype) in UNSUPPORTED or _reads_as_dates(values):
+        return Skipped(
+            column=name,
+            reason="date",
+            message="Dates aren't supported yet — we can't tell what to do with them.",
+        )
+    if pd.api.types.is_numeric_dtype(values):
+        return None
+    if len(values) and values.nunique(dropna=True) / len(values) > 0.9:
+        return Skipped(
+            column=name,
+            reason="free-text",
+            message=(
+                "Almost every row here is different, so this reads as free text or a "
+                "reference number rather than something to learn from."
+            ),
+        )
+    return None
+
+
+def _reads_as_dates(values: pd.Series) -> bool:
+    """Whether a text column is really dates.
+
+    Checked before the free-text rule, because dates are also nearly all distinct and would
+    otherwise be reported as notes — a message that is wrong about the user's data in a way
+    they can see, which is worse than saying nothing.
+    """
+    sample = values.dropna().head(DATE_SAMPLE)
+    if sample.empty or pd.api.types.is_numeric_dtype(sample):
         return False
-    distinct = column.nunique(dropna=True)
-    return bool(len(column)) and distinct / len(column) > 0.9
+    parsed = pd.to_datetime(sample, errors="coerce", format="mixed")
+    return bool(parsed.notna().mean() >= DATE_SHARE)

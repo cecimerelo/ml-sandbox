@@ -29,13 +29,23 @@ const DETECTION = {
   uncertain: [],
 };
 
-function setup(columns = ['size_m2', 'city', 'price']) {
+const UNUSABLE = [
+  { column: 'listed_on', reason: 'date' as const, message: "Dates aren't supported yet." },
+  {
+    column: 'agent_note',
+    reason: 'free-text' as const,
+    message: 'Almost every row here is different.',
+  },
+];
+
+function setup(columns = ['size_m2', 'city', 'price'], unusable = UNUSABLE) {
   const onDetected = vi.fn();
   render(
     <ThemeProvider theme={theme}>
       <DatasetPanel
         file={new File(['a,b\n1,2\n'], 'houses.csv', { type: 'text/csv' })}
         columns={columns}
+        unusable={unusable}
         onDetected={onDetected}
       />
     </ThemeProvider>,
@@ -73,8 +83,8 @@ describe('the target', () => {
     }
   });
 
-  it('offers every column', async () => {
-    const { user } = setup(['a', 'b', 'c']);
+  it('offers every usable column', async () => {
+    const { user } = setup(['a', 'b', 'c'], []);
     await user.click(screen.getByRole('combobox', { name: /predict/i }));
     expect(await screen.findAllByRole('option')).toHaveLength(3);
   });
@@ -134,5 +144,50 @@ describe('what it reports', () => {
       expect(onDetected).toHaveBeenCalledWith(expect.objectContaining({ task: 'regression' })),
     );
     expect(screen.queryByText(/388 rows/)).toBeNull();
+  });
+});
+
+describe('columns that cannot be predicted', () => {
+  it('are shown disabled rather than hidden', async () => {
+    // The same rule FR-8.3 sets for methods that do not apply. A column that is simply
+    // absent leaves someone scrolling for it and wondering whether they uploaded the right
+    // file.
+    const { user } = setup();
+    await user.click(screen.getByRole('combobox', { name: /predict/i }));
+
+    const listed = await screen.findByRole('option', { name: /listed_on/ });
+    expect(listed).toHaveAttribute('aria-disabled', 'true');
+  });
+
+  it('say why, beside the column', async () => {
+    // The reason is the point. Greying it out without one teaches nothing and invites the
+    // user to assume the file was read wrongly.
+    const { user } = setup();
+    await user.click(screen.getByRole('combobox', { name: /predict/i }));
+    expect(await screen.findByText(/dates aren't supported yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/almost every row here is different/i)).toBeInTheDocument();
+  });
+
+  it('cannot be chosen', async () => {
+    const fetched = vi.fn();
+    vi.stubGlobal('fetch', fetched);
+    const { user } = setup();
+    await user.click(screen.getByRole('combobox', { name: /predict/i }));
+
+    // The click is refused rather than ignored: a disabled option takes no pointer events
+    // at all, so there is no path from here to a request.
+    await expect(
+      user.click(await screen.findByRole('option', { name: /agent_note/ })),
+    ).rejects.toThrow(/pointer-events/);
+    expect(fetched).not.toHaveBeenCalled();
+  });
+
+  it('sit after the usable ones', async () => {
+    // A list that opens on greyed-out entries reads as broken.
+    const { user } = setup();
+    await user.click(screen.getByRole('combobox', { name: /predict/i }));
+    const options = await screen.findAllByRole('option');
+    expect(options[0]).toHaveTextContent('size_m2');
+    expect(options.at(-1)).toHaveTextContent('agent_note');
   });
 });

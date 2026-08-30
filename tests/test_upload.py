@@ -109,13 +109,37 @@ def test_a_date_column_is_skipped_rather_than_rejecting_the_file():
     assert isinstance(result, Dataset)
 
 
-def test_free_text_is_skipped_and_named():
-    """Named, not silently dropped — otherwise the user wonders where their column went."""
+def test_free_text_is_skipped_with_a_reason():
+    """Named and explained, not silently dropped.
+
+    The interface shows these disabled rather than hidden — the same rule FR-8.3 sets for
+    methods that do not apply — so the reason has to travel with the column.
+    """
     notes = ["a unique sentence " + str(i) for i in range(10)]
     result = read(csv(notes=notes, x=list(range(10)), y=list(range(10))))
     assert isinstance(result, Dataset)
-    assert result.skipped == ["notes"]
-    assert "notes" not in result.columns
+    assert [s.column for s in result.skipped] == ["notes"]
+    assert result.skipped[0].reason == "free-text"
+    assert result.skipped[0].message
+
+
+def test_a_date_column_is_called_a_date_not_free_text():
+    """Dates read from a CSV arrive as strings, and dates are also nearly all distinct.
+
+    Without a parse attempt they fall through to the free-text rule and the user is told
+    something about their data that is visibly wrong — worse than saying nothing.
+    """
+    dates = pd.date_range("2024-01-01", periods=30).astype(str).tolist()
+    result = read(csv(listed_on=dates, x=list(range(30)), y=list(range(30))))
+    assert isinstance(result, Dataset)
+    assert result.skipped[0].reason == "date"
+
+
+def test_a_column_of_a_few_dates_among_text_is_not_called_a_date():
+    mostly_text = ["note " + str(i) for i in range(27)] + ["2024-01-01", "2024-01-02", "x"]
+    result = read(csv(mixed=mostly_text, x=list(range(30)), y=list(range(30))))
+    assert isinstance(result, Dataset)
+    assert result.skipped[0].reason == "free-text"
 
 
 def test_a_repeating_label_column_is_kept():
@@ -215,4 +239,6 @@ def test_the_example_with_notes_skips_them_rather_than_being_refused():
 
     result = read(path.read_bytes(), filename=path.name)
     assert isinstance(result, Dataset)
-    assert sorted(result.skipped) == ["agent_note", "listed_on"]
+    assert sorted(s.column for s in result.skipped) == ["agent_note", "listed_on"]
+    reasons = {s.column: s.reason for s in result.skipped}
+    assert reasons == {"listed_on": "date", "agent_note": "free-text"}

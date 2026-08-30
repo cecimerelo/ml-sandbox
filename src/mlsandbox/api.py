@@ -51,7 +51,7 @@ class DatasetSummary(StrictModel):
 
     columns: list[str]
     rows: int
-    skipped: list[str] = []
+    skipped: list[upload.Skipped] = []
 
 
 @app.post("/api/dataset")

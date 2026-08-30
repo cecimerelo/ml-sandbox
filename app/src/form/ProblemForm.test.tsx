@@ -264,3 +264,54 @@ describe('when a file has been read', () => {
     expect(onSubmit.mock.calls[0]?.[0]).toMatchObject({ rows: '500-10k', missing: 'some' });
   });
 });
+
+describe('when the file goes away', () => {
+  function rerenderWith(detection: typeof DETECTION | null) {
+    const onSubmit = vi.fn();
+    const { rerender } = render(
+      <ThemeProvider theme={theme}>
+        <ProblemForm onSubmit={onSubmit} detection={DETECTION} />
+      </ThemeProvider>,
+    );
+    return {
+      onSubmit,
+      user: userEvent.setup(),
+      clear: () =>
+        rerender(
+          <ThemeProvider theme={theme}>
+            <ProblemForm onSubmit={onSubmit} detection={detection} />
+          </ThemeProvider>,
+        ),
+    };
+  }
+
+  it('takes its readings with it', async () => {
+    // Left behind they are answers the user never gave, with nothing saying where they
+    // came from — the caption that explained them went with the detection.
+    const { clear } = rerenderWith(null);
+    const kind = () => screen.getByRole('radiogroup', { name: /what are you trying to predict/i });
+    expect(within(kind()).getByRole('radio', { name: 'A number' })).toBeChecked();
+
+    clear();
+    for (const radio of within(kind()).getAllByRole('radio')) {
+      expect(radio).not.toBeChecked();
+    }
+  });
+
+  it('keeps what the user answered themselves', async () => {
+    // A file failing to load is no reason to make someone say again what they need.
+    const { user, clear } = rerenderWith(null);
+    await answer(user, /explain individual predictions/i, 'Critical');
+
+    clear();
+    const control = screen.getByRole('radiogroup', { name: /explain individual predictions/i });
+    expect(within(control).getByRole('radio', { name: 'Critical' })).toBeChecked();
+  });
+
+  it('leaves no detected caption behind', async () => {
+    const { clear } = rerenderWith(null);
+    expect(screen.getByText(/8,412 rows in your file/)).toBeInTheDocument();
+    clear();
+    expect(screen.queryByText(/in your file/)).toBeNull();
+  });
+});

@@ -63,10 +63,14 @@ def test_an_unusable_file_is_422_with_a_reason_and_a_message():
     assert "comma-separated" in body["message"]
 
 
-def test_skipped_columns_are_named_in_the_response():
+def test_skipped_columns_carry_their_reason():
+    # The picker shows them disabled with the reason rather than hiding them, so the reason
+    # has to reach the browser.
     notes = "\n".join(f"note {i},{i},{i}" for i in range(10))
-    response = upload_csv(f"notes,x,y\n{notes}\n".encode())
-    assert response.json()["skipped"] == ["notes"]
+    body = upload_csv(f"notes,x,y\n{notes}\n".encode()).json()
+    assert body["skipped"][0]["column"] == "notes"
+    assert body["skipped"][0]["reason"] == "free-text"
+    assert body["skipped"][0]["message"]
 
 
 def test_a_missing_file_is_rejected_by_the_framework():

@@ -55,6 +55,10 @@ export function Dashboard() {
           // with properties of a dataset nobody uploaded.
           setDetection(null);
         }}
+        onCleared={() => {
+          setDataset(null);
+          setDetection(null);
+        }}
       />
 
       {/* Choosing the outcome comes before anything else the file can say, because every
@@ -65,6 +69,7 @@ export function Dashboard() {
         <DatasetPanel
           file={dataset.file}
           columns={dataset.summary.columns}
+          unusable={dataset.summary.skipped}
           onDetected={setDetection}
         />
       )}
