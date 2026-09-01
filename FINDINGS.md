@@ -93,11 +93,55 @@ because either alone tells a different story.
 A study whose result is *"the sophisticated thing does not beat the simple thing"* is worth
 more than one that avoids finding out.
 
-## Not yet established
+---
 
-**Whether Layer 2 wins in an identifiable regime** — few rows, high dimensionality, heavy
-missingness. If such a subset exists the finding becomes *"ties overall and wins where X"*,
-which is more useful than either half alone.
+## F-002 — The tie is a real tie, and the regime pattern does not survive testing
+
+**Date:** 2026-08-31 · **Run:** `results-801f29e62585.parquet` · **Follows:** F-001
+
+F-001 left open whether Layer 2's tie with the fixed baseline hides a regime where it wins.
+It was worth asking and the answer is no — with a qualification worth stating precisely.
+
+### The tie is not an average hiding a pattern
+
+On the 29 datasets where the choice makes a difference, the two disagree eight times and
+**split them exactly four and four**. Nine times both are right, twelve times neither is.
+
+### There is a pattern, and it is interpretable
+
+| Regime | n | Layer 2 | Baseline |
+|---|---|---|---|
+| 500–10k rows | 9 | **0.78** | 0.44 |
+| under 10 columns | 13 | **0.62** | 0.38 |
+| over 10k rows | 12 | 0.33 | **0.58** |
+| under 500 rows | 8 | 0.25 | 0.25 |
+
+It reads sensibly: on large data-rich problems boosting wins almost regardless, so there is
+nothing to personalise; on medium problems with few predictors the best method genuinely
+varies and a model can learn which.
+
+### It does not hold up
+
+| Comparison | p |
+|---|---|
+| Hits in the 500–10k band (3–0 to Layer 2) | 0.250 |
+| Regret across all discriminating datasets | 0.332 |
+| Regret in the 500–10k band (0.026 against 0.052) | **0.109** |
+
+The band is **nine datasets and they disagree on three**. Three in a row favouring one side
+happens by chance one time in four — the same odds as three coin flips.
+
+**Reported as a limitation, not as a finding.** *"Layer 2 wins on medium datasets"* is the
+first claim that would fall apart under questioning, and it would deserve to.
+
+What can be said: **the advantage is not uniform.** It concentrates where the data is
+medium-sized and narrow, halving regret there — and this study lacks the power to establish
+that. What it would take is **more datasets in that band**, not more methods and not more
+folds.
+
+---
+
+## Not yet established
 
 **How stable the 29-dataset stratum is.** Small enough to want an interval rather than a
 point estimate. An earlier partial run put the same comparison 15 points elsewhere.
