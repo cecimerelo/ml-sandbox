@@ -136,8 +136,14 @@ first claim that would fall apart under questioning, and it would deserve to.
 
 What can be said: **the advantage is not uniform.** It concentrates where the data is
 medium-sized and narrow, halving regret there — and this study lacks the power to establish
-that. What it would take is **more datasets in that band**, not more methods and not more
-folds.
+that.
+
+**What would settle it: more datasets between 500 and 10,000 rows.** Not more methods, not
+more folds, and specifically **not more large datasets** — above ten thousand rows the two
+strategies already agree, because boosting wins almost regardless and there is nothing left
+to personalise. Adding large datasets would confirm something already confirmed. The
+unresolved question lives entirely in the middle band, where nine datasets disagreeing on
+three cannot tell a signal from three coin flips, and thirty could.
 
 ---
 
