@@ -27,10 +27,27 @@ from mlsandbox.pmlb_source import PINNED_REVISION, fetch_provenance, fetch_summa
 
 MANIFEST_PATH = PROJECT_ROOT / "config" / "collection.json"
 
-PER_STRATUM = 10
-"""Datasets kept per size-band x task-type cell. Six cells gives roughly 60 datasets:
-enough rows to train Layer 2 on, and small enough to re-run the benchmark in an evening
-when a bug appears (D-011)."""
+PER_STRATUM = 20
+"""Datasets kept per size-band x task-type cell. Six cells gives roughly 120 datasets.
+
+**Was 10, giving 60.** Raised after the first full run, because the difference between a
+trained recommender and a fixed choice could not be resolved at that size: nine datasets in
+the band where the difference concentrates, disagreeing on three, which is the same
+evidence as three coin flips (F-002).
+
+**Raised uniformly, and that is what keeps it honest.** Growing only the band where the
+result was unresolved would enrich the collection around our own uncertainty, and every
+figure computed from it would describe a sample shaped by what we hoped to find. Growing
+every cell equally cannot favour the hypothesis — it adds most of its cost in the large-row
+band, which is precisely where the two strategies already agree.
+
+**Fixed in advance at 20, and reported once.** Adding datasets, looking, and adding more
+until a p-value falls is not collecting data, it is fishing. The stopping point is here so
+it cannot move.
+
+The same seed keeps the original sixty: the sample shuffles each stratum and takes the
+first N, so a larger N extends the selection rather than replacing it. Asserted by the
+tests."""
 
 MAX_PER_FAMILY = 2
 """PMLB carries large families from one source (`fri_c*`, `analcatdata_*`). Two per family
