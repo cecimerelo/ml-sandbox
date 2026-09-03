@@ -97,6 +97,20 @@ export function Dropzone({
     void handle(files[0]!);
   }
 
+  function remove() {
+    // Everything the file put there goes with it. Keeping the bands would leave answers
+    // on screen that came from a dataset the user deliberately discarded, with nothing
+    // saying where they came from — the same confusion a failed replacement caused.
+    //
+    // The spine says to carry them over as manual answers so nobody re-answers what the
+    // file already said. That is a real convenience and it was weighed against orphan
+    // answers, which is the worse of the two (D-047).
+    setName(null);
+    setSummary(null);
+    setError(null);
+    onCleared();
+  }
+
   function fail(message: string) {
     setError(message);
     // Whatever was loaded is gone with it. A dataset the user tried to replace is not
@@ -184,9 +198,17 @@ export function Dropzone({
               </Box>{' '}
               loaded.
             </Typography>
-            <Button variant="outlined" onClick={() => input.current?.click()} disabled={busy}>
-              {busy ? 'Reading…' : 'Choose a different file'}
-            </Button>
+            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+              <Button variant="outlined" onClick={() => input.current?.click()} disabled={busy}>
+                {busy ? 'Reading…' : 'Choose a different file'}
+              </Button>
+              {/* Removing is offered beside replacing, because they are the two things
+                  someone does next and hiding one behind the other makes the form feel
+                  like a trap. */}
+              <Button onClick={remove} disabled={busy}>
+                Remove
+              </Button>
+            </Box>
           </>
         ) : (
           <>

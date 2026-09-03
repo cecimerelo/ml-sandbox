@@ -377,3 +377,63 @@ describe('a failed file after a good one', () => {
     expect(onCleared).toHaveBeenCalled();
   });
 });
+
+describe('removing a dataset', () => {
+  async function loadThenRemove() {
+    respond(200, { columns: ['a', 'b'], rows: 5, skipped: [] });
+    const { onCleared, user } = setup();
+    await user.upload(screen.getByLabelText(/upload a csv/i), csv('houses.csv'));
+    await screen.findByText('houses.csv');
+    onCleared.mockClear();
+    await user.click(screen.getByRole('button', { name: /^remove$/i }));
+    return { onCleared, user };
+  }
+
+  it('is offered beside replacing, not hidden behind it', async () => {
+    respond(200, { columns: ['a'], rows: 3, skipped: [] });
+    const { user } = setup();
+    await user.upload(screen.getByLabelText(/upload a csv/i), csv('houses.csv'));
+    await screen.findByText('houses.csv');
+    expect(screen.getByRole('button', { name: /^remove$/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /choose a different file/i })).toBeInTheDocument();
+  });
+
+  it('is not offered before there is anything to remove', () => {
+    setup();
+    expect(screen.queryByRole('button', { name: /^remove$/i })).toBeNull();
+  });
+
+  it('takes everything the file put there with it', async () => {
+    // Keeping the bands would leave answers on screen from a dataset the user
+    // deliberately discarded, with nothing saying where they came from.
+    const { onCleared } = await loadThenRemove();
+    expect(onCleared).toHaveBeenCalled();
+  });
+
+  it('returns the zone to its empty state', async () => {
+    await loadThenRemove();
+    expect(screen.queryByText('houses.csv')).toBeNull();
+    expect(screen.getByText(/drop a csv here/i)).toBeInTheDocument();
+  });
+
+  it('leaves no error behind', async () => {
+    // Removing is not a failure, and a red alert would say the user did something wrong.
+    respond(422, { detail: { reason: 'no-rows', message: 'no data' } });
+    const { user } = setup();
+    await user.upload(screen.getByLabelText(/upload a csv/i), csv('bad.csv'));
+    await screen.findByRole('alert');
+
+    respond(200, { columns: ['a'], rows: 3, skipped: [] });
+    await user.upload(screen.getByLabelText(/upload a csv/i), csv('good.csv'));
+    await screen.findByText('good.csv');
+    await user.click(screen.getByRole('button', { name: /^remove$/i }));
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('lets another file be uploaded after', async () => {
+    const { user } = await loadThenRemove();
+    respond(200, { columns: ['x'], rows: 9, skipped: [] });
+    await user.upload(screen.getByLabelText(/upload a csv/i), csv('second.csv'));
+    expect(await screen.findByText('second.csv')).toBeInTheDocument();
+  });
+});

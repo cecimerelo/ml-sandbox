@@ -1767,3 +1767,43 @@ grows. Keying on it was not caution, it was a bill.
 All 690 existing `polynomial` rows were deleted: they were computed with the full
 expansion, which is now a different method under a different name, and a column meaning two
 things is worse than a column with holes.
+
+---
+
+## D-047 — Removing a dataset removes what it put there
+
+**Date:** 2026-08-30 · **Status:** accepted · **Departs from:** `EXPERIENCE.md § Shape switching` · **Affects:** [#44](https://github.com/cecimerelo/ml-sandbox/issues/44)
+
+**Context.** The experience spine's transition table says that removing a dataset carries
+the detections over **as manual bands** — 8,412 rows becomes `500–10k` — *"so the user is
+not re-answering questions the file already answered"*.
+
+That is a real convenience, and it was weighed against a real cost. Carried over, the form
+holds six answers the user never gave, describing a dataset they deliberately discarded,
+with **no caption left to say where they came from** — the `detected from your file` line
+goes with the detection that produced it.
+
+The same confusion had already appeared by accident: a failed upload after a good one left
+the previous file's readings driving the form while the control showed nothing loaded. It
+was reported as a bug, not as a convenience.
+
+**Decision.** Removing a dataset clears everything the file supplied.
+
+**Everything it supplied, not everything.** The three always-asked questions — required
+explainability, suspected non-linearity, suspected interactions — survive. They were never
+the file's to fill in, they are the user's own answers about what they need and believe,
+and removing a CSV is no reason to make someone say again what they need.
+
+**Consequences.** Deliberate removal and a failed replacement now behave identically, which
+is one rule instead of two and removes the question of which case a user is in. The spine's
+version would have needed the two to differ, and the difference would have been invisible
+on screen.
+
+The convenience is genuinely lost: someone who removes a file to describe the same data by
+hand re-answers six banded questions. That is the price, and it is the smaller one — an
+answer with no explanation of where it came from is worse than an answer that has to be
+given.
+
+**Not settled here.** The spine also has removal leave existing results stale rather than
+destroyed. There are no results yet, so that half of the transition is untouched and stays
+with #44.
