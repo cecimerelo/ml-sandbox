@@ -47,6 +47,39 @@
   },
   "datasets": [
     {
+      "dataset": "210_cloud",
+      "source": "pmlb",
+      "task": "regression",
+      "rows": "<500",
+      "features": "<10",
+      "regime": "moderate",
+      "feature_types": "numeric",
+      "missing": "none",
+      "class_balance": "not applicable"
+    },
+    {
+      "dataset": "230_machine_cpu",
+      "source": "pmlb",
+      "task": "regression",
+      "rows": "<500",
+      "features": "<10",
+      "regime": "moderate",
+      "feature_types": "numeric",
+      "missing": "none",
+      "class_balance": "not applicable"
+    },
+    {
+      "dataset": "519_vinnie",
+      "source": "pmlb",
+      "task": "regression",
+      "rows": "<500",
+      "features": "<10",
+      "regime": "moderate",
+      "feature_types": "numeric",
+      "missing": "none",
+      "class_balance": "not applicable"
+    },
+    {
       "dataset": "527_analcatdata_election2000",
       "source": "pmlb",
       "task": "regression",
@@ -75,6 +108,39 @@
       "rows": "<500",
       "features": "<10",
       "regime": "moderate",
+      "feature_types": "numeric",
+      "missing": "none",
+      "class_balance": "not applicable"
+    },
+    {
+      "dataset": "561_cpu",
+      "source": "pmlb",
+      "task": "regression",
+      "rows": "<500",
+      "features": "<10",
+      "regime": "moderate",
+      "feature_types": "numeric",
+      "missing": "none",
+      "class_balance": "not applicable"
+    },
+    {
+      "dataset": "591_fri_c1_100_10",
+      "source": "pmlb",
+      "task": "regression",
+      "rows": "<500",
+      "features": "10-50",
+      "regime": "high-dimensional",
+      "feature_types": "numeric",
+      "missing": "none",
+      "class_balance": "not applicable"
+    },
+    {
+      "dataset": "602_fri_c3_250_10",
+      "source": "pmlb",
+      "task": "regression",
+      "rows": "<500",
+      "features": "10-50",
+      "regime": "high-dimensional",
       "feature_types": "numeric",
       "missing": "none",
       "class_balance": "not applicable"
@@ -124,6 +190,17 @@
       "class_balance": "not applicable"
     },
     {
+      "dataset": "678_visualizing_environmental",
+      "source": "pmlb",
+      "task": "regression",
+      "rows": "<500",
+      "features": "<10",
+      "regime": "moderate",
+      "feature_types": "numeric",
+      "missing": "none",
+      "class_balance": "not applicable"
+    },
+    {
       "dataset": "690_visualizing_galaxy",
       "source": "pmlb",
       "task": "regression",
@@ -157,6 +234,17 @@
       "class_balance": "not applicable"
     },
     {
+      "dataset": "Moneyball",
+      "source": "openml-ctr23",
+      "task": "regression",
+      "rows": "500-10k",
+      "features": "10-50",
+      "regime": "moderate",
+      "feature_types": "mixed",
+      "missing": "a lot",
+      "class_balance": "not applicable"
+    },
+    {
       "dataset": "PhishingWebsites",
       "source": "openml-cc18",
       "task": "binary classification",
@@ -166,6 +254,39 @@
       "feature_types": "categorical",
       "missing": "none",
       "class_balance": "roughly equal"
+    },
+    {
+      "dataset": "QSAR_fish_toxicity",
+      "source": "openml-ctr23",
+      "task": "regression",
+      "rows": "500-10k",
+      "features": "<10",
+      "regime": "data-rich",
+      "feature_types": "numeric",
+      "missing": "none",
+      "class_balance": "not applicable"
+    },
+    {
+      "dataset": "abalone",
+      "source": "openml-ctr23",
+      "task": "regression",
+      "rows": "500-10k",
+      "features": "<10",
+      "regime": "data-rich",
+      "feature_types": "mixed",
+      "missing": "none",
+      "class_balance": "not applicable"
+    },
+    {
+      "dataset": "adult",
+      "source": "openml-cc18",
+      "task": "binary classification",
+      "rows": ">10k",
+      "features": "10-50",
+      "regime": "data-rich",
+      "feature_types": "mixed",
+      "missing": "some",
+      "class_balance": "one class dominates"
     },
     {
       "dataset": "airfoil_self_noise",
@@ -179,6 +300,17 @@
       "class_balance": "not applicable"
     },
     {
+      "dataset": "analcatdata_aids",
+      "source": "pmlb",
+      "task": "binary classification",
+      "rows": "<500",
+      "features": "<10",
+      "regime": "moderate",
+      "feature_types": "numeric",
+      "missing": "none",
+      "class_balance": "roughly equal"
+    },
+    {
       "dataset": "appendicitis",
       "source": "pmlb",
       "task": "binary classification",
@@ -190,6 +322,17 @@
       "class_balance": "one class dominates"
     },
     {
+      "dataset": "auction_verification",
+      "source": "openml-ctr23",
+      "task": "regression",
+      "rows": "500-10k",
+      "features": "<10",
+      "regime": "data-rich",
+      "feature_types": "mixed",
+      "missing": "none",
+      "class_balance": "not applicable"
+    },
+    {
       "dataset": "bank-marketing",
       "source": "openml-cc18",
       "task": "binary classification",
@@ -199,6 +342,28 @@
       "feature_types": "mixed",
       "missing": "none",
       "class_balance": "one class dominates"
+    },
+    {
+      "dataset": "banknote-authentication",
+      "source": "openml-cc18",
+      "task": "binary classification",
+      "rows": "500-10k",
+      "features": "<10",
+      "regime": "data-rich",
+      "feature_types": "numeric",
+      "missing": "none",
+      "class_balance": "roughly equal"
+    },
+    {
+      "dataset": "biomed",
+      "source": "pmlb",
+      "task": "binary classification",
+      "rows": "<500",
+      "features": "<10",
+      "regime": "moderate",
+      "feature_types": "numeric",
+      "missing": "none",
+      "class_balance": "roughly equal"
     },
     {
       "dataset": "blood-transfusion-service-center",
@@ -234,6 +399,17 @@
       "class_balance": "roughly equal"
     },
     {
+      "dataset": "breast_cancer",
+      "source": "pmlb",
+      "task": "binary classification",
+      "rows": "<500",
+      "features": "<10",
+      "regime": "moderate",
+      "feature_types": "numeric",
+      "missing": "none",
+      "class_balance": "one class dominates"
+    },
+    {
       "dataset": "calendarDOW",
       "source": "pmlb",
       "task": "multiclass classification",
@@ -245,6 +421,17 @@
       "class_balance": "roughly equal"
     },
     {
+      "dataset": "california_housing",
+      "source": "openml-ctr23",
+      "task": "regression",
+      "rows": ">10k",
+      "features": "<10",
+      "regime": "data-rich",
+      "feature_types": "numeric",
+      "missing": "none",
+      "class_balance": "not applicable"
+    },
+    {
       "dataset": "car",
       "source": "openml-cc18",
       "task": "multiclass classification",
@@ -252,6 +439,28 @@
       "features": "<10",
       "regime": "data-rich",
       "feature_types": "categorical",
+      "missing": "none",
+      "class_balance": "one class dominates"
+    },
+    {
+      "dataset": "cars",
+      "source": "openml-ctr23",
+      "task": "regression",
+      "rows": "500-10k",
+      "features": "10-50",
+      "regime": "moderate",
+      "feature_types": "numeric",
+      "missing": "none",
+      "class_balance": "not applicable"
+    },
+    {
+      "dataset": "churn",
+      "source": "openml-cc18",
+      "task": "binary classification",
+      "rows": "500-10k",
+      "features": "10-50",
+      "regime": "moderate",
+      "feature_types": "mixed",
       "missing": "none",
       "class_balance": "one class dominates"
     },
@@ -274,6 +483,17 @@
       "features": "<10",
       "regime": "data-rich",
       "feature_types": "mixed",
+      "missing": "none",
+      "class_balance": "roughly equal"
+    },
+    {
+      "dataset": "collins",
+      "source": "pmlb",
+      "task": "multiclass classification",
+      "rows": "<500",
+      "features": "10-50",
+      "regime": "high-dimensional",
+      "feature_types": "numeric",
       "missing": "none",
       "class_balance": "roughly equal"
     },
@@ -355,6 +575,17 @@
       "class_balance": "one class dominates"
     },
     {
+      "dataset": "cylinder-bands",
+      "source": "openml-cc18",
+      "task": "binary classification",
+      "rows": "500-10k",
+      "features": "10-50",
+      "regime": "moderate",
+      "feature_types": "mixed",
+      "missing": "some",
+      "class_balance": "roughly equal"
+    },
+    {
       "dataset": "diamonds",
       "source": "openml-ctr23",
       "task": "regression",
@@ -364,6 +595,28 @@
       "feature_types": "mixed",
       "missing": "none",
       "class_balance": "not applicable"
+    },
+    {
+      "dataset": "dresses-sales",
+      "source": "openml-cc18",
+      "task": "binary classification",
+      "rows": "500-10k",
+      "features": "10-50",
+      "regime": "moderate",
+      "feature_types": "mixed",
+      "missing": "a lot",
+      "class_balance": "roughly equal"
+    },
+    {
+      "dataset": "ecoli",
+      "source": "pmlb",
+      "task": "multiclass classification",
+      "rows": "<500",
+      "features": "<10",
+      "regime": "moderate",
+      "feature_types": "numeric",
+      "missing": "none",
+      "class_balance": "one class dominates"
     },
     {
       "dataset": "electricity",
@@ -377,6 +630,17 @@
       "class_balance": "roughly equal"
     },
     {
+      "dataset": "energy_efficiency",
+      "source": "openml-ctr23",
+      "task": "regression",
+      "rows": "500-10k",
+      "features": "<10",
+      "regime": "data-rich",
+      "feature_types": "numeric",
+      "missing": "none",
+      "class_balance": "not applicable"
+    },
+    {
       "dataset": "fifa",
       "source": "openml-ctr23",
       "task": "regression",
@@ -384,6 +648,28 @@
       "features": "10-50",
       "regime": "data-rich",
       "feature_types": "numeric",
+      "missing": "none",
+      "class_balance": "not applicable"
+    },
+    {
+      "dataset": "first_principles_supernovae_zg",
+      "source": "pmlb",
+      "task": "regression",
+      "rows": "<500",
+      "features": "<10",
+      "regime": "moderate",
+      "feature_types": "numeric",
+      "missing": "none",
+      "class_balance": "not applicable"
+    },
+    {
+      "dataset": "forest_fires",
+      "source": "openml-ctr23",
+      "task": "regression",
+      "rows": "500-10k",
+      "features": "10-50",
+      "regime": "moderate",
+      "feature_types": "mixed",
       "missing": "none",
       "class_balance": "not applicable"
     },
@@ -396,6 +682,17 @@
       "regime": "data-rich",
       "feature_types": "mixed",
       "missing": "some",
+      "class_balance": "not applicable"
+    },
+    {
+      "dataset": "geographical_origin_of_music",
+      "source": "openml-ctr23",
+      "task": "regression",
+      "rows": "500-10k",
+      "features": ">50",
+      "regime": "moderate",
+      "feature_types": "numeric",
+      "missing": "none",
       "class_balance": "not applicable"
     },
     {
@@ -419,6 +716,17 @@
       "feature_types": "numeric",
       "missing": "none",
       "class_balance": "roughly equal"
+    },
+    {
+      "dataset": "health_insurance",
+      "source": "openml-ctr23",
+      "task": "regression",
+      "rows": ">10k",
+      "features": "10-50",
+      "regime": "data-rich",
+      "feature_types": "mixed",
+      "missing": "none",
+      "class_balance": "not applicable"
     },
     {
       "dataset": "jm1",
@@ -465,6 +773,17 @@
       "class_balance": "not applicable"
     },
     {
+      "dataset": "labor",
+      "source": "pmlb",
+      "task": "binary classification",
+      "rows": "<500",
+      "features": "10-50",
+      "regime": "high-dimensional",
+      "feature_types": "numeric",
+      "missing": "none",
+      "class_balance": "roughly equal"
+    },
+    {
       "dataset": "letter",
       "source": "openml-cc18",
       "task": "multiclass classification",
@@ -476,6 +795,17 @@
       "class_balance": "roughly equal"
     },
     {
+      "dataset": "lymphography",
+      "source": "pmlb",
+      "task": "multiclass classification",
+      "rows": "<500",
+      "features": "10-50",
+      "regime": "high-dimensional",
+      "feature_types": "numeric",
+      "missing": "none",
+      "class_balance": "one class dominates"
+    },
+    {
       "dataset": "mfeat-factors",
       "source": "openml-cc18",
       "task": "multiclass classification",
@@ -485,6 +815,17 @@
       "feature_types": "numeric",
       "missing": "none",
       "class_balance": "roughly equal"
+    },
+    {
+      "dataset": "miami_housing",
+      "source": "openml-ctr23",
+      "task": "regression",
+      "rows": ">10k",
+      "features": "10-50",
+      "regime": "data-rich",
+      "feature_types": "numeric",
+      "missing": "none",
+      "class_balance": "not applicable"
     },
     {
       "dataset": "mux6",
@@ -504,6 +845,39 @@
       "rows": ">10k",
       "features": "10-50",
       "regime": "data-rich",
+      "feature_types": "numeric",
+      "missing": "none",
+      "class_balance": "not applicable"
+    },
+    {
+      "dataset": "new_thyroid",
+      "source": "pmlb",
+      "task": "multiclass classification",
+      "rows": "<500",
+      "features": "<10",
+      "regime": "moderate",
+      "feature_types": "numeric",
+      "missing": "none",
+      "class_balance": "one class dominates"
+    },
+    {
+      "dataset": "nikuradse_1",
+      "source": "pmlb",
+      "task": "regression",
+      "rows": "<500",
+      "features": "<10",
+      "regime": "moderate",
+      "feature_types": "numeric",
+      "missing": "none",
+      "class_balance": "not applicable"
+    },
+    {
+      "dataset": "nikuradse_2",
+      "source": "pmlb",
+      "task": "regression",
+      "rows": "<500",
+      "features": "<10",
+      "regime": "moderate",
       "feature_types": "numeric",
       "missing": "none",
       "class_balance": "not applicable"
@@ -531,6 +905,17 @@
       "class_balance": "roughly equal"
     },
     {
+      "dataset": "optdigits",
+      "source": "openml-cc18",
+      "task": "multiclass classification",
+      "rows": "500-10k",
+      "features": ">50",
+      "regime": "moderate",
+      "feature_types": "numeric",
+      "missing": "none",
+      "class_balance": "roughly equal"
+    },
+    {
       "dataset": "pendigits",
       "source": "openml-cc18",
       "task": "multiclass classification",
@@ -553,6 +938,39 @@
       "class_balance": "roughly equal"
     },
     {
+      "dataset": "physiochemical_protein",
+      "source": "openml-ctr23",
+      "task": "regression",
+      "rows": ">10k",
+      "features": "<10",
+      "regime": "data-rich",
+      "feature_types": "numeric",
+      "missing": "none",
+      "class_balance": "not applicable"
+    },
+    {
+      "dataset": "postoperative_patient_data",
+      "source": "pmlb",
+      "task": "binary classification",
+      "rows": "<500",
+      "features": "<10",
+      "regime": "moderate",
+      "feature_types": "numeric",
+      "missing": "none",
+      "class_balance": "one class dominates"
+    },
+    {
+      "dataset": "prnn_crabs",
+      "source": "pmlb",
+      "task": "binary classification",
+      "rows": "<500",
+      "features": "<10",
+      "regime": "moderate",
+      "feature_types": "numeric",
+      "missing": "none",
+      "class_balance": "roughly equal"
+    },
+    {
       "dataset": "pumadyn32nh",
       "source": "openml-ctr23",
       "task": "regression",
@@ -562,6 +980,17 @@
       "feature_types": "numeric",
       "missing": "none",
       "class_balance": "not applicable"
+    },
+    {
+      "dataset": "qsar-biodeg",
+      "source": "openml-cc18",
+      "task": "binary classification",
+      "rows": "500-10k",
+      "features": "10-50",
+      "regime": "moderate",
+      "feature_types": "numeric",
+      "missing": "none",
+      "class_balance": "roughly equal"
     },
     {
       "dataset": "red_wine",
@@ -586,6 +1015,17 @@
       "class_balance": "roughly equal"
     },
     {
+      "dataset": "sarcos",
+      "source": "openml-ctr23",
+      "task": "regression",
+      "rows": ">10k",
+      "features": "10-50",
+      "regime": "data-rich",
+      "feature_types": "numeric",
+      "missing": "none",
+      "class_balance": "not applicable"
+    },
+    {
       "dataset": "satimage",
       "source": "openml-cc18",
       "task": "multiclass classification",
@@ -606,6 +1046,17 @@
       "feature_types": "numeric",
       "missing": "none",
       "class_balance": "one class dominates"
+    },
+    {
+      "dataset": "segment",
+      "source": "openml-cc18",
+      "task": "multiclass classification",
+      "rows": "500-10k",
+      "features": "10-50",
+      "regime": "moderate",
+      "feature_types": "numeric",
+      "missing": "none",
+      "class_balance": "roughly equal"
     },
     {
       "dataset": "socmob",
@@ -641,6 +1092,28 @@
       "class_balance": "not applicable"
     },
     {
+      "dataset": "splice",
+      "source": "openml-cc18",
+      "task": "multiclass classification",
+      "rows": "500-10k",
+      "features": ">50",
+      "regime": "moderate",
+      "feature_types": "categorical",
+      "missing": "none",
+      "class_balance": "roughly equal"
+    },
+    {
+      "dataset": "student_performance_por",
+      "source": "openml-ctr23",
+      "task": "regression",
+      "rows": "500-10k",
+      "features": "10-50",
+      "regime": "moderate",
+      "feature_types": "mixed",
+      "missing": "none",
+      "class_balance": "not applicable"
+    },
+    {
       "dataset": "superconductivity",
       "source": "openml-ctr23",
       "task": "regression",
@@ -663,6 +1136,17 @@
       "class_balance": "roughly equal"
     },
     {
+      "dataset": "vehicle",
+      "source": "openml-cc18",
+      "task": "multiclass classification",
+      "rows": "500-10k",
+      "features": "10-50",
+      "regime": "moderate",
+      "feature_types": "numeric",
+      "missing": "none",
+      "class_balance": "roughly equal"
+    },
+    {
       "dataset": "video_transcoding",
       "source": "openml-ctr23",
       "task": "regression",
@@ -674,12 +1158,34 @@
       "class_balance": "not applicable"
     },
     {
+      "dataset": "wall-robot-navigation",
+      "source": "openml-cc18",
+      "task": "multiclass classification",
+      "rows": "500-10k",
+      "features": "10-50",
+      "regime": "moderate",
+      "feature_types": "numeric",
+      "missing": "none",
+      "class_balance": "roughly equal"
+    },
+    {
       "dataset": "wave_energy",
       "source": "openml-ctr23",
       "task": "regression",
       "rows": ">10k",
       "features": "10-50",
       "regime": "data-rich",
+      "feature_types": "numeric",
+      "missing": "none",
+      "class_balance": "not applicable"
+    },
+    {
+      "dataset": "white_wine",
+      "source": "openml-ctr23",
+      "task": "regression",
+      "rows": "500-10k",
+      "features": "10-50",
+      "regime": "moderate",
       "feature_types": "numeric",
       "missing": "none",
       "class_balance": "not applicable"

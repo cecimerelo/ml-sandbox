@@ -41,12 +41,12 @@
   "pmlb_revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
   "seed": 20260815,
   "max_per_family": 2,
-  "per_stratum": 10,
+  "per_stratum": 20,
   "counts": {
     "considered": 267,
     "eligible": 195,
-    "kept": 60,
-    "excluded": 497
+    "kept": 106,
+    "excluded": 451
   },
   "missingness_rates": [
     0.05,
@@ -57,56 +57,148 @@
     "mfeat-factors": 12,
     "breast-w": 15,
     "cmc": 23,
+    "optdigits": 28,
     "credit-approval": 29,
     "credit-g": 31,
     "pendigits": 32,
+    "splice": 45,
+    "vehicle": 53,
     "electricity": 219,
     "satimage": 2074,
     "jm1": 3904,
+    "adult": 7592,
+    "qsar-biodeg": 9957,
+    "wall-robot-navigation": 9960,
     "nomao": 9977,
+    "banknote-authentication": 10093,
     "blood-transfusion-service-center": 10101,
     "PhishingWebsites": 14952,
+    "cylinder-bands": 14954,
     "bank-marketing": 14965,
+    "dresses-sales": 125920,
     "connect-4": 146195,
     "climate-model-simulation-crashes": 146819,
     "wilt": 146820,
     "car": 146821,
+    "segment": 146822,
     "jungle_chess_2pcs_raw_endgame_complete": 167119,
     "numerai28.6": 167120,
+    "churn": 167141,
+    "abalone": 361234,
     "airfoil_self_noise": 361235,
+    "auction_verification": 361236,
     "concrete_compressive_strength": 361237,
+    "physiochemical_protein": 361241,
     "superconductivity": 361242,
+    "geographical_origin_of_music": 361243,
     "solar_flare": 361244,
     "naval_propulsion_plant": 361247,
+    "white_wine": 361249,
     "red_wine": 361250,
     "grid_stability": 361251,
     "video_transcoding": 361252,
     "wave_energy": 361253,
+    "sarcos": 361254,
+    "california_housing": 361255,
     "cpu_activity": 361256,
     "diamonds": 361257,
     "kin8nm": 361258,
     "pumadyn32nh": 361259,
+    "miami_housing": 361260,
     "cps88wages": 361261,
     "socmob": 361264,
     "kings_county": 361266,
     "brazilian_houses": 361267,
     "fps_benchmark": 361268,
+    "health_insurance": 361269,
     "fifa": 361272,
+    "Moneyball": 361616,
+    "energy_efficiency": 361617,
+    "forest_fires": 361618,
+    "student_performance_por": 361619,
+    "QSAR_fish_toxicity": 361621,
+    "cars": 361622,
     "space_ga": 361623
   },
   "coverage": {
-    "rows < 500": 20,
-    "rows 500-10k": 20,
-    "rows > 10k": 20,
-    "classification": 30,
-    "regression": 30,
-    "multiclass": 14,
-    "binary": 16,
-    "has missing values": 4,
-    "missing-value data unavailable": 20,
-    "has categorical features": 35
+    "rows < 500": 40,
+    "rows 500-10k": 40,
+    "rows > 10k": 26,
+    "classification": 51,
+    "regression": 55,
+    "multiclass": 23,
+    "binary": 28,
+    "has missing values": 8,
+    "missing-value data unavailable": 40,
+    "has categorical features": 60
   },
   "datasets": [
+    {
+      "name": "210_cloud",
+      "source": "pmlb",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "rows": 108,
+      "predictors": 5,
+      "task": "regression",
+      "classes": 94,
+      "categorical_predictors": 1,
+      "missing_values": null,
+      "imbalance": 0.0013791170700768,
+      "licence": null,
+      "origin": null,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
+    },
+    {
+      "name": "230_machine_cpu",
+      "source": "pmlb",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "rows": 209,
+      "predictors": 6,
+      "task": "regression",
+      "classes": 116,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0049057246061614,
+      "licence": null,
+      "origin": null,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
+    },
+    {
+      "name": "519_vinnie",
+      "source": "pmlb",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "rows": 380,
+      "predictors": 2,
+      "task": "regression",
+      "classes": 16,
+      "categorical_predictors": 1,
+      "missing_values": null,
+      "imbalance": 0.0301458910433979,
+      "licence": null,
+      "origin": null,
+      "provenance": {
+        "description": "Data on the shooting of Vinnie Johnson of the Detroit Pistons during the 1985-1986 through 1988-1989 seasons.",
+        "sources": [
+          "https://www.openml.org/data/get_csv/52631/vinnie.arff,",
+          "https://www.openml.org/d/519"
+        ],
+        "publication": "The data are analyzed in the Carnegie Mellon Ph.D. Thesis of Kate Hsiao and some results are cited in Example 2 of Kass, R.E. and Raftery, A.E. (1995), Bayes Factors, J. Amer. Statist. Assoc."
+      },
+      "keywords": [
+        "basketball",
+        "detroit"
+      ]
+    },
     {
       "name": "527_analcatdata_election2000",
       "source": "pmlb",
@@ -166,6 +258,66 @@
       "categorical_predictors": 2,
       "missing_values": null,
       "imbalance": 0.3252596910422626,
+      "licence": null,
+      "origin": null,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
+    },
+    {
+      "name": "561_cpu",
+      "source": "pmlb",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "rows": 209,
+      "predictors": 7,
+      "task": "regression",
+      "classes": 104,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0065414680084629,
+      "licence": null,
+      "origin": null,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
+    },
+    {
+      "name": "591_fri_c1_100_10",
+      "source": "pmlb",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "rows": 100,
+      "predictors": 10,
+      "task": "regression",
+      "classes": 100,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0,
+      "licence": null,
+      "origin": null,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
+    },
+    {
+      "name": "602_fri_c3_250_10",
+      "source": "pmlb",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "rows": 250,
+      "predictors": 10,
+      "task": "regression",
+      "classes": 250,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0,
       "licence": null,
       "origin": null,
       "provenance": {
@@ -256,6 +408,26 @@
       "keywords": []
     },
     {
+      "name": "678_visualizing_environmental",
+      "source": "pmlb",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "rows": 111,
+      "predictors": 3,
+      "task": "regression",
+      "classes": 28,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0196081967853739,
+      "licence": null,
+      "origin": null,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
+    },
+    {
       "name": "690_visualizing_galaxy",
       "source": "pmlb",
       "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
@@ -316,6 +488,22 @@
       "keywords": []
     },
     {
+      "name": "Moneyball",
+      "source": "openml-ctr23",
+      "revision": "2",
+      "rows": 1232,
+      "predictors": 14,
+      "task": "regression",
+      "classes": 0,
+      "categorical_predictors": 6,
+      "missing_values": 3600,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/41021",
+      "provenance": null,
+      "keywords": []
+    },
+    {
       "name": "PhishingWebsites",
       "source": "openml-cc18",
       "revision": "1",
@@ -328,6 +516,54 @@
       "imbalance": null,
       "licence": "Public",
       "origin": "https://www.openml.org/d/4534",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "QSAR_fish_toxicity",
+      "source": "openml-ctr23",
+      "revision": "7",
+      "rows": 908,
+      "predictors": 6,
+      "task": "regression",
+      "classes": 0,
+      "categorical_predictors": 0,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "CC BY 4.0",
+      "origin": "https://www.openml.org/d/44970",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "abalone",
+      "source": "openml-ctr23",
+      "revision": "15",
+      "rows": 4177,
+      "predictors": 8,
+      "task": "regression",
+      "classes": 0,
+      "categorical_predictors": 1,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "CC BY 4.0",
+      "origin": "https://www.openml.org/d/44956",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "adult",
+      "source": "openml-cc18",
+      "revision": "2",
+      "rows": 48842,
+      "predictors": 14,
+      "task": "classification",
+      "classes": 2,
+      "categorical_predictors": 9,
+      "missing_values": 6465,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/1590",
       "provenance": null,
       "keywords": []
     },
@@ -345,6 +581,26 @@
       "licence": "CC BY 4.0",
       "origin": "https://www.openml.org/d/44957",
       "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "analcatdata_aids",
+      "source": "pmlb",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "rows": 50,
+      "predictors": 4,
+      "task": "classification",
+      "classes": 2,
+      "categorical_predictors": 2,
+      "missing_values": null,
+      "imbalance": 0.0,
+      "licence": null,
+      "origin": null,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
       "keywords": []
     },
     {
@@ -368,6 +624,22 @@
       "keywords": []
     },
     {
+      "name": "auction_verification",
+      "source": "openml-ctr23",
+      "revision": "7",
+      "rows": 2043,
+      "predictors": 7,
+      "task": "regression",
+      "classes": 0,
+      "categorical_predictors": 2,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "CC BY 4.0",
+      "origin": "https://www.openml.org/d/44958",
+      "provenance": null,
+      "keywords": []
+    },
+    {
       "name": "bank-marketing",
       "source": "openml-cc18",
       "revision": "1",
@@ -381,6 +653,42 @@
       "licence": "Public",
       "origin": "https://www.openml.org/d/1461",
       "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "banknote-authentication",
+      "source": "openml-cc18",
+      "revision": "1",
+      "rows": 1372,
+      "predictors": 4,
+      "task": "classification",
+      "classes": 2,
+      "categorical_predictors": 1,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/1462",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "biomed",
+      "source": "pmlb",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "rows": 209,
+      "predictors": 8,
+      "task": "classification",
+      "classes": 2,
+      "categorical_predictors": 1,
+      "missing_values": null,
+      "imbalance": 0.079691399006433,
+      "licence": null,
+      "origin": null,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
       "keywords": []
     },
     {
@@ -432,6 +740,26 @@
       "keywords": []
     },
     {
+      "name": "breast_cancer",
+      "source": "pmlb",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "rows": 286,
+      "predictors": 9,
+      "task": "classification",
+      "classes": 2,
+      "categorical_predictors": 6,
+      "missing_values": null,
+      "imbalance": 0.1645068218494792,
+      "licence": null,
+      "origin": null,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
+    },
+    {
       "name": "calendarDOW",
       "source": "pmlb",
       "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
@@ -452,6 +780,22 @@
       "keywords": []
     },
     {
+      "name": "california_housing",
+      "source": "openml-ctr23",
+      "revision": "7",
+      "rows": 20640,
+      "predictors": 8,
+      "task": "regression",
+      "classes": 0,
+      "categorical_predictors": 0,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/44977",
+      "provenance": null,
+      "keywords": []
+    },
+    {
       "name": "car",
       "source": "openml-cc18",
       "revision": "3",
@@ -464,6 +808,42 @@
       "imbalance": null,
       "licence": "Public",
       "origin": "https://www.openml.org/d/40975",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "cars",
+      "source": "openml-ctr23",
+      "revision": "4",
+      "rows": 804,
+      "predictors": 17,
+      "task": "regression",
+      "classes": 0,
+      "categorical_predictors": 0,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/44994",
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
+    },
+    {
+      "name": "churn",
+      "source": "openml-cc18",
+      "revision": "1",
+      "rows": 5000,
+      "predictors": 20,
+      "task": "classification",
+      "classes": 2,
+      "categorical_predictors": 5,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "public",
+      "origin": "https://www.openml.org/d/40701",
       "provenance": null,
       "keywords": []
     },
@@ -497,6 +877,26 @@
       "licence": "Public",
       "origin": "https://www.openml.org/d/23",
       "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "collins",
+      "source": "pmlb",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "rows": 485,
+      "predictors": 23,
+      "task": "classification",
+      "classes": 13,
+      "categorical_predictors": 1,
+      "missing_values": null,
+      "imbalance": 0.0219810819428207,
+      "licence": null,
+      "origin": null,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
       "keywords": []
     },
     {
@@ -618,6 +1018,22 @@
       "keywords": []
     },
     {
+      "name": "cylinder-bands",
+      "source": "openml-cc18",
+      "revision": "2",
+      "rows": 540,
+      "predictors": 39,
+      "task": "classification",
+      "classes": 2,
+      "categorical_predictors": 22,
+      "missing_values": 999,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/6332",
+      "provenance": null,
+      "keywords": []
+    },
+    {
       "name": "diamonds",
       "source": "openml-ctr23",
       "revision": "8",
@@ -634,6 +1050,42 @@
       "keywords": []
     },
     {
+      "name": "dresses-sales",
+      "source": "openml-cc18",
+      "revision": "2",
+      "rows": 500,
+      "predictors": 12,
+      "task": "classification",
+      "classes": 2,
+      "categorical_predictors": 12,
+      "missing_values": 835,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/23381",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "ecoli",
+      "source": "pmlb",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "rows": 327,
+      "predictors": 7,
+      "task": "classification",
+      "classes": 5,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.1089648271282813,
+      "licence": null,
+      "origin": null,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
+    },
+    {
       "name": "electricity",
       "source": "openml-cc18",
       "revision": "1",
@@ -646,6 +1098,22 @@
       "imbalance": null,
       "licence": "Public",
       "origin": "https://www.openml.org/d/151",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "energy_efficiency",
+      "source": "openml-ctr23",
+      "revision": "9",
+      "rows": 768,
+      "predictors": 8,
+      "task": "regression",
+      "classes": 0,
+      "categorical_predictors": 0,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "CC BY 4.0",
+      "origin": "https://www.openml.org/d/44960",
       "provenance": null,
       "keywords": []
     },
@@ -666,6 +1134,48 @@
       "keywords": []
     },
     {
+      "name": "first_principles_supernovae_zg",
+      "source": "pmlb",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "rows": 243,
+      "predictors": 1,
+      "task": "regression",
+      "classes": 243,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0,
+      "licence": null,
+      "origin": null,
+      "provenance": {
+        "description": "A real-world dataset containing the normalized flux of a supernova explosion from ZTF Data Release 17. The original publication has data for 6 different events, and here we include data from only one of them (`real_data/supernovae/examples/example1.csv`).",
+        "sources": [
+          "https://github.com/erusseil/MvSR-analysis"
+        ],
+        "publication": "Etienne Russeil, Fabricio Olivetti de Franca, Konstantin Malanchev, Bogdan Burlacu, Emille Ishida, Marion Leroux, Cl\u00e9ment Michelin, Guillaume Moinard, and Emmanuel Gangler. 2024. Multiview Symbolic Re"
+      },
+      "keywords": [
+        "symbolic regression",
+        "physics",
+        "first principles"
+      ]
+    },
+    {
+      "name": "forest_fires",
+      "source": "openml-ctr23",
+      "revision": "9",
+      "rows": 517,
+      "predictors": 12,
+      "task": "regression",
+      "classes": 0,
+      "categorical_predictors": 0,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "CC BY 4.0",
+      "origin": "https://www.openml.org/d/44962",
+      "provenance": null,
+      "keywords": []
+    },
+    {
       "name": "fps_benchmark",
       "source": "openml-ctr23",
       "revision": "2",
@@ -678,6 +1188,22 @@
       "imbalance": null,
       "licence": "CC BY",
       "origin": "https://www.openml.org/d/44992",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "geographical_origin_of_music",
+      "source": "openml-ctr23",
+      "revision": "7",
+      "rows": 1059,
+      "predictors": 116,
+      "task": "regression",
+      "classes": 0,
+      "categorical_predictors": 0,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "CC BY 4.0",
+      "origin": "https://www.openml.org/d/44965",
       "provenance": null,
       "keywords": []
     },
@@ -715,6 +1241,22 @@
         "sources": [],
         "publication": ""
       },
+      "keywords": []
+    },
+    {
+      "name": "health_insurance",
+      "source": "openml-ctr23",
+      "revision": "3",
+      "rows": 22272,
+      "predictors": 11,
+      "task": "regression",
+      "classes": 0,
+      "categorical_predictors": 7,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "GPL (>= 2)",
+      "origin": "https://www.openml.org/d/44993",
+      "provenance": null,
       "keywords": []
     },
     {
@@ -782,6 +1324,26 @@
       "keywords": []
     },
     {
+      "name": "labor",
+      "source": "pmlb",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "rows": 57,
+      "predictors": 16,
+      "task": "classification",
+      "classes": 2,
+      "categorical_predictors": 13,
+      "missing_values": null,
+      "imbalance": 0.0889504462911665,
+      "licence": null,
+      "origin": null,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
+    },
+    {
       "name": "letter",
       "source": "openml-cc18",
       "revision": "1",
@@ -798,6 +1360,31 @@
       "keywords": []
     },
     {
+      "name": "lymphography",
+      "source": "pmlb",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "rows": 148,
+      "predictors": 18,
+      "task": "classification",
+      "classes": 4,
+      "categorical_predictors": 9,
+      "missing_values": null,
+      "imbalance": 0.2937667397126856,
+      "licence": null,
+      "origin": null,
+      "provenance": {
+        "description": "used to predict correct diagnosis from categorical anatomical features",
+        "sources": [
+          "https://archive.ics.uci.edu/ml/datasets/Lymphography"
+        ],
+        "publication": "Cestnik, G., Konenenko, I, & Bratko, I 'A Knowledge-Elicitation Tool for Sophisticated Users' 'In I.Bratko & N.Lavrac (Eds.) Progress in Machine Learning, 31-45, Sigma Press.'"
+      },
+      "keywords": [
+        "biomedical",
+        "cancer"
+      ]
+    },
+    {
       "name": "mfeat-factors",
       "source": "openml-cc18",
       "revision": "1",
@@ -810,6 +1397,22 @@
       "imbalance": null,
       "licence": "Public",
       "origin": "https://www.openml.org/d/12",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "miami_housing",
+      "source": "openml-ctr23",
+      "revision": "2",
+      "rows": 13932,
+      "predictors": 15,
+      "task": "regression",
+      "classes": 0,
+      "categorical_predictors": 0,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "CC0: Public Domain",
+      "origin": "https://www.openml.org/d/44983",
       "provenance": null,
       "keywords": []
     },
@@ -850,6 +1453,72 @@
       "keywords": []
     },
     {
+      "name": "new_thyroid",
+      "source": "pmlb",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "rows": 215,
+      "predictors": 5,
+      "task": "classification",
+      "classes": 3,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.2990805840995132,
+      "licence": null,
+      "origin": null,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
+    },
+    {
+      "name": "nikuradse_1",
+      "source": "pmlb",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "rows": 362,
+      "predictors": 2,
+      "task": "regression",
+      "classes": 186,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0049368192404119,
+      "licence": null,
+      "origin": null,
+      "provenance": {
+        "description": "Predict the resistance for fluid flow in rough pipes based on the Nikuradse dataset.",
+        "sources": [],
+        "publication": "Ignasi Reichardt, Jordi Pallar\u00e8s, Marta Sales-Pardo, and Roger Guimer\u00e0: Bayesian Machine Scientist to Compare Data Collapses for the Nikuradse Dataset. Phys. Rev. Lett. 124, 084503 - Published 27 Febr"
+      },
+      "keywords": [
+        "Physics",
+        "Flow"
+      ]
+    },
+    {
+      "name": "nikuradse_2",
+      "source": "pmlb",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "rows": 362,
+      "predictors": 1,
+      "task": "regression",
+      "classes": 80,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0204005302692805,
+      "licence": null,
+      "origin": null,
+      "provenance": {
+        "description": "Predict the resistance for fluid flow in rough pipes based on the Nikuradse dataset. This dataset uses the Prandl collapse.",
+        "sources": [],
+        "publication": "Ignasi Reichardt, Jordi Pallar\u00e8s, Marta Sales-Pardo, and Roger Guimer\u00e0: Bayesian Machine Scientist to Compare Data Collapses for the Nikuradse Dataset. Phys. Rev. Lett. 124, 084503 - Published 27 Febr"
+      },
+      "keywords": [
+        "Physics",
+        "Flow"
+      ]
+    },
+    {
       "name": "nomao",
       "source": "openml-cc18",
       "revision": "1",
@@ -878,6 +1547,22 @@
       "imbalance": null,
       "licence": "Public",
       "origin": "https://www.openml.org/d/23517",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "optdigits",
+      "source": "openml-cc18",
+      "revision": "1",
+      "rows": 5620,
+      "predictors": 64,
+      "task": "classification",
+      "classes": 10,
+      "categorical_predictors": 1,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/28",
       "provenance": null,
       "keywords": []
     },
@@ -926,6 +1611,62 @@
       ]
     },
     {
+      "name": "physiochemical_protein",
+      "source": "openml-ctr23",
+      "revision": "7",
+      "rows": 45730,
+      "predictors": 9,
+      "task": "regression",
+      "classes": 0,
+      "categorical_predictors": 0,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "CC BY 4.0",
+      "origin": "https://www.openml.org/d/44963",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "postoperative_patient_data",
+      "source": "pmlb",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "rows": 88,
+      "predictors": 8,
+      "task": "classification",
+      "classes": 2,
+      "categorical_predictors": 6,
+      "missing_values": null,
+      "imbalance": 0.2066115702479339,
+      "licence": null,
+      "origin": null,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
+    },
+    {
+      "name": "prnn_crabs",
+      "source": "pmlb",
+      "revision": "7c1f4bdc00136dc2e55c87fa6b8ba6e8af6d1a68",
+      "rows": 200,
+      "predictors": 7,
+      "task": "classification",
+      "classes": 2,
+      "categorical_predictors": 0,
+      "missing_values": null,
+      "imbalance": 0.0,
+      "licence": null,
+      "origin": null,
+      "provenance": {
+        "description": "",
+        "sources": [],
+        "publication": ""
+      },
+      "keywords": []
+    },
+    {
       "name": "pumadyn32nh",
       "source": "openml-ctr23",
       "revision": "2",
@@ -938,6 +1679,22 @@
       "imbalance": null,
       "licence": "Public",
       "origin": "https://www.openml.org/d/44981",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "qsar-biodeg",
+      "source": "openml-cc18",
+      "revision": "1",
+      "rows": 1055,
+      "predictors": 41,
+      "task": "classification",
+      "classes": 2,
+      "categorical_predictors": 1,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/1494",
       "provenance": null,
       "keywords": []
     },
@@ -987,6 +1744,22 @@
       ]
     },
     {
+      "name": "sarcos",
+      "source": "openml-ctr23",
+      "revision": "9",
+      "rows": 48933,
+      "predictors": 21,
+      "task": "regression",
+      "classes": 0,
+      "categorical_predictors": 0,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/44976",
+      "provenance": null,
+      "keywords": []
+    },
+    {
       "name": "satimage",
       "source": "openml-cc18",
       "revision": "1",
@@ -1020,6 +1793,22 @@
         "sources": [],
         "publication": ""
       },
+      "keywords": []
+    },
+    {
+      "name": "segment",
+      "source": "openml-cc18",
+      "revision": "3",
+      "rows": 2310,
+      "predictors": 19,
+      "task": "classification",
+      "classes": 7,
+      "categorical_predictors": 1,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/40984",
+      "provenance": null,
       "keywords": []
     },
     {
@@ -1071,6 +1860,38 @@
       "keywords": []
     },
     {
+      "name": "splice",
+      "source": "openml-cc18",
+      "revision": "1",
+      "rows": 3190,
+      "predictors": 60,
+      "task": "classification",
+      "classes": 3,
+      "categorical_predictors": 61,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/46",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "student_performance_por",
+      "source": "openml-ctr23",
+      "revision": "8",
+      "rows": 649,
+      "predictors": 30,
+      "task": "regression",
+      "classes": 0,
+      "categorical_predictors": 17,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "CC BY 4.0",
+      "origin": "https://www.openml.org/d/44967",
+      "provenance": null,
+      "keywords": []
+    },
+    {
       "name": "superconductivity",
       "source": "openml-ctr23",
       "revision": "7",
@@ -1107,6 +1928,22 @@
       "keywords": []
     },
     {
+      "name": "vehicle",
+      "source": "openml-cc18",
+      "revision": "1",
+      "rows": 846,
+      "predictors": 18,
+      "task": "classification",
+      "classes": 4,
+      "categorical_predictors": 1,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/54",
+      "provenance": null,
+      "keywords": []
+    },
+    {
       "name": "video_transcoding",
       "source": "openml-ctr23",
       "revision": "6",
@@ -1123,6 +1960,22 @@
       "keywords": []
     },
     {
+      "name": "wall-robot-navigation",
+      "source": "openml-cc18",
+      "revision": "1",
+      "rows": 5456,
+      "predictors": 24,
+      "task": "classification",
+      "classes": 4,
+      "categorical_predictors": 1,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "Public",
+      "origin": "https://www.openml.org/d/1497",
+      "provenance": null,
+      "keywords": []
+    },
+    {
       "name": "wave_energy",
       "source": "openml-ctr23",
       "revision": "6",
@@ -1135,6 +1988,22 @@
       "imbalance": null,
       "licence": "CC BY 4.0",
       "origin": "https://www.openml.org/d/44975",
+      "provenance": null,
+      "keywords": []
+    },
+    {
+      "name": "white_wine",
+      "source": "openml-ctr23",
+      "revision": "7",
+      "rows": 4898,
+      "predictors": 11,
+      "task": "regression",
+      "classes": 0,
+      "categorical_predictors": 0,
+      "missing_values": 0,
+      "imbalance": null,
+      "licence": "CC BY 4.0",
+      "origin": "https://www.openml.org/d/44971",
       "provenance": null,
       "keywords": []
     },
@@ -2626,543 +3495,359 @@
     },
     {
       "name": "1027_ESL",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "1096_FacultySalaries",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "192_vineyard",
-      "reason": "not sampled: stratum small/regression already has 10"
-    },
-    {
-      "name": "210_cloud",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "228_elusage",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "229_pwLinear",
-      "reason": "not sampled: stratum small/regression already has 10"
-    },
-    {
-      "name": "230_machine_cpu",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "505_tecator",
-      "reason": "not sampled: stratum small/regression already has 10"
-    },
-    {
-      "name": "519_vinnie",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "523_analcatdata_neavote",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "556_analcatdata_apnea2",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "560_bodyfat",
-      "reason": "not sampled: stratum small/regression already has 10"
-    },
-    {
-      "name": "561_cpu",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "579_fri_c0_250_5",
-      "reason": "not sampled: stratum small/regression already has 10"
-    },
-    {
-      "name": "591_fri_c1_100_10",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "594_fri_c2_100_5",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "596_fri_c2_250_5",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "601_fri_c1_250_5",
-      "reason": "not sampled: stratum small/regression already has 10"
-    },
-    {
-      "name": "602_fri_c3_250_10",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "603_fri_c0_250_50",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "605_fri_c2_250_25",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "615_fri_c4_250_10",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "621_fri_c0_100_10",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "624_fri_c0_100_5",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "635_fri_c0_250_10",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "644_fri_c4_250_25",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "647_fri_c1_250_10",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "648_fri_c1_250_50",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "651_fri_c0_100_25",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "653_fri_c0_250_25",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "656_fri_c1_100_5",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "658_fri_c3_250_25",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "663_rabe_266",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "665_sleuth_case2002",
-      "reason": "not sampled: stratum small/regression already has 10"
-    },
-    {
-      "name": "678_visualizing_environmental",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "687_sleuth_ex1605",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "695_chatfield_4",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "GesturePhaseSegmentationProcessed",
-      "reason": "not sampled: stratum medium/classification already has 10"
+      "reason": "not sampled: stratum medium/classification already has 20"
     },
     {
       "name": "MiceProtein",
-      "reason": "not sampled: stratum medium/classification already has 10"
-    },
-    {
-      "name": "Moneyball",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
-      "name": "QSAR_fish_toxicity",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
-      "name": "abalone",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
-      "name": "adult",
-      "reason": "not sampled: stratum large/classification already has 10"
-    },
-    {
-      "name": "analcatdata_aids",
-      "reason": "not sampled: stratum small/classification already has 10"
+      "reason": "not sampled: stratum medium/classification already has 20"
     },
     {
       "name": "analcatdata_asbestos",
-      "reason": "not sampled: stratum small/classification already has 10"
-    },
-    {
-      "name": "auction_verification",
-      "reason": "not sampled: stratum medium/regression already has 10"
+      "reason": "not sampled: stratum small/classification already has 20"
     },
     {
       "name": "auto_insurance_losses",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "auto_insurance_price",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "backache",
-      "reason": "not sampled: stratum small/classification already has 10"
+      "reason": "not sampled: stratum small/classification already has 20"
     },
     {
       "name": "balance-scale",
-      "reason": "not sampled: stratum medium/classification already has 10"
-    },
-    {
-      "name": "banknote-authentication",
-      "reason": "not sampled: stratum medium/classification already has 10"
-    },
-    {
-      "name": "biomed",
-      "reason": "not sampled: stratum small/classification already has 10"
-    },
-    {
-      "name": "breast_cancer",
-      "reason": "not sampled: stratum small/classification already has 10"
+      "reason": "not sampled: stratum medium/classification already has 20"
     },
     {
       "name": "bupa",
-      "reason": "not sampled: stratum small/classification already has 10"
-    },
-    {
-      "name": "california_housing",
-      "reason": "not sampled: stratum large/regression already has 10"
+      "reason": "not sampled: stratum small/classification already has 20"
     },
     {
       "name": "cars",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
-      "name": "cars",
-      "reason": "not sampled: stratum small/classification already has 10"
-    },
-    {
-      "name": "churn",
-      "reason": "not sampled: stratum medium/classification already has 10"
+      "reason": "not sampled: stratum small/classification already has 20"
     },
     {
       "name": "clean1",
-      "reason": "not sampled: stratum small/classification already has 10"
+      "reason": "not sampled: stratum small/classification already has 20"
     },
     {
       "name": "cloud",
-      "reason": "not sampled: stratum small/classification already has 10"
-    },
-    {
-      "name": "collins",
-      "reason": "not sampled: stratum small/classification already has 10"
+      "reason": "not sampled: stratum small/classification already has 20"
     },
     {
       "name": "confidence",
-      "reason": "not sampled: stratum small/classification already has 10"
+      "reason": "not sampled: stratum small/classification already has 20"
     },
     {
       "name": "corral",
-      "reason": "not sampled: stratum small/classification already has 10"
-    },
-    {
-      "name": "cylinder-bands",
-      "reason": "not sampled: stratum medium/classification already has 10"
+      "reason": "not sampled: stratum small/classification already has 20"
     },
     {
       "name": "dermatology",
-      "reason": "not sampled: stratum small/classification already has 10"
+      "reason": "not sampled: stratum small/classification already has 20"
     },
     {
       "name": "diabetes",
-      "reason": "not sampled: stratum medium/classification already has 10"
+      "reason": "not sampled: stratum medium/classification already has 20"
     },
     {
       "name": "dna",
-      "reason": "not sampled: stratum medium/classification already has 10"
-    },
-    {
-      "name": "dresses-sales",
-      "reason": "not sampled: stratum medium/classification already has 10"
-    },
-    {
-      "name": "ecoli",
-      "reason": "not sampled: stratum small/classification already has 10"
-    },
-    {
-      "name": "energy_efficiency",
-      "reason": "not sampled: stratum medium/regression already has 10"
+      "reason": "not sampled: stratum medium/classification already has 20"
     },
     {
       "name": "eucalyptus",
-      "reason": "not sampled: stratum medium/classification already has 10"
+      "reason": "not sampled: stratum medium/classification already has 20"
     },
     {
       "name": "first-order-theorem-proving",
-      "reason": "not sampled: stratum medium/classification already has 10"
+      "reason": "not sampled: stratum medium/classification already has 20"
     },
     {
       "name": "first_principles_planck",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "first_principles_rydberg",
-      "reason": "not sampled: stratum small/regression already has 10"
-    },
-    {
-      "name": "first_principles_supernovae_zg",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "first_principles_supernovae_zr",
-      "reason": "not sampled: stratum small/regression already has 10"
+      "reason": "not sampled: stratum small/regression already has 20"
     },
     {
       "name": "flags",
-      "reason": "not sampled: stratum small/classification already has 10"
-    },
-    {
-      "name": "forest_fires",
-      "reason": "not sampled: stratum medium/regression already has 10"
-    },
-    {
-      "name": "geographical_origin_of_music",
-      "reason": "not sampled: stratum medium/regression already has 10"
+      "reason": "not sampled: stratum small/classification already has 20"
     },
     {
       "name": "glass2",
-      "reason": "not sampled: stratum small/classification already has 10"
+      "reason": "not sampled: stratum small/classification already has 20"
     },
     {
       "name": "haberman",
-      "reason": "not sampled: stratum small/classification already has 10"
-    },
-    {
-      "name": "health_insurance",
-      "reason": "not sampled: stratum large/regression already has 10"
+      "reason": "not sampled: stratum small/classification already has 20"
     },
     {
       "name": "heart_disease_cleveland",
-      "reason": "not sampled: stratum small/classification already has 10"
+      "reason": "not sampled: stratum small/classification already has 20"
     },
     {
       "name": "heart_disease_hungarian",
-      "reason": "not sampled: stratum small/classification already has 10"
+      "reason": "not sampled: stratum small/classification already has 20"
     },
     {
       "name": "heart_disease_va_long_beach",
-      "reason": "not sampled: stratum small/classification already has 10"
+      "reason": "not sampled: stratum small/classification already has 20"
     },
     {
       "name": "hepatitis",
-      "reason": "not sampled: stratum small/classification already has 10"
+      "reason": "not sampled: stratum small/classification already has 20"
     },
     {
       "name": "horse_colic_lesion_type",
-      "reason": "not sampled: stratum small/classification already has 10"
+      "reason": "not sampled: stratum small/classification already has 20"
     },
     {
       "name": "horse_colic_outcome",
-      "reason": "not sampled: stratum small/classification already has 10"
+      "reason": "not sampled: stratum small/classification already has 20"
     },
     {
       "name": "horse_colic_surgery",
-      "reason": "not sampled: stratum small/classification already has 10"
+      "reason": "not sampled: stratum small/classification already has 20"
     },
     {
       "name": "ilpd",
-      "reason": "not sampled: stratum medium/classification already has 10"
+      "reason": "not sampled: stratum medium/classification already has 20"
     },
     {
       "name": "ionosphere",
-      "reason": "not sampled: stratum small/classification already has 10"
+      "reason": "not sampled: stratum small/classification already has 20"
     },
     {
       "name": "iris",
-      "reason": "not sampled: stratum small/classification already has 10"
+      "reason": "not sampled: stratum small/classification already has 20"
     },
     {
       "name": "kc1",
-      "reason": "not sampled: stratum medium/classification already has 10"
+      "reason": "not sampled: stratum medium/classification already has 20"
     },
     {
       "name": "kc2",
-      "reason": "not sampled: stratum medium/classification already has 10"
+      "reason": "not sampled: stratum medium/classification already has 20"
     },
     {
       "name": "kr-vs-kp",
-      "reason": "not sampled: stratum medium/classification already has 10"
-    },
-    {
-      "name": "labor",
-      "reason": "not sampled: stratum small/classification already has 10"
+      "reason": "not sampled: stratum medium/classification already has 20"
     },
     {
       "name": "lupus",
-      "reason": "not sampled: stratum small/classification already has 10"
-    },
-    {
-      "name": "lymphography",
-      "reason": "not sampled: stratum small/classification already has 10"
+      "reason": "not sampled: stratum small/classification already has 20"
     },
     {
       "name": "madelon",
-      "reason": "not sampled: stratum medium/classification already has 10"
+      "reason": "not sampled: stratum medium/classification already has 20"
     },
     {
       "name": "mfeat-fourier",
-      "reason": "not sampled: stratum medium/classification already has 10"
-    },
-    {
-      "name": "miami_housing",
-      "reason": "not sampled: stratum large/regression already has 10"
+      "reason": "not sampled: stratum medium/classification already has 20"
     },
     {
       "name": "molecular_biology_promoters",
-      "reason": "not sampled: stratum small/classification already has 10"
+      "reason": "not sampled: stratum small/classification already has 20"
     },
     {
       "name": "movement_libras",
-      "reason": "not sampled: stratum small/classification already has 10"
-    },
-    {
-      "name": "new_thyroid",
-      "reason": "not sampled: stratum small/classification already has 10"
-    },
-    {
-      "name": "nikuradse_1",
-      "reason": "not sampled: stratum small/regression already has 10"
-    },
-    {
-      "name": "nikuradse_2",
-      "reason": "not sampled: stratum small/regression already has 10"
-    },
-    {
-      "name": "optdigits",
-      "reason": "not sampled: stratum medium/classification already has 10"
+      "reason": "not sampled: stratum small/classification already has 20"
     },
     {
       "name": "ozone-level-8hr",
-      "reason": "not sampled: stratum medium/classification already has 10"
+      "reason": "not sampled: stratum medium/classification already has 20"
     },
     {
       "name": "pc1",
-      "reason": "not sampled: stratum medium/classification already has 10"
+      "reason": "not sampled: stratum medium/classification already has 20"
     },
     {
       "name": "pc3",
-      "reason": "not sampled: stratum medium/classification already has 10"
+      "reason": "not sampled: stratum medium/classification already has 20"
     },
     {
       "name": "pc4",
-      "reason": "not sampled: stratum medium/classification already has 10"
+      "reason": "not sampled: stratum medium/classification already has 20"
     },
     {
       "name": "phoneme",
-      "reason": "not sampled: stratum medium/classification already has 10"
-    },
-    {
-      "name": "physiochemical_protein",
-      "reason": "not sampled: stratum large/regression already has 10"
-    },
-    {
-      "name": "postoperative_patient_data",
-      "reason": "not sampled: stratum small/classification already has 10"
-    },
-    {
-      "name": "prnn_crabs",
-      "reason": "not sampled: stratum small/classification already has 10"
+      "reason": "not sampled: stratum medium/classification already has 20"
     },
     {
       "name": "prnn_synth",
-      "reason": "not sampled: stratum small/classification already has 10"
-    },
-    {
-      "name": "qsar-biodeg",
-      "reason": "not sampled: stratum medium/classification already has 10"
-    },
-    {
-      "name": "sarcos",
-      "reason": "not sampled: stratum large/regression already has 10"
-    },
-    {
-      "name": "segment",
-      "reason": "not sampled: stratum medium/classification already has 10"
+      "reason": "not sampled: stratum small/classification already has 20"
     },
     {
       "name": "semeion",
-      "reason": "not sampled: stratum medium/classification already has 10"
+      "reason": "not sampled: stratum medium/classification already has 20"
     },
     {
       "name": "sick",
-      "reason": "not sampled: stratum medium/classification already has 10"
+      "reason": "not sampled: stratum medium/classification already has 20"
     },
     {
       "name": "sonar",
-      "reason": "not sampled: stratum small/classification already has 10"
+      "reason": "not sampled: stratum small/classification already has 20"
     },
     {
       "name": "spambase",
-      "reason": "not sampled: stratum medium/classification already has 10"
+      "reason": "not sampled: stratum medium/classification already has 20"
     },
     {
       "name": "spect",
-      "reason": "not sampled: stratum small/classification already has 10"
+      "reason": "not sampled: stratum small/classification already has 20"
     },
     {
       "name": "spectf",
-      "reason": "not sampled: stratum small/classification already has 10"
-    },
-    {
-      "name": "splice",
-      "reason": "not sampled: stratum medium/classification already has 10"
+      "reason": "not sampled: stratum small/classification already has 20"
     },
     {
       "name": "steel-plates-fault",
-      "reason": "not sampled: stratum medium/classification already has 10"
-    },
-    {
-      "name": "student_performance_por",
-      "reason": "not sampled: stratum medium/regression already has 10"
+      "reason": "not sampled: stratum medium/classification already has 20"
     },
     {
       "name": "texture",
-      "reason": "not sampled: stratum medium/classification already has 10"
+      "reason": "not sampled: stratum medium/classification already has 20"
     },
     {
       "name": "tic-tac-toe",
-      "reason": "not sampled: stratum medium/classification already has 10"
-    },
-    {
-      "name": "vehicle",
-      "reason": "not sampled: stratum medium/classification already has 10"
+      "reason": "not sampled: stratum medium/classification already has 20"
     },
     {
       "name": "vowel",
-      "reason": "not sampled: stratum medium/classification already has 10"
-    },
-    {
-      "name": "wall-robot-navigation",
-      "reason": "not sampled: stratum medium/classification already has 10"
+      "reason": "not sampled: stratum medium/classification already has 20"
     },
     {
       "name": "wdbc",
-      "reason": "not sampled: stratum medium/classification already has 10"
-    },
-    {
-      "name": "white_wine",
-      "reason": "not sampled: stratum medium/regression already has 10"
+      "reason": "not sampled: stratum medium/classification already has 20"
     }
   ]
 }
