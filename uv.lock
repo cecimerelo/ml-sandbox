@@ -286,6 +286,7 @@ source = { editable = "." }
 dependencies = [
     { name = "fastapi" },
     { name = "httpx" },
+    { name = "joblib" },
     { name = "numpy" },
     { name = "openml" },
     { name = "pandas" },
@@ -309,6 +310,7 @@ dev = [
 requires-dist = [
     { name = "fastapi", specifier = ">=0.141.1" },
     { name = "httpx", specifier = ">=0.28.1" },
+    { name = "joblib", specifier = ">=1.5.3" },
     { name = "numpy", specifier = ">=2.1" },
     { name = "openml", specifier = ">=0.15.1" },
     { name = "pandas", specifier = ">=3.0.5" },

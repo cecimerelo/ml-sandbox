@@ -58,7 +58,12 @@ def built(**kwargs):
 
 
 def problem(**overrides) -> MetaFeatures:
-    return MetaFeatures(**{**FEATURES, **overrides})
+    """A problem the synthetic collection actually covers, unless told otherwise.
+
+    `FEATURES` says `10-50`, which none of the generated datasets have — so a default
+    problem would be extrapolating on width and every support test would find that first.
+    """
+    return MetaFeatures(**{**FEATURES, "features": ">50", **overrides})
 
 
 # The card
@@ -209,3 +214,69 @@ def test_the_ranking_reflects_what_was_learned():
     wide = built().rank(problem(features=">50"), METHODS)
     narrow = built().rank(problem(features="<10"), METHODS)
     assert [p.method for p in wide] != [p.method for p in narrow]
+
+
+# Saying when the training data does not cover the question
+
+
+def test_the_card_records_how_many_datasets_back_each_answer():
+    support = built().card.answer_support
+    assert support["features"][">50"] == 6
+    assert support["features"]["<10"] == 6
+
+
+def test_a_thinly_supported_answer_is_named():
+    """Named, with a count. "This might be unreliable" gives a reader nothing to weigh."""
+    results, meta = training_data()
+    # One dataset with a rare answer, eleven without.
+    meta.loc[0, "missing"] = "a lot"
+    a = artifact.build(results, meta, seed=0, collection_size=12)
+
+    support = a.support(problem(missing="a lot"))
+    assert support.field == "missing"
+    assert support.datasets == 1
+    assert "1 of 12" in support.sentence()
+
+
+def test_an_answer_no_dataset_gave_is_flagged_as_extrapolation():
+    """The strongest form of the signal: not thin evidence, none."""
+    support = built().support(problem(missing="a lot"))
+    assert support.is_extrapolating
+    assert "extrapolated rather than learned" in support.sentence()
+
+
+def test_a_well_covered_problem_is_not_flagged():
+    """A signal that fires on everything says nothing."""
+    assert not built().support(problem()).is_extrapolating
+
+
+def test_support_is_the_weakest_single_answer_not_the_exact_combination():
+    """With three options across six questions there are 729 combinations and about a
+    hundred datasets, so almost every combination is unseen — including entirely ordinary
+    ones. A measure that fires on all of them carries no information.
+
+    Every answer here is covered while the combination as a whole never occurs, and the
+    support is still positive. That is the distinction.
+    """
+    assert built().support(problem()).datasets > 0
+
+
+def test_tree_spread_is_not_used_as_a_novelty_signal():
+    """Measured, not assumed, and it does not work.
+
+    A random forest's prediction variance tracks how *hard* a region is, not how
+    *unfamiliar*. Checked against the real artifact: an unusual problem — few rows, many
+    columns — came back with **lower** spread than a typical one. Treating it as novelty
+    would have produced a confident wrong answer with a number attached, which is the one
+    outcome #17 forbids.
+
+    This test exists so the shortcut is not reached for again.
+    """
+    import inspect
+
+    from mlsandbox.artifact import Artifact, Support
+
+    # The computation, not the docstring that explains why: `Support` is built from answer
+    # counts alone, and `support()` never consults a prediction.
+    assert "uncertainty" not in inspect.getsource(Artifact.support)
+    assert set(Support.model_fields) == {"field", "answer", "datasets", "total"}

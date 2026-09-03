@@ -49,6 +49,19 @@ def main() -> int:
 
     print(built.card.summary())
     print(f"\nwritten to {path.relative_to(PROJECT_ROOT)}")
+
+    # The thinnest evidence in the collection, so a reader knows which answers the model
+    # is barely qualified to speak about before it speaks about them.
+    thin = sorted(
+        (
+            (count, field, answer)
+            for field, answers in built.card.answer_support.items()
+            for answer, count in answers.items()
+        )
+    )[:3]
+    print("\nleast-supported answers:")
+    for count, field, answer in thin:
+        print(f"  {field} = {answer!r}: {count} of {built.card.datasets} datasets")
     if built.card.is_provisional:
         print(
             "\nPROVISIONAL — the benchmark has not finished. Fine to build against, "

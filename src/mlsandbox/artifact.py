@@ -69,6 +69,14 @@ class ModelCard(StrictModel):
     python: str
     sklearn: str
 
+    answer_support: dict[str, dict[str, int]] = {}
+    """How many training datasets carry each answer, per meta-feature.
+
+    The artifact's only means of saying *"I have not seen data like this"*. Kept in the card
+    rather than recomputed, because the answer depends on what the model was trained on and
+    not on whatever manifest happens to be on disk.
+    """
+
     @property
     def is_provisional(self) -> bool:
         """True when this model should not be reported from.
@@ -95,6 +103,40 @@ class ModelCard(StrictModel):
         )
 
 
+class Support(StrictModel):
+    """How well the training data covers one problem.
+
+    Reported alongside the ranking, because the model's own uncertainty does not carry this
+    and was measured not to: the spread across a forest's trees tracks how *hard* a region
+    is, not how *unfamiliar*. A rare combination came back more confident than a typical
+    one when this was checked, so treating tree spread as a novelty signal would have been
+    a confident wrong answer with a number attached to it — the outcome #17 forbids.
+    """
+
+    field: str
+    answer: str
+    datasets: int
+    """Training datasets sharing the least-supported answer given."""
+
+    total: int
+
+    @property
+    def is_extrapolating(self) -> bool:
+        """No training dataset answered this way. The ranking is a guess."""
+        return self.datasets == 0
+
+    def sentence(self) -> str:
+        if self.is_extrapolating:
+            return (
+                f"No dataset in the study had {self.field} = {self.answer!r}, so this "
+                "ranking is extrapolated rather than learned."
+            )
+        return (
+            f"{self.datasets} of {self.total} datasets had {self.field} = "
+            f"{self.answer!r} — the least-supported answer given."
+        )
+
+
 class Artifact(StrictModel):
     """A fitted model and the card that describes it, kept together.
 
@@ -106,6 +148,26 @@ class Artifact(StrictModel):
     card: ModelCard
 
     model_config = {"arbitrary_types_allowed": True, "frozen": True}
+
+    def support(self, features: MetaFeatures) -> Support:
+        """The thinnest evidence behind this problem.
+
+        The weakest single answer rather than the exact combination: with three options
+        across six questions there are 729 combinations and roughly a hundred datasets, so
+        almost every combination is unseen — including entirely ordinary ones. A measure
+        that fires on everything says nothing.
+        """
+        counts = self.card.answer_support
+        total = self.card.datasets
+        weakest = min(
+            (
+                (counts.get(field, {}).get(answer, 0), field, answer)
+                for field, answer in features.as_row().items()
+                if field in counts
+            ),
+            default=(total, "", ""),
+        )
+        return Support(field=weakest[1], answer=weakest[2], datasets=weakest[0], total=total)
 
     def rank(self, features: MetaFeatures, methods: list[str]) -> list[layer2.Prediction]:
         """Order the candidate methods for one problem, best first.
@@ -157,6 +219,14 @@ def build(
                 if known_datasets is not None
                 else 0
             ),
+            # Every meta-feature column, by name rather than by dtype: pandas reports
+            # string columns as `object` on one backend and `str` on another, and a check
+            # that depends on which one is installed silently produced an empty table.
+            answer_support={
+                field: metafeatures[field].value_counts().to_dict()
+                for field in MetaFeatures.model_fields
+                if field in metafeatures.columns
+            },
             missing_rate=missing_rate,
             seed=seed,
             python=platform.python_version(),
