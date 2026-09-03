@@ -158,14 +158,14 @@ three cannot tell a signal from three coin flips, and thirty could.
 
 ## F-003 — At double the sample, there is no difference to find
 
-**Date:** 2026-09-03 · **Run:** `results-801f29e62585.parquet`, **105 of 106 datasets** · **Supersedes:** F-001, F-002
+**Date:** 2026-09-03 · **Run:** `results-801f29e62585.parquet`, **106 datasets, complete** · **Supersedes:** F-001, F-002
 
-> **Computed one dataset short.** `numerai28.6` was still running. Stated rather than
-> rounded up: the significance tests below were run on 106 with 51 discriminating and give
-> the same answer, so the conclusion does not depend on it — but a figure captioned "106"
-> that was computed on 105 is the kind of small inaccuracy that makes a reader stop
-> trusting the rest. Regenerate with `scripts/report_metrics.py` before the memoria quotes
-> these numbers.
+38,820 evaluations. 965 unscored (2.5%): QDA on singular covariances, Lasso timing out
+under `saga`, the 120 refusals `polynomial_interactions` was predicted to produce (D-046),
+and 28 Ridge timeouts.
+
+*An earlier version of this entry was computed one dataset short and said so. Regenerated
+on the complete run; nothing moved by more than 0.02.*
 
 The collection was grown from 60 to 106 because F-002 could not resolve whether Layer 2's
 tie with the fixed baseline hid a regime where it won. It resolved it, and it also
@@ -178,10 +178,12 @@ the collection, so the datasets added were no easier than the ones already there
 
 | Strategy | Hit | Top-3 | Regret |
 |---|---|---|---|
-| Single best method | **0.48** | 0.66 | **0.032** |
-| Learned (Layer 2) | 0.46 | **0.70** | 0.040 |
-| Heuristics (ISLR) | 0.18 | 0.50 | 0.114 |
-| Random choice | 0.02 | 0.30 | 0.330 |
+| Single best method | **0.47** | 0.65 | **0.031** |
+| Learned (Layer 2) | **0.47** | **0.69** | 0.039 |
+| Heuristics (ISLR) | 0.18 | 0.49 | 0.112 |
+| Random choice | 0.02 | 0.29 | 0.325 |
+
+Across all 106 the hit rates tie too — 0.62 each.
 
 ### Nothing separates the two, on any metric
 
@@ -208,7 +210,20 @@ the sample"*. That is a stronger claim and a more defensible one: at 29 datasets
 was underpowered, and 4 wins each at p = 1.000 across 51 is a well-supported null.
 
 **Inspecting the user's problem does not beat always recommending Gradient Boosting.** Not
-in how often it is right, not in how much it gives up when it is wrong.
+in how often it is right, not in how much it gives up when it is wrong. The hit rates are
+identical to two decimal places in both strata.
+
+### One direction has never reversed
+
+Layer 2 is ahead on **top-3** in all three runs — 0.77 against 0.75 at 60 datasets, 0.70
+against 0.66 at 105, 0.69 against 0.65 at 106. It is the only comparison that has not
+flipped, and it is **not significant** (3 wins to 1, p = 0.625).
+
+Worth stating as a hypothesis rather than a result, and worth stating because it matches
+what the interface does: it shows three alternatives, not one. *Personalising may not help
+you pick the winner, but it may help you put the winner on the shortlist.* Establishing
+that needs more datasets than this study has — and unlike F-002's regime pattern, this one
+has survived every enlargement so far rather than dissolving under one.
 
 ## What still holds, with more margin than before
 
@@ -216,7 +231,8 @@ in how often it is right, not in how much it gives up when it is wrong.
 F-001's 0.24 against 0.45. Still far above chance (0.02), so they carry real signal, and
 comfortably behind a single fixed choice.
 
-**Requiring explainability costs about 0.10 regret and binds on 102 of 105 datasets.**
+**Requiring explainability costs about 0.11 regret and binds on 103 of 106 datasets.** The
+best available method is almost always an opaque one.
 
 ## Why growing the collection was worth the compute
 
