@@ -62,6 +62,9 @@ added when a task needs them, not in advance.
 ## Layout
 
 ```
+FINDINGS.md what the study measured — separate from DECISIONS.md, which is what
+            it chose. A decision can be argued with; a finding can only be
+            reproduced or refuted.
 config/     study configuration — the only place knobs live
 src/        library code, including the API the application calls
 tests/      including the reproducibility guarantee
