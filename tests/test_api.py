@@ -3,18 +3,76 @@
 Thin for now — the health endpoint and the property that makes it worth having.
 """
 
+import numpy as np
+import pandas as pd
 from fastapi.testclient import TestClient
 
-from mlsandbox.api import app
+from mlsandbox import artifact
+from mlsandbox.api import app, get_model
 from mlsandbox.methods import METHODS
 
 client = TestClient(app)
+
+SYNTHETIC_FEATURES = dict(
+    task="binary classification",
+    rows="500-10k",
+    features="10-50",
+    regime="moderate",
+    feature_types="numeric",
+    missing="none",
+    class_balance="roughly equal",
+)
+
+
+def _synthetic_model() -> artifact.Artifact:
+    """A small artifact, so these tests do not need a benchmark run.
+
+    The endpoint used to load the real model at import, which meant the module could not be
+    imported without one — CI could not even collect these tests. Injecting the model is
+    what makes the dependency explicit instead of ambient.
+    """
+    rng = np.random.default_rng(0)
+    methods = ["random_forest", "logistic_regression", "knn", "ridge", "mlp", "decision_tree"]
+    rows, meta = [], []
+    for i in range(12):
+        name = f"d{i}"
+        meta.append({"dataset": name, **SYNTHETIC_FEATURES})
+        for method in methods:
+            good = method == "mlp"
+            for fold in range(3):
+                rows.append(
+                    {
+                        "dataset": name,
+                        "method": method,
+                        "score": (0.9 if good else 0.5) + rng.normal(0, 0.01),
+                        "status": "ok",
+                        "missing_rate": 0.0,
+                        "fold": fold,
+                    }
+                )
+    return artifact.build(
+        pd.DataFrame(rows), pd.DataFrame(meta), seed=0, collection_size=12
+    )
+
+
+# Injected rather than read from disk, so a test failure means the endpoint is wrong and
+# not that somebody has not run the benchmark.
+app.dependency_overrides[get_model] = _synthetic_model
 
 
 def test_health_reports_ok():
     response = client.get("/api/health")
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
+
+
+def test_health_says_whether_the_model_is_there():
+    """So a deployment finds out before a user does.
+
+    This replaced refusing to import without a model: the check happens where someone is
+    looking for it, rather than by making the module unusable.
+    """
+    assert client.get("/api/health").json()["model"] in {"ready", "missing"}
 
 
 def test_health_proves_the_server_can_reach_the_study():
@@ -141,3 +199,143 @@ def test_a_target_that_is_not_a_column_says_so():
     response = detect("nonexistent")
     assert response.status_code == 422
     assert "nonexistent" in response.json()["detail"]["message"]
+
+
+# Recommending a method
+
+
+FORM = dict(
+    task="binary classification",
+    rows="500-10k",
+    features="10-50",
+    feature_types="numeric",
+    missing="none",
+    class_balance="roughly equal",
+)
+
+
+def ask(**overrides):
+    return client.post("/api/recommend", json={**FORM, **overrides})
+
+
+def test_a_valid_form_gets_a_recommendation():
+    body = ask().json()
+    assert body["recommended"]["method"]
+    assert body["recommended"]["label"]
+    assert len(body["alternatives"]) == 3
+
+
+def test_the_request_schema_is_the_study_s_own_types():
+    """Not a parallel copy of them.
+
+    D-027's train/serve agreement rests on these types and has already failed once. A
+    schema of its own would be a second definition of what a valid band is, and when two
+    definitions drift the model does not error — it answers (D-037).
+    """
+    from mlsandbox.api import RecommendationRequest
+    from mlsandbox.metafeatures import MetaFeatures
+
+    for field in ("task", "rows", "features", "feature_types", "missing", "class_balance"):
+        assert (
+            RecommendationRequest.model_fields[field].annotation
+            is MetaFeatures.model_fields[field].annotation
+        )
+
+
+def test_an_answer_the_model_never_saw_is_rejected_naming_the_field():
+    response = ask(rows="a few thousand")
+    assert response.status_code == 422
+    assert any("rows" in str(e.get("loc", "")) for e in response.json()["detail"])
+
+
+def test_the_regime_is_not_asked_for():
+    """Derived from the row and feature bands, so the server computes it and there is one
+    definition rather than two (D-028)."""
+    from mlsandbox.api import RecommendationRequest
+
+    assert "regime" not in RecommendationRequest.model_fields
+
+
+def test_an_unexpected_field_is_refused_rather_than_ignored():
+    assert ask(regime="moderate").status_code == 422
+
+
+def test_uncertainty_survives_the_trip():
+    """#15's central risk is a meta-model trained on around a hundred datasets. Without
+    this the interface presents a decisive ranking it has no grounds for."""
+    body = ask().json()
+    assert body["recommended"]["uncertainty"] >= 0
+    for alternative in body["alternatives"]:
+        assert alternative["uncertainty"] >= 0
+
+
+def test_every_suggestion_carries_its_reasons():
+    """FR-2.2 needs the decision factors, and a score cannot be turned back into the
+    reasoning that produced it."""
+    body = ask(suspects_non_linearity="yes").json()
+    assert body["recommended"]["reasons"]
+    assert all(isinstance(r, str) for r in body["recommended"]["reasons"])
+
+
+def test_the_reasons_name_no_source():
+    # FR-2.3. The theory is a statistical learning course; the interface never says so.
+    body = ask(explainability="critical").json()
+    for reason in body["recommended"]["reasons"]:
+        assert "ISLR" not in reason
+        assert "textbook" not in reason.lower()
+
+
+# The user's constraints
+
+
+def test_a_constraint_changes_the_answer():
+    """A control whose options change nothing is worse than not asking (D-042)."""
+    relaxed = ask().json()["recommended"]["method"]
+    strict = ask(explainability="critical").json()["recommended"]["method"]
+    assert relaxed != strict
+
+
+def test_a_ruled_out_method_is_returned_rather_than_dropped():
+    """Withholding the best method silently leaves the user unable to see what their
+    constraint cost them (D-035)."""
+    body = ask(explainability="critical").json()
+    assert body["excluded"]
+    assert all(m["excluded_by_constraint"] for m in body["excluded"])
+
+
+def test_the_cost_of_a_constraint_is_visible():
+    """The number that makes the trade the user's to make, rather than the tool's."""
+    body = ask(explainability="critical").json()
+    best_allowed = body["recommended"]["expected_shortfall"]
+    best_excluded = min(m["expected_shortfall"] for m in body["excluded"])
+    assert best_excluded < best_allowed
+
+
+def test_nothing_is_marked_excluded_when_nothing_is_constrained():
+    body = ask().json()
+    assert body["excluded"] == []
+    assert not body["recommended"]["excluded_by_constraint"]
+
+
+# What the study knows about a problem like this
+
+
+def test_the_response_says_how_much_evidence_backs_it():
+    """The model's own uncertainty does not carry this and was measured not to: tree
+    spread tracks how hard a region is, not how unfamiliar (#17)."""
+    support = ask().json()["support"]
+    assert support["total"] > 0
+    assert support["field"]
+
+
+def test_an_answer_no_dataset_gave_is_reported_as_extrapolation():
+    """The strongest form of the signal: not thin evidence, none."""
+    support = ask(missing="a lot").json()["support"]
+    assert support["field"] == "missing"
+    assert support["datasets"] == 0
+
+
+def test_the_response_says_when_the_model_is_provisional():
+    """A model trained on part of the collection is useful to build against and must never
+    be mistaken for the finished one."""
+    assert ask().json()["provisional"] is False
