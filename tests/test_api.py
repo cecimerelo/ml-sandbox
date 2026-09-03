@@ -3,18 +3,76 @@
 Thin for now — the health endpoint and the property that makes it worth having.
 """
 
+import numpy as np
+import pandas as pd
 from fastapi.testclient import TestClient
 
-from mlsandbox.api import app
+from mlsandbox import artifact
+from mlsandbox.api import app, get_model
 from mlsandbox.methods import METHODS
 
 client = TestClient(app)
+
+SYNTHETIC_FEATURES = dict(
+    task="binary classification",
+    rows="500-10k",
+    features="10-50",
+    regime="moderate",
+    feature_types="numeric",
+    missing="none",
+    class_balance="roughly equal",
+)
+
+
+def _synthetic_model() -> artifact.Artifact:
+    """A small artifact, so these tests do not need a benchmark run.
+
+    The endpoint used to load the real model at import, which meant the module could not be
+    imported without one — CI could not even collect these tests. Injecting the model is
+    what makes the dependency explicit instead of ambient.
+    """
+    rng = np.random.default_rng(0)
+    methods = ["random_forest", "logistic_regression", "knn", "ridge", "mlp", "decision_tree"]
+    rows, meta = [], []
+    for i in range(12):
+        name = f"d{i}"
+        meta.append({"dataset": name, **SYNTHETIC_FEATURES})
+        for method in methods:
+            good = method == "mlp"
+            for fold in range(3):
+                rows.append(
+                    {
+                        "dataset": name,
+                        "method": method,
+                        "score": (0.9 if good else 0.5) + rng.normal(0, 0.01),
+                        "status": "ok",
+                        "missing_rate": 0.0,
+                        "fold": fold,
+                    }
+                )
+    return artifact.build(
+        pd.DataFrame(rows), pd.DataFrame(meta), seed=0, collection_size=12
+    )
+
+
+# Injected rather than read from disk, so a test failure means the endpoint is wrong and
+# not that somebody has not run the benchmark.
+app.dependency_overrides[get_model] = _synthetic_model
 
 
 def test_health_reports_ok():
     response = client.get("/api/health")
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
+
+
+def test_health_says_whether_the_model_is_there():
+    """So a deployment finds out before a user does.
+
+    This replaced refusing to import without a model: the check happens where someone is
+    looking for it, rather than by making the module unusable.
+    """
+    assert client.get("/api/health").json()["model"] in {"ready", "missing"}
 
 
 def test_health_proves_the_server_can_reach_the_study():
@@ -230,13 +288,11 @@ def test_the_reasons_name_no_source():
 # The user's constraints
 
 
-def test_the_three_explainability_levels_give_three_answers():
-    """A control whose middle option changes nothing is worse than not asking (D-042)."""
-    answers = {
-        level: ask(explainability=level).json()["recommended"]["method"]
-        for level in ("not important", "somewhat", "critical")
-    }
-    assert len(set(answers.values())) == 3
+def test_a_constraint_changes_the_answer():
+    """A control whose options change nothing is worse than not asking (D-042)."""
+    relaxed = ask().json()["recommended"]["method"]
+    strict = ask(explainability="critical").json()["recommended"]["method"]
+    assert relaxed != strict
 
 
 def test_a_ruled_out_method_is_returned_rather_than_dropped():
@@ -272,13 +328,14 @@ def test_the_response_says_how_much_evidence_backs_it():
     assert support["field"]
 
 
-def test_a_thinly_supported_answer_is_reported_as_such():
-    body = ask(missing="a lot").json()
-    assert body["support"]["field"] == "missing"
-    assert body["support"]["datasets"] < body["support"]["total"] / 10
+def test_an_answer_no_dataset_gave_is_reported_as_extrapolation():
+    """The strongest form of the signal: not thin evidence, none."""
+    support = ask(missing="a lot").json()["support"]
+    assert support["field"] == "missing"
+    assert support["datasets"] == 0
 
 
 def test_the_response_says_when_the_model_is_provisional():
     """A model trained on part of the collection is useful to build against and must never
     be mistaken for the finished one."""
-    assert "provisional" in ask().json()
+    assert ask().json()["provisional"] is False

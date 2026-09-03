@@ -10,9 +10,11 @@ Only the health endpoint lives here so far. `/recommend` arrives with 2.2.
 
 from __future__ import annotations
 
+from functools import lru_cache
+from pathlib import Path
 from typing import Annotated
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 
 from mlsandbox import artifact, detection, layer1, recommend, upload
 from mlsandbox.base import StrictModel
@@ -32,15 +34,28 @@ MODEL_PATH_PARTS = ("model", "layer2.joblib")
 """Where `scripts/package_model.py` writes the artifact, relative to the data directory."""
 
 
-def _load_model() -> artifact.Artifact:
-    """Load the artifact once, at import, and say plainly when it is not there.
+def model_path() -> Path:
+    return load_config().paths.datasets.parent.joinpath(*MODEL_PATH_PARTS)
 
-    Once rather than per request: reading it every time would spend a hundred milliseconds
-    proving something that cannot have changed. Loudly rather than lazily, because a server
-    that starts without its model and fails on the first real request has moved a
-    deployment problem into a user's session.
+
+@lru_cache(maxsize=1)
+def get_model() -> artifact.Artifact:
+    """The artifact this server answers from, loaded once and kept.
+
+    Once rather than per request: reading it again would spend a hundred milliseconds
+    proving something that cannot have changed.
+
+    **On first use rather than at import**, which was the first thing I got wrong here.
+    Loading at module level meant `mlsandbox.api` could not be imported at all without a
+    model on disk — so CI could not collect the tests, and the upload and detection
+    endpoints, which have no use for the model, stopped working without one.
+
+    The concern that led me there is real: a server that starts without its model and
+    fails on someone's first request has moved a deployment problem into their session.
+    That is answered by `/api/health`, which reports whether the model is loadable, rather
+    than by refusing to import.
     """
-    path = load_config().paths.datasets.parent.joinpath(*MODEL_PATH_PARTS)
+    path = model_path()
     if not path.exists():
         raise RuntimeError(
             f"No model at {path}. Run scripts/package_model.py — the benchmark has to have "
@@ -67,10 +82,22 @@ class Health(StrictModel):
     status: str
     methods: int
 
+    model: str
+    """`ready` or `missing`.
+
+    Reported here so a deployment can find out before a user does. This is what replaced
+    refusing to import without a model: the check happens where someone is looking for it,
+    rather than by making the module unusable.
+    """
+
 
 @app.get("/api/health")
 def health() -> Health:
-    return Health(status="ok", methods=len(METHODS))
+    return Health(
+        status="ok",
+        methods=len(METHODS),
+        model="ready" if model_path().exists() else "missing",
+    )
 
 
 class DatasetSummary(StrictModel):
@@ -178,10 +205,6 @@ async def detect_dataset(
     )
 
 
-MODEL = _load_model()
-"""The artifact this server answers from. Held for the process's lifetime."""
-
-
 class RecommendationRequest(StrictModel):
     """The form's answers.
 
@@ -212,7 +235,10 @@ class RecommendationRequest(StrictModel):
 
 
 @app.post("/api/recommend")
-def recommend_method(request: RecommendationRequest) -> recommend.Recommendation:
+def recommend_method(
+    request: RecommendationRequest,
+    model: Annotated[artifact.Artifact, Depends(get_model)],
+) -> recommend.Recommendation:
     """Recommend a method for the problem the form describes.
 
     The meta-features are built by `from_form`, the same function the study used for its
@@ -228,7 +254,7 @@ def recommend_method(request: RecommendationRequest) -> recommend.Recommendation
     )
     return recommend.for_problem(
         features,
-        MODEL,
+        model,
         explainability=request.explainability,
         suspects_non_linearity=request.suspects_non_linearity,
         suspects_interactions=request.suspects_interactions,
