@@ -162,9 +162,16 @@ def test_a_saved_artifact_predicts_what_it_predicted(tmp_path):
 
 
 def test_the_card_survives_the_round_trip(tmp_path):
+    """Compared against the card that was saved, not against a freshly built one.
+
+    `created` is a timestamp, so building twice and comparing fails whenever the clock
+    crosses a second between the two calls. It passed locally and failed in CI, which is
+    the worst way for a test to be wrong: it looks like the code broke.
+    """
+    original = built()
     path = tmp_path / "layer2.joblib"
-    artifact.save(built(), path)
-    assert artifact.load(path).card == built().card
+    artifact.save(original, path)
+    assert artifact.load(path).card == original.card
 
 
 def test_a_file_from_another_version_is_refused(tmp_path):
@@ -211,8 +218,11 @@ def test_every_prediction_carries_its_uncertainty():
 def test_the_ranking_reflects_what_was_learned():
     """A model that ranks the same whatever it is asked has learned nothing, and every
     other test here would still pass."""
-    wide = built().rank(problem(features=">50"), METHODS)
-    narrow = built().rank(problem(features="<10"), METHODS)
+    # One model asked twice, not two models. Building twice is wasteful and invites the
+    # same mistake the round-trip test made: two artifacts differ in their timestamps.
+    model = built()
+    wide = model.rank(problem(features=">50"), METHODS)
+    narrow = model.rank(problem(features="<10"), METHODS)
     assert [p.method for p in wide] != [p.method for p in narrow]
 
 
