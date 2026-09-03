@@ -15,7 +15,11 @@ it.
 
 ## F-001 — The benchmark, and what the four strategies achieved
 
-**Date:** 2026-08-31 · **Run:** `results-801f29e62585.parquet` · **Closes:** [#12](https://github.com/cecimerelo/ml-sandbox/issues/12) · **Answers:** [#16](https://github.com/cecimerelo/ml-sandbox/issues/16)
+**Date:** 2026-08-31 · **Run:** `results-801f29e62585.parquet`, 60 datasets · **Closes:** [#12](https://github.com/cecimerelo/ml-sandbox/issues/12) · **Answers:** [#16](https://github.com/cecimerelo/ml-sandbox/issues/16)
+
+> **Partly superseded by F-003.** The regret advantage below did not survive doubling the
+> collection. Kept as written, because a findings log that quietly edits its earlier
+> numbers cannot be checked against anything.
 
 **22,500 evaluations, 60 datasets, 20 methods, 12 hours.** 551 unscored (2.4%): QDA on
 singular covariances, Lasso timing out under `saga` on wide data, and the 90 refusals
@@ -97,7 +101,10 @@ more than one that avoids finding out.
 
 ## F-002 — The tie is a real tie, and the regime pattern does not survive testing
 
-**Date:** 2026-08-31 · **Run:** `results-801f29e62585.parquet` · **Follows:** F-001
+**Date:** 2026-08-31 · **Run:** `results-801f29e62585.parquet`, 60 datasets · **Follows:** F-001
+
+> **Superseded by F-003.** The limitation this recorded was resolved by growing the
+> collection: the pattern is gone at double the sample.
 
 F-001 left open whether Layer 2's tie with the fixed baseline hides a regime where it wins.
 It was worth asking and the answer is no — with a qualification worth stating precisely.
@@ -144,6 +151,82 @@ strategies already agree, because boosting wins almost regardless and there is n
 to personalise. Adding large datasets would confirm something already confirmed. The
 unresolved question lives entirely in the middle band, where nine datasets disagreeing on
 three cannot tell a signal from three coin flips, and thirty could.
+
+---
+
+---
+
+## F-003 — At double the sample, there is no difference to find
+
+**Date:** 2026-09-03 · **Run:** `results-801f29e62585.parquet`, **105 of 106 datasets** · **Supersedes:** F-001, F-002
+
+> **Computed one dataset short.** `numerai28.6` was still running. Stated rather than
+> rounded up: the significance tests below were run on 106 with 51 discriminating and give
+> the same answer, so the conclusion does not depend on it — but a figure captioned "106"
+> that was computed on 105 is the kind of small inaccuracy that makes a reader stop
+> trusting the rest. Regenerate with `scripts/report_metrics.py` before the memoria quotes
+> these numbers.
+
+The collection was grown from 60 to 106 because F-002 could not resolve whether Layer 2's
+tie with the fixed baseline hid a regime where it won. It resolved it, and it also
+**overturned part of F-001.**
+
+The discriminating stratum nearly doubled — 29 datasets to 51 — and grew in proportion to
+the collection, so the datasets added were no easier than the ones already there.
+
+### Where the choice makes a difference (51 datasets)
+
+| Strategy | Hit | Top-3 | Regret |
+|---|---|---|---|
+| Single best method | **0.48** | 0.66 | **0.032** |
+| Learned (Layer 2) | 0.46 | **0.70** | 0.040 |
+| Heuristics (ISLR) | 0.18 | 0.50 | 0.114 |
+| Random choice | 0.02 | 0.30 | 0.330 |
+
+### Nothing separates the two, on any metric
+
+| Comparison | Result | p |
+|---|---|---|
+| Hit rate | 4 wins each | **1.000** |
+| Top-3 | 3 to 1 for Layer 2 | 0.625 |
+| Regret | 0.039 against 0.031 | 0.768 |
+| The 500–10k band | 2 wins each | **1.000** |
+
+## What this corrects
+
+**F-001's 26% regret advantage was noise.** At 29 datasets Layer 2 gave up 0.028 against
+the baseline's 0.038, and it was reported as the finding that saved the model from looking
+worthless. At 51 it is 0.040 against 0.032 — **reversed**, and not significant either way.
+
+**F-002's regime pattern does not exist.** The 3–0 in the 500–10k band, recorded as a
+limitation the study lacked power to settle, is now **2–2**. There was nothing to settle.
+
+## What this establishes
+
+The tie moves from *"we cannot tell"* to *"there is no difference we can detect at double
+the sample"*. That is a stronger claim and a more defensible one: at 29 datasets the result
+was underpowered, and 4 wins each at p = 1.000 across 51 is a well-supported null.
+
+**Inspecting the user's problem does not beat always recommending Gradient Boosting.** Not
+in how often it is right, not in how much it gives up when it is wrong.
+
+## What still holds, with more margin than before
+
+**ISLR's heuristics are clearly beaten** — 0.18 against 0.48, and the gap widened from
+F-001's 0.24 against 0.45. Still far above chance (0.02), so they carry real signal, and
+comfortably behind a single fixed choice.
+
+**Requiring explainability costs about 0.10 regret and binds on 102 of 105 datasets.**
+
+## Why growing the collection was worth the compute
+
+It cost about eight hours and it changed three things: a consoling result was shown to be
+noise, an open question was closed, and an underpowered tie became an established one.
+
+Had the collection been grown **only** in the band where the result was unresolved, the
+same numbers would carry none of that weight — they would describe a sample shaped around
+the answer we were hoping for. Growing every stratum equally is what makes this a
+measurement rather than a search.
 
 ---
 
