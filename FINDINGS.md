@@ -158,7 +158,14 @@ three cannot tell a signal from three coin flips, and thirty could.
 
 ## F-003 — At double the sample, there is no difference to find
 
-**Date:** 2026-09-03 · **Run:** `results-801f29e62585.parquet`, 106 datasets · **Supersedes:** F-001, F-002
+**Date:** 2026-09-03 · **Run:** `results-801f29e62585.parquet`, **105 of 106 datasets** · **Supersedes:** F-001, F-002
+
+> **Computed one dataset short.** `numerai28.6` was still running. Stated rather than
+> rounded up: the significance tests below were run on 106 with 51 discriminating and give
+> the same answer, so the conclusion does not depend on it — but a figure captioned "106"
+> that was computed on 105 is the kind of small inaccuracy that makes a reader stop
+> trusting the rest. Regenerate with `scripts/report_metrics.py` before the memoria quotes
+> these numbers.
 
 The collection was grown from 60 to 106 because F-002 could not resolve whether Layer 2's
 tie with the fixed baseline hid a regime where it won. It resolved it, and it also
