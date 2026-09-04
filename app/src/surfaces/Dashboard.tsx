@@ -5,6 +5,8 @@ import { useState } from 'react';
 
 import type { RecommendationRequest } from '../api/types';
 import { ProblemForm } from '../form/ProblemForm';
+import { RecommendationPanel } from '../panel/RecommendationPanel';
+import type { Recommendation } from '../panel/types';
 import { DatasetPanel } from '../detect/DatasetPanel';
 import type { Detection } from '../detect/types';
 import { Dropzone } from '../upload/Dropzone';
@@ -20,9 +22,34 @@ import { spacing } from '../theme/tokens';
  * exercised end to end.
  */
 export function Dashboard() {
-  const [submitted, setSubmitted] = useState<RecommendationRequest | null>(null);
+  const [result, setResult] = useState<Recommendation | null>(null);
+  const [failed, setFailed] = useState<string | null>(null);
   const [dataset, setDataset] = useState<{ file: File; summary: DatasetSummary } | null>(null);
   const [detection, setDetection] = useState<Detection | null>(null);
+
+  async function ask(request: RecommendationRequest) {
+    setFailed(null);
+    // Cleared before the request. Leaving the previous recommendation on screen while a
+    // new one is computed shows an answer to a question the user has already changed.
+    setResult(null);
+    try {
+      const response = await fetch('/api/recommend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(request),
+      });
+      if (!response.ok) {
+        setFailed('We could not work out a recommendation for that. Try again.');
+        return;
+      }
+      setResult(await response.json());
+    } catch {
+      setFailed(
+        "We couldn't reach the server, so nothing has been worked out yet. If you're " +
+          'running this locally, check the API is up.',
+      );
+    }
+  }
 
   return (
     // Centred in a reading column rather than filling the page. Text stays left-aligned
@@ -74,19 +101,15 @@ export function Dashboard() {
         />
       )}
 
-      <ProblemForm onSubmit={setSubmitted} detection={detection} />
+      <ProblemForm onSubmit={ask} detection={detection} />
 
-      {/* Stands in for the recommendation panel until the engine is reachable over HTTP.
-          Marked as scaffolding in the copy rather than dressed up as a result — and with
-          no issue numbers, which are ours and mean nothing to anyone using this. */}
-      {submitted && (
-        <Alert severity="info" sx={{ mt: 4 }}>
-          Your answers are ready to send. The recommendation itself is still being built.
-          <Box component="pre" sx={{ m: 0, mt: 1, overflowX: 'auto', fontSize: '0.75rem' }}>
-            {JSON.stringify(submitted, null, 2)}
-          </Box>
+      {failed && (
+        <Alert severity="error" sx={{ mt: 4 }}>
+          {failed}
         </Alert>
       )}
+
+      {result && !failed && <RecommendationPanel result={result} />}
     </Box>
   );
 }

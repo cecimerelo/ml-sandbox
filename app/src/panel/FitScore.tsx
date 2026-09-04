@@ -41,9 +41,14 @@ export function FitScore({ shortfall, compact = false }: { shortfall: number; co
       >
         <Box sx={{ width: `${score * 100}%`, height: '100%', bgcolor: series[1].hex }} />
       </Box>
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-        fit score · 0–1
-      </Typography>
+      {/* Named once, on the primary card. Repeating the scale under each alternative is
+          three copies of the same sentence, and the spec asks for a caption on the meter
+          rather than on every instance of it. */}
+      {!compact && (
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+          fit score · 0–1
+        </Typography>
+      )}
     </Box>
   );
 }
