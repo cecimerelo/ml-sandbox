@@ -220,16 +220,13 @@ describe('how much the study knows', () => {
 });
 
 describe('the method\'s fixed properties, inside "what led to this"', () => {
-  it('name the recommended method, not the concept in the abstract', () => {
-    // What this replaced: two separate sections showing the same paragraph explaining
-    // bias-variance to every user regardless of what was recommended — informative about
-    // the axis, silent about the answer. Now folded into the one list of decision
-    // factors, since they are properties of the method rather than reactions to what the
-    // user answered.
+  it('say "the chosen method" rather than repeating its name a third time', () => {
+    // The name already appears in the heading and on every alternative card. Repeating
+    // it again here, twice, reads as noise where the name has already been established.
     show();
     const text = (_: string, node: Element | null) =>
       node?.tagName === 'SPAN' &&
-      node.textContent === 'Random Forest is flexible — splits the data repeatedly';
+      node.textContent === 'The chosen method is flexible — splits the data repeatedly';
     expect(screen.getByText(text)).toBeInTheDocument();
   });
 
@@ -239,7 +236,7 @@ describe('the method\'s fixed properties, inside "what led to this"', () => {
     show(result({ recommended: suggestion({ reasons: ['Some reason fired.'] }) }));
     const list = screen.getByText('Some reason fired.').closest('ul');
     expect(list).not.toBeNull();
-    expect(list?.textContent).toContain('flexible');
-    expect(list?.textContent).toContain('opaque');
+    expect(list?.textContent).toContain('The chosen method is flexible');
+    expect(list?.textContent).toContain('The chosen method is opaque');
   });
 });
