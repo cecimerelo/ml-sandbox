@@ -210,6 +210,32 @@ was underpowered, and 4 wins each at p = 1.000 across 51 is a well-supported nul
 **Inspecting the user's problem does not beat always recommending Gradient Boosting.** Not
 in how often it is right, not in how much it gives up when it is wrong.
 
+## What the ISLR result does not say
+
+The heuristics lose as a **selection procedure**. That is the whole of the claim, and the
+distance between it and *"the textbook is not pedagogical"* is where this study would be
+attacked if it overreached.
+
+**They carry real signal.** 0.18 against random's 0.02 — nine times better than choosing
+blind. They are not noise; they are beaten.
+
+**What beats them is not a teachable alternative.** *"Always use Gradient Boosting"* is a
+fact about modern tabular data, not an understanding anyone could be taught. There is no
+chapter to write about it, and a student who learned it would know one thing rather than a
+subject.
+
+**And the book does not promise this.** It promises that a reader understands *why* methods
+behave as they do — the bias-variance trade-off, what regularisation buys, when interactions
+matter. Someone who has read it can read a residual plot, diagnose overfitting, and explain
+a coefficient. **This benchmark measures none of that**, and cannot.
+
+## The result is about the problem, not the book
+
+If a fixed choice matches reasoned selection, that is a statement about how much method
+choice matters on typical tabular data: **less than the field assumes.** ISLR does not tell
+a reader that, and this study found it. Read that way it is a positive result wearing a
+negative one's clothes — and it is the reading the evidence actually supports.
+
 ## What still holds, with more margin than before
 
 **ISLR's heuristics are clearly beaten** — 0.18 against 0.48, and the gap widened from
