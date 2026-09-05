@@ -24,6 +24,8 @@ function suggestion(overrides: Partial<Suggestion> = {}): Suggestion {
     expected_shortfall: 0.02,
     uncertainty: 0.005,
     reasons: [],
+    factors: [],
+    characteristics: null,
     excluded_by_constraint: false,
     ...overrides,
   };

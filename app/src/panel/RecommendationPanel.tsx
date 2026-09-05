@@ -7,7 +7,9 @@ import Typography from '@mui/material/Typography';
 import { PANEL } from '../copy/catalogue';
 import { renderCopy } from '../copy/render';
 import { spacing } from '../theme/tokens';
+import { CharacteristicsTable } from './CharacteristicsTable';
 import { FitScore } from './FitScore';
+import { Flowchart } from './Flowchart';
 import { indistinguishable } from './types';
 import type { Position as PositionType, Recommendation, Suggestion, Support } from './types';
 
@@ -59,6 +61,20 @@ export function RecommendationPanel({ result }: { result: Recommendation }) {
             <Position method="The chosen method" position={recommended.interpretability} />
           </li>
         </Box>
+      </Section>
+
+      {/* The flowchart — "what led to this" as a diagram rather than a list. Built from
+          the same factors above, in the same order: it is not a second account of the
+          decision, it is the first one drawn. */}
+      <Section heading="How the engine got here">
+        <Flowchart method={recommended.label} factors={recommended.factors} />
+      </Section>
+
+      {/* Advice-only mode's only evidence artifact (DESIGN.md): with no dataset there is
+          nothing to fit and nothing to plot, so this table is the one thing a user can use
+          to judge the recommendation against its alternatives with their own eyes. */}
+      <Section heading="Method characteristics">
+        <CharacteristicsTable recommended={recommended} alternatives={alternatives} />
       </Section>
 
       {/* The tie is marked on the method it applies to, not announced separately above.
