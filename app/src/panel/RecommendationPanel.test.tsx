@@ -184,9 +184,26 @@ describe('how much the study knows', () => {
     expect(screen.getByText(/106 datasets, of which 30/i)).toBeInTheDocument();
   });
 
+  it('names the field the way the form asked it, not the engine\'s internal name', () => {
+    // 'feature_types' is the field name in the API response; a reader never saw a
+    // question called that.
+    show(result({ support: { field: 'feature_types', answer: 'mixed', datasets: 24, total: 106 } }));
+    expect(screen.getByText(/of which 24 resembled yours on what kind of columns/i)).toBeInTheDocument();
+    expect(screen.queryByText(/feature_types/i)).toBeNull();
+  });
+
+  it('says the recommendation rests on the form alone', () => {
+    // Until Epic 4 trains the recommended method on an uploaded dataset, every number
+    // here comes from the benchmark, not from the user's own file — a reader could
+    // otherwise take "based on 106 datasets" to mean their file was among them.
+    show();
+    expect(screen.getByText(/based only on your answers to the form/i)).toBeInTheDocument();
+  });
+
   it('says plainly when none did', () => {
     show(result({ support: { field: 'missing', answer: 'a lot', datasets: 0, total: 106 } }));
-    expect(screen.getByText(/no dataset in the study had missing/i)).toBeInTheDocument();
+    // Named the way the form asked the question, not the engine's field name.
+    expect(screen.getByText(/no dataset in the study had an answer like yours for how much is missing/i)).toBeInTheDocument();
   });
 
   it('says when the model behind it is unfinished', () => {
