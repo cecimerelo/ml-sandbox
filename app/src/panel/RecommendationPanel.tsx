@@ -53,10 +53,10 @@ export function RecommendationPanel({ result }: { result: Recommendation }) {
             </Typography>
           )}
           <li>
-            <Position method={recommended.label} position={recommended.flexibility} />
+            <Position method="The chosen method" position={recommended.flexibility} />
           </li>
           <li>
-            <Position method={recommended.label} position={recommended.interpretability} />
+            <Position method="The chosen method" position={recommended.interpretability} />
           </li>
         </Box>
       </Section>
