@@ -1,4 +1,5 @@
 import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
@@ -8,7 +9,7 @@ import { renderCopy } from '../copy/render';
 import { spacing } from '../theme/tokens';
 import { FitScore } from './FitScore';
 import { indistinguishable } from './types';
-import type { Recommendation, Suggestion, Support } from './types';
+import type { Position as PositionType, Recommendation, Suggestion, Support } from './types';
 
 /**
  * Block 2 — the recommendation and the reasoning behind it.
@@ -33,9 +34,12 @@ export function RecommendationPanel({ result }: { result: Recommendation }) {
       </Box>
 
       <Section heading={PANEL['panel.factors.heading']}>
-        {/* The user's own answers, given back to them. The explanation is traceable to
-            what they said, not to an authority — which is also why FR-2.3 forbids naming
-            a source: there is no source to name, only their inputs and a rule. */}
+        {/* The user's own answers first — traceable to what they said, not to an
+            authority, which is also why FR-2.3 forbids naming a source. The method's
+            fixed properties (flexibility, interpretability) close the list: they hold
+            whatever the user answered, so they read as consequences of the recommendation
+            rather than reasons for it. One list, one place to look, instead of three
+            sections making the same kind of claim in three different shapes. */}
         <Box component="ul" sx={{ pl: 3, m: 0 }}>
           {recommended.reasons.map((reason) => (
             <Typography component="li" key={reason} sx={{ mb: 0.5 }}>
@@ -48,24 +52,13 @@ export function RecommendationPanel({ result }: { result: Recommendation }) {
               method that does best on data in general.
             </Typography>
           )}
+          <li>
+            <Position method={recommended.label} position={recommended.flexibility} />
+          </li>
+          <li>
+            <Position method={recommended.label} position={recommended.interpretability} />
+          </li>
         </Box>
-      </Section>
-
-      {/* Where THIS method sits, not a definition of the axis. The panel used to show
-          the same paragraph explaining bias-variance to every user regardless of what was
-          recommended — informative about the concept, silent about their own answer. */}
-      <Section heading={PANEL['panel.bias-variance.heading']}>
-        <Typography sx={{ fontWeight: 700 }}>
-          {recommended.label} is {recommended.flexibility.label}
-        </Typography>
-        <Typography color="text.secondary">{recommended.flexibility.detail}</Typography>
-      </Section>
-
-      <Section heading={PANEL['panel.interpretability.heading']}>
-        <Typography sx={{ fontWeight: 700 }}>
-          {recommended.label} is {recommended.interpretability.label}
-        </Typography>
-        <Typography color="text.secondary">{recommended.interpretability.detail}</Typography>
       </Section>
 
       {/* The tie is marked on the method it applies to, not announced separately above.
@@ -118,6 +111,24 @@ export function RecommendationPanel({ result }: { result: Recommendation }) {
   );
 }
 
+/**
+ * One line: the method's position, then what it means for this method.
+ *
+ * The name identifies whose position this is and is italicised for it; the label
+ * ("flexible", "opaque") is a plain word the sentence already carries and does not need
+ * weight of its own.
+ */
+function Position({ method, position }: { method: string; position: PositionType }) {
+  return (
+    <Typography component="span">
+      <Box component="span" sx={{ fontStyle: 'italic' }}>
+        {method}
+      </Box>{' '}
+      is {position.label} — {position.detail}
+    </Typography>
+  );
+}
+
 function Section({ heading, children }: { heading: string; children: React.ReactNode }) {
   return (
     <Box sx={{ mb: 3 }}>
@@ -136,18 +147,23 @@ function Alternative({
   tiedWith?: string | null;
 }) {
   return (
-    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 1.5 }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1.5 }}>
       <Box sx={{ minWidth: 90 }}>
         <FitScore shortfall={suggestion.expected_shortfall} compact />
       </Box>
-      <Box>
-        <Typography>{suggestion.label}</Typography>
-        {tiedWith && (
-          <Typography variant="body2" color="text.secondary">
-            too close to call apart from {tiedWith}
-          </Typography>
-        )}
-      </Box>
+      <Typography>{suggestion.label}</Typography>
+      {tiedWith && (
+        // A mark, not a sentence: the spec requires that an overlapping ranking not be
+        // shown as a finding, but the earlier full sentence was heavier than the signal
+        // needed. `title` carries the reason for anyone who wants it, without spending a
+        // line of body text on every tied method.
+        <Chip
+          label="≈ tied"
+          size="small"
+          variant="outlined"
+          title={`Too close to call apart from ${tiedWith} — the model does not distinguish them.`}
+        />
+      )}
     </Box>
   );
 }
