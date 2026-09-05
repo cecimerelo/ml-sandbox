@@ -19,8 +19,8 @@ function suggestion(overrides: Partial<Suggestion> = {}): Suggestion {
   return {
     method: 'random_forest',
     label: 'Random Forest',
-    flexibility: { label: 'flexible', detail: 'splits the data repeatedly.' },
-    interpretability: { label: 'opaque', detail: 'no single reason to give for one answer.' },
+    flexibility: { label: 'flexible', detail: 'splits the data repeatedly' },
+    interpretability: { label: 'opaque', detail: 'no single reason to give for one answer' },
     expected_shortfall: 0.02,
     uncertainty: 0.005,
     reasons: [],
@@ -92,10 +92,11 @@ describe('when an ordering is not evidence', () => {
     expect(indistinguishable(a, b)).toBe(false);
   });
 
-  it('marks the tie on the method it applies to', () => {
-    // Not in a banner above the list. A banner naming the same methods the list repeats
-    // underneath gives a reader two places to look, and makes the more important half —
-    // that these are equivalent — read as a footnote to the less important half.
+  it('marks the tie with a small chip, not a sentence', () => {
+    // Not a banner above the list, and not a full sentence per method either: the spec
+    // requires that an overlapping ranking not be shown as a finding, but a whole
+    // sentence per tied method was heavier than the signal needed. The reason is still
+    // available — in the chip's title — for anyone who wants it.
     show(
       result({
         alternatives: [
@@ -103,7 +104,8 @@ describe('when an ordering is not evidence', () => {
         ],
       }),
     );
-    expect(screen.getByText(/too close to call apart from Random Forest/i)).toBeInTheDocument();
+    expect(screen.getByText('≈ tied')).toBeInTheDocument();
+    expect(screen.queryByText(/too close to call/i)).toBeNull();
   });
 
   it('marks only the methods that are actually tied', () => {
@@ -115,7 +117,7 @@ describe('when an ordering is not evidence', () => {
         ],
       }),
     );
-    expect(screen.getAllByText(/too close to call/i)).toHaveLength(1);
+    expect(screen.getAllByText('≈ tied')).toHaveLength(1);
   });
 
   it('names each method once', () => {
@@ -133,7 +135,7 @@ describe('when an ordering is not evidence', () => {
 
   it('says nothing when the methods are clearly apart', () => {
     show();
-    expect(screen.queryByText(/too close to call/i)).toBeNull();
+    expect(screen.queryByText('≈ tied')).toBeNull();
   });
 });
 
@@ -217,19 +219,27 @@ describe('how much the study knows', () => {
   });
 });
 
-describe('the position sections', () => {
-  it("name the recommended method, not the concept in the abstract", () => {
-    // What this replaced: the same paragraph explaining bias-variance to every user,
-    // regardless of what was recommended — informative about the axis, silent about the
-    // answer.
+describe('the method\'s fixed properties, inside "what led to this"', () => {
+  it('name the recommended method, not the concept in the abstract', () => {
+    // What this replaced: two separate sections showing the same paragraph explaining
+    // bias-variance to every user regardless of what was recommended — informative about
+    // the axis, silent about the answer. Now folded into the one list of decision
+    // factors, since they are properties of the method rather than reactions to what the
+    // user answered.
     show();
-    expect(screen.getByText('Random Forest is flexible')).toBeInTheDocument();
-    expect(screen.getByText('Random Forest is opaque')).toBeInTheDocument();
+    const text = (_: string, node: Element | null) =>
+      node?.tagName === 'SPAN' &&
+      node.textContent === 'Random Forest is flexible — splits the data repeatedly';
+    expect(screen.getByText(text)).toBeInTheDocument();
   });
 
-  it("say what that means for this method", () => {
-    show();
-    expect(screen.getByText(/splits the data repeatedly/i)).toBeInTheDocument();
-    expect(screen.getByText(/no single reason to give/i)).toBeInTheDocument();
+  it('close the same list the user\'s own reasons open', () => {
+    // One list, one place to look, instead of three sections making the same kind of
+    // claim in three different shapes.
+    show(result({ recommended: suggestion({ reasons: ['Some reason fired.'] }) }));
+    const list = screen.getByText('Some reason fired.').closest('ul');
+    expect(list).not.toBeNull();
+    expect(list?.textContent).toContain('flexible');
+    expect(list?.textContent).toContain('opaque');
   });
 });
