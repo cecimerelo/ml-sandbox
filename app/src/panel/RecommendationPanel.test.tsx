@@ -242,3 +242,14 @@ describe('the method\'s fixed properties, inside "what led to this"', () => {
     expect(list?.textContent).toContain('The chosen method is opaque');
   });
 });
+
+describe('section order', () => {
+  it('places the characteristics table after the alternatives, since it compares them', () => {
+    show();
+    const order = document.body.textContent ?? '';
+    const alternatives = order.indexOf('Other methods worth considering');
+    const characteristics = order.indexOf('Method characteristics');
+    expect(alternatives).toBeGreaterThan(-1);
+    expect(characteristics).toBeGreaterThan(alternatives);
+  });
+});

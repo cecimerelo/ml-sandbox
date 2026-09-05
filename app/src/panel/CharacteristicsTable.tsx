@@ -1,6 +1,7 @@
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
@@ -32,44 +33,49 @@ export function CharacteristicsTable({
   if (rows.length === 0) return null;
 
   return (
-    <Table size="small">
-      <TableHead>
-        <TableRow>
-          <TableCell>Method</TableCell>
-          <TableCell>Interpretability</TableCell>
-          <TableCell>Handles non-linearity</TableCell>
-          <TableCell>Handles missing values</TableCell>
-          <TableCell>Accuracy potential</TableCell>
-          <TableCell>Training speed</TableCell>
-        </TableRow>
-      </TableHead>
-      <TableBody>
-        {rows.map((row) => {
-          const c = row.characteristics!;
-          const isRecommended = row.method === recommended.method;
-          return (
-            <TableRow
-              key={row.method}
-              {...(isRecommended
-                ? {
-                    sx: {
-                      bgcolor: chrome.detected.hex + '14',
-                      borderLeft: `2px solid ${chrome.detected.hex}`,
-                    },
-                  }
-                : {})}
-            >
-              <TableCell>{row.label}</TableCell>
-              <AxisCell axis={c.interpretability} />
-              <AxisCell axis={c.handles_non_linearity} />
-              <AxisCell axis={c.handles_missing_values} />
-              <AxisCell axis={c.accuracy_potential} />
-              <AxisCell axis={c.training_speed} />
-            </TableRow>
-          );
-        })}
-      </TableBody>
-    </Table>
+    // Scrolls its own width rather than the panel's. Five word-plus-dots columns do not
+    // fit a narrow panel at a readable size, and the panel itself must not grow to fit
+    // them — a table is the one thing here allowed to need its own scrollbar.
+    <TableContainer sx={{ maxWidth: '100%' }}>
+      <Table size="small" sx={{ minWidth: 560 }}>
+        <TableHead>
+          <TableRow>
+            <TableCell>Method</TableCell>
+            <TableCell>Interpretability</TableCell>
+            <TableCell>Handles non-linearity</TableCell>
+            <TableCell>Handles missing values</TableCell>
+            <TableCell>Accuracy potential</TableCell>
+            <TableCell>Training speed</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {rows.map((row) => {
+            const c = row.characteristics!;
+            const isRecommended = row.method === recommended.method;
+            return (
+              <TableRow
+                key={row.method}
+                {...(isRecommended
+                  ? {
+                      sx: {
+                        bgcolor: chrome.detected.hex + '14',
+                        borderLeft: `2px solid ${chrome.detected.hex}`,
+                      },
+                    }
+                  : {})}
+              >
+                <TableCell>{row.label}</TableCell>
+                <AxisCell axis={c.interpretability} />
+                <AxisCell axis={c.handles_non_linearity} />
+                <AxisCell axis={c.handles_missing_values} />
+                <AxisCell axis={c.accuracy_potential} />
+                <AxisCell axis={c.training_speed} />
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </TableContainer>
   );
 }
 

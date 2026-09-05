@@ -70,13 +70,6 @@ export function RecommendationPanel({ result }: { result: Recommendation }) {
         <Flowchart method={recommended.label} factors={recommended.factors} />
       </Section>
 
-      {/* Advice-only mode's only evidence artifact (DESIGN.md): with no dataset there is
-          nothing to fit and nothing to plot, so this table is the one thing a user can use
-          to judge the recommendation against its alternatives with their own eyes. */}
-      <Section heading="Method characteristics">
-        <CharacteristicsTable recommended={recommended} alternatives={alternatives} />
-      </Section>
-
       {/* The tie is marked on the method it applies to, not announced separately above.
           A banner listing the same names the list repeats underneath gives a reader two
           places to look and makes the more important half — that these are equivalent —
@@ -89,6 +82,15 @@ export function RecommendationPanel({ result }: { result: Recommendation }) {
             tiedWith={indistinguishable(recommended, s) ? recommended.label : null}
           />
         ))}
+      </Section>
+
+      {/* Advice-only mode's only evidence artifact (DESIGN.md): with no dataset there is
+          nothing to fit and nothing to plot, so this table is the one thing a user can use
+          to judge the recommendation against its alternatives with their own eyes. Placed
+          after the alternatives are named, since it compares exactly the methods that
+          section just listed. */}
+      <Section heading="Method characteristics">
+        <CharacteristicsTable recommended={recommended} alternatives={alternatives} />
       </Section>
 
       {/* Returned rather than hidden. Withholding the best method leaves the user unable
