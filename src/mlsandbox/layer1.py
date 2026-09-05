@@ -137,9 +137,39 @@ class Rule(StrictModel):
         return list(dict.fromkeys(methods))
 
 
+class Factor(StrictModel):
+    """One rule that moved a method, and the answer that set it off.
+
+    The trigger is the point. A claim on its own is a statement about method families —
+    true, and about nobody's problem in particular. Naming the answer that fired it turns
+    it into an account of **this** decision: the explanation becomes traceable to what the
+    user said rather than to an authority, which is what FR-2.2 asks for and what FR-2.3
+    makes necessary by forbidding a source.
+    """
+
+    rule: str
+    claim: str
+
+    question: str
+    """The form question whose answer fired this, in the words that question uses."""
+
+    answer: str
+    """What the user said."""
+
+    favours: bool
+    """Whether it pushed this method up or down.
+
+    Both are recorded and only one is shown as a reason. A rule that penalised the
+    recommended method is not why it was recommended, and listing it under "what led to
+    this" says the opposite of what happened — which is what the panel did before this
+    existed.
+    """
+
+
 class Recommendation(StrictModel):
     method: str
     score: float
+    factors: list[Factor] = []
     reasons: list[str]
     """The claims that fired, in the order they were applied. This is the explanation —
     FR-2.2 needs the decision factors, and they cannot be reconstructed after the fact."""
@@ -310,7 +340,28 @@ def applicable_rules(
     suspects_non_linearity: Suspicion = "no",
     suspects_interactions: Suspicion = "no",
 ) -> list[Rule]:
-    """Which claims apply to this problem, at the strength the user's answers give them.
+    """Which claims apply to this problem, at the strength the user's answers give them."""
+    rules, _ = _fire(
+        features,
+        explainability=explainability,
+        suspects_non_linearity=suspects_non_linearity,
+        suspects_interactions=suspects_interactions,
+    )
+    return rules
+
+
+def _fire(
+    features: MetaFeatures,
+    *,
+    explainability: Explainability = "not important",
+    suspects_non_linearity: Suspicion = "no",
+    suspects_interactions: Suspicion = "no",
+) -> tuple[list[Rule], dict[str, tuple[str, str]]]:
+    """The rules that apply, and what set each one off.
+
+    Returns both rather than stashing the triggers somewhere for a second call to find.
+    Module-level state would be shared across requests, which on a server means one user's
+    explanation can be assembled from another user's answers.
 
     The three user inputs come from the person rather than the data (FR-1.4). They are
     constraints and beliefs, not measurable properties, which is exactly why they belong
@@ -323,46 +374,75 @@ def applicable_rules(
     by_name = {rule.name: rule for rule in RULES}
     fired: list[str] = []
     scaled: dict[str, float] = {}
+    # What set each rule off, so the explanation can name the user's own answer back to
+    # them rather than restating a claim about method families.
+    triggers: dict[str, tuple[str, str]] = {}
+
+    def fire(names: tuple[str, ...] | list[str], question: str, answer: str) -> None:
+        fired.extend(names)
+        triggers.update(dict.fromkeys(names, (question, answer)))
 
     if features.rows == "<500":
-        fired += ["small-sample-favours-simple", "small-sample-penalises-flexible"]
+        fire(
+            ["small-sample-favours-simple", "small-sample-penalises-flexible"],
+            "how many rows",
+            "fewer than 500",
+        )
     if features.regime == "high-dimensional":
-        fired.append("high-dimensional-favours-regularisation")
+        fire(
+            ["high-dimensional-favours-regularisation"],
+            "how many rows and columns",
+            f"{features.rows} rows against {features.features} columns",
+        )
     if features.regime == "data-rich":
-        fired.append("data-rich-affords-flexibility")
+        fire(
+            ["data-rich-affords-flexibility"],
+            "how many rows and columns",
+            f"{features.rows} rows against {features.features} columns",
+        )
 
     interpretability = EXPLAINABILITY_STRENGTH[explainability]
     if interpretability:
         names = ("interpretability-required", "interpretability-rules-out-black-boxes")
-        fired += names
+        fire(names, "explaining individual predictions", explainability)
         scaled.update(dict.fromkeys(names, interpretability))
 
     gaps = MISSING_STRENGTH[features.missing]
     if gaps:
-        fired.append("missing-values-favour-trees")
+        fire(["missing-values-favour-trees"], "how much is missing", features.missing)
         scaled["missing-values-favour-trees"] = gaps
 
     if features.feature_types in ("categorical", "mixed"):
-        fired.append("categorical-features-favour-trees")
+        fire(
+            ["categorical-features-favour-trees"],
+            "what kind of columns",
+            features.feature_types,
+        )
     # `categorical` is not a stronger `mixed`, it is a different problem: with no numeric
     # column left, distance between rows has no natural meaning at all. Without this the
     # two answers produce identical advice, and the question stops being worth asking.
     if features.feature_types == "categorical":
-        fired.append("all-categorical-penalises-distance-methods")
+        fire(
+            ["all-categorical-penalises-distance-methods"],
+            "what kind of columns",
+            "all labels",
+        )
 
     # Reaches the rules directly rather than only through the regime. The regime maps nine
     # band pairs onto three values, so two feature bands can land on the same cell — and
     # then answering "more than 50 columns" rather than "10 to 50" changes nothing.
     if features.features == ">50":
-        fired.append("many-features-favour-fewer-of-them")
+        fire(["many-features-favour-fewer-of-them"], "how many columns", "more than 50")
 
-    for answer, names in (
+    for answer, question, names in (
         (
             suspects_non_linearity,
+            "whether the pattern is a straight line",
             ("non-linearity-penalises-linear-methods", "non-linearity-favours-flexible"),
         ),
         (
             suspects_interactions,
+            "whether columns only matter in combination",
             (
                 "interactions-favour-methods-that-find-them",
                 "interactions-penalise-additive-methods",
@@ -371,20 +451,24 @@ def applicable_rules(
     ):
         strength = SUSPICION_STRENGTH[answer]
         if strength:
-            fired += names
+            fire(names, question, answer)
             scaled.update(dict.fromkeys(names, strength))
 
     if features.class_balance == "one class dominates":
-        fired.append("imbalance-penalises-naive-methods")
+        fire(["imbalance-penalises-naive-methods"], "category sizes", "one dominates")
     if features.task == "multiclass classification":
-        fired.append("multiclass-penalises-binary-first-methods")
+        fire(
+            ["multiclass-penalises-binary-first-methods"],
+            "what you are predicting",
+            "one of several categories",
+        )
 
     return [
         by_name[name].model_copy(update={"weight": by_name[name].weight * scaled[name]})
         if name in scaled and scaled[name] != 1.0
         else by_name[name]
         for name in fired
-    ]
+    ], triggers
 
 
 def recommend(
@@ -401,7 +485,7 @@ def recommend(
     same problem could produce different advice between runs, and the study would be
     measuring the ordering of a hash table.
     """
-    rules = applicable_rules(
+    rules, triggers = _fire(
         features,
         explainability=explainability,
         suspects_non_linearity=suspects_non_linearity,
@@ -418,17 +502,33 @@ def recommend(
 
     scores = dict.fromkeys(candidates, 0.0)
     reasons: dict[str, list[str]] = {method: [] for method in candidates}
+    factors: dict[str, list[Factor]] = {method: [] for method in candidates}
     for rule in rules:
+        question, answer = triggers.get(rule.name, ("", ""))
         for method in rule.methods:
             if method in scores:
                 scores[method] += rule.weight
                 reasons[method].append(rule.claim)
+                factors[method].append(
+                    Factor(
+                        rule=rule.name,
+                        claim=rule.claim,
+                        question=question,
+                        answer=answer,
+                        favours=rule.weight > 0,
+                    )
+                )
 
     # Excluded methods are ranked last, never dropped. Withholding the best option
     # silently leaves the user unable to see what their constraint cost them (D-035).
     return sorted(
         (
-            Recommendation(method=method, score=score, reasons=reasons[method])
+            Recommendation(
+                method=method,
+                score=score,
+                reasons=reasons[method],
+                factors=factors[method],
+            )
             for method, score in scores.items()
         ),
         key=lambda r: (r.method in blocked, -r.score, r.method),

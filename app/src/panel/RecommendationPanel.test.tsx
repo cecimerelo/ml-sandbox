@@ -19,6 +19,8 @@ function suggestion(overrides: Partial<Suggestion> = {}): Suggestion {
   return {
     method: 'random_forest',
     label: 'Random Forest',
+    flexibility: { label: 'flexible', detail: 'splits the data repeatedly.' },
+    interpretability: { label: 'opaque', detail: 'no single reason to give for one answer.' },
     expected_shortfall: 0.02,
     uncertainty: 0.005,
     reasons: [],
@@ -90,10 +92,10 @@ describe('when an ordering is not evidence', () => {
     expect(indistinguishable(a, b)).toBe(false);
   });
 
-  it('says so before the ranking is read', () => {
-    // The model is trained on about a hundred datasets. Where the intervals overlap the
-    // order is a coin toss, and presenting it as a ranking is the confident wrong answer
-    // this layer exists to avoid.
+  it('marks the tie on the method it applies to', () => {
+    // Not in a banner above the list. A banner naming the same methods the list repeats
+    // underneath gives a reader two places to look, and makes the more important half —
+    // that these are equivalent — read as a footnote to the less important half.
     show(
       result({
         alternatives: [
@@ -101,9 +103,32 @@ describe('when an ordering is not evidence', () => {
         ],
       }),
     );
-    expect(screen.getByText(/too close to call apart/i)).toHaveTextContent(
-      /gradient boosting/i,
+    expect(screen.getByText(/too close to call apart from Random Forest/i)).toBeInTheDocument();
+  });
+
+  it('marks only the methods that are actually tied', () => {
+    show(
+      result({
+        alternatives: [
+          suggestion({ method: 'boosting', label: 'Gradient Boosting', expected_shortfall: 0.022 }),
+          suggestion({ method: 'knn', label: 'K-Nearest Neighbours', expected_shortfall: 0.4 }),
+        ],
+      }),
     );
+    expect(screen.getAllByText(/too close to call/i)).toHaveLength(1);
+  });
+
+  it('names each method once', () => {
+    // The redundancy this replaced: a banner listing three methods, and a list repeating
+    // the same three underneath it.
+    show(
+      result({
+        alternatives: [
+          suggestion({ method: 'boosting', label: 'Gradient Boosting', expected_shortfall: 0.022 }),
+        ],
+      }),
+    );
+    expect(screen.getAllByText('Gradient Boosting')).toHaveLength(1);
   });
 
   it('says nothing when the methods are clearly apart', () => {
@@ -172,5 +197,22 @@ describe('how much the study knows', () => {
   it('says nothing about provisional when the benchmark is done', () => {
     show();
     expect(screen.queryByText(/provisional/i)).toBeNull();
+  });
+});
+
+describe('the position sections', () => {
+  it("name the recommended method, not the concept in the abstract", () => {
+    // What this replaced: the same paragraph explaining bias-variance to every user,
+    // regardless of what was recommended — informative about the axis, silent about the
+    // answer.
+    show();
+    expect(screen.getByText('Random Forest is flexible')).toBeInTheDocument();
+    expect(screen.getByText('Random Forest is opaque')).toBeInTheDocument();
+  });
+
+  it("say what that means for this method", () => {
+    show();
+    expect(screen.getByText(/splits the data repeatedly/i)).toBeInTheDocument();
+    expect(screen.getByText(/no single reason to give/i)).toBeInTheDocument();
   });
 });

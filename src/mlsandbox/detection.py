@@ -40,11 +40,22 @@ ID_LIKE_SHARE = 0.95
 Not 1.0: a real identifier can repeat once through a duplicated row, and a threshold that
 only catches perfect uniqueness misses exactly the messy file this is here to catch."""
 
-AMBIGUOUS_INTEGER_LEVELS = 10
+AMBIGUOUS_INTEGER_LEVELS = 5
 """Whole numbers with few distinct values might be categories or might be measurements.
 
 A 1-to-5 satisfaction rating and a count of children are the same bytes. The file does not
-say which, so neither does the detector."""
+say which, so neither does the detector.
+
+**Was 10, and it flagged too much.** Bedrooms, bathrooms, cars — ordinary small counts —
+almost always fall at or under ten distinct values, so the flag fired on the common case
+rather than the ambiguous one. Lowered to 5, which still catches genuine codes (a 1-to-5
+rating, a handful of grades) without flagging every small count a house listing has.
+
+There is no threshold in the data that separates the two cleanly — checked against sixty
+of the study's own datasets, and the count of columns at each cardinality falls off
+smoothly from 3 to 15 with no gap to anchor on. So this is a judgement call, not a discovery,
+and it is named here rather than buried in a comparison so the next person who finds it
+too tight or too loose knows what to change."""
 
 Problem = Literal["single-value", "identifier", "rare-class", "empty"]
 
