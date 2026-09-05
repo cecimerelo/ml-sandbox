@@ -98,7 +98,15 @@ export function RecommendationPanel({ result }: { result: Recommendation }) {
 
       <Divider sx={{ my: 2 }} />
 
+      {/* The disclaimer this whole panel needs: nothing here has been trained on the
+          user's own data. Until Epic 4 fits the recommended method on an uploaded
+          dataset, every number is from the benchmark alone, and a reader could otherwise
+          take "based on 106 datasets" to mean their file was one of them. */}
       <Typography variant="body2" color="text.secondary">
+        This suggestion is based only on your answers to the form — nothing here has been
+        trained or tested on your own data.
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
         {evidence(support)}
       </Typography>
       {provisional && (
@@ -136,7 +144,7 @@ function Alternative({
         <Typography>{suggestion.label}</Typography>
         {tiedWith && (
           <Typography variant="body2" color="text.secondary">
-            too close to call apart from {tiedWith} — either is a reasonable choice
+            too close to call apart from {tiedWith}
           </Typography>
         )}
       </Box>
@@ -150,16 +158,27 @@ function Alternative({
  * Reported because the model's own uncertainty does not carry it: tree spread tracks how
  * hard a region is, not how unfamiliar, and that was measured rather than assumed.
  */
+/** The engine's internal field names, in the words the form actually used to ask. */
+const FIELD_LABEL: Record<string, string> = {
+  task: 'what you are predicting',
+  rows: 'how many rows',
+  features: 'how many columns',
+  feature_types: 'what kind of columns',
+  missing: 'how much is missing',
+  class_balance: 'category sizes',
+};
+
 function evidence(support: Support): string {
+  const field = FIELD_LABEL[support.field] ?? support.field;
   if (support.datasets === 0) {
     return (
-      `No dataset in the study had ${support.field} = ${support.answer}, so this ` +
+      `No dataset in the study had an answer like yours for ${field}, so this ` +
       'suggestion is worked out from neighbouring cases rather than measured on data like ' +
       'yours.'
     );
   }
   return (
     `Based on ${support.total} datasets, of which ${support.datasets} resembled yours on ` +
-    `${support.field}.`
+    `${field}.`
   );
 }
