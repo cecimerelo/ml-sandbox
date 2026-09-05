@@ -6,9 +6,18 @@
  * browser's half of a contract, not its definition.
  */
 
+export interface Position {
+  /** Where the method sits, e.g. "flexible" or "readable". */
+  label: string;
+  /** What that means for this method, in one sentence. */
+  detail: string;
+}
+
 export interface Suggestion {
   method: string;
   label: string;
+  flexibility: Position;
+  interpretability: Position;
   /** Predicted distance below the best available method. Zero means "expected to be best". */
   expected_shortfall: number;
   /** Spread across the model's trees. Where intervals overlap, the ordering is not evidence. */

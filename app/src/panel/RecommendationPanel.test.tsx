@@ -19,6 +19,8 @@ function suggestion(overrides: Partial<Suggestion> = {}): Suggestion {
   return {
     method: 'random_forest',
     label: 'Random Forest',
+    flexibility: { label: 'flexible', detail: 'splits the data repeatedly.' },
+    interpretability: { label: 'opaque', detail: 'no single reason to give for one answer.' },
     expected_shortfall: 0.02,
     uncertainty: 0.005,
     reasons: [],
@@ -195,5 +197,22 @@ describe('how much the study knows', () => {
   it('says nothing about provisional when the benchmark is done', () => {
     show();
     expect(screen.queryByText(/provisional/i)).toBeNull();
+  });
+});
+
+describe('the position sections', () => {
+  it("name the recommended method, not the concept in the abstract", () => {
+    // What this replaced: the same paragraph explaining bias-variance to every user,
+    // regardless of what was recommended — informative about the axis, silent about the
+    // answer.
+    show();
+    expect(screen.getByText('Random Forest is flexible')).toBeInTheDocument();
+    expect(screen.getByText('Random Forest is opaque')).toBeInTheDocument();
+  });
+
+  it("say what that means for this method", () => {
+    show();
+    expect(screen.getByText(/splits the data repeatedly/i)).toBeInTheDocument();
+    expect(screen.getByText(/no single reason to give/i)).toBeInTheDocument();
   });
 });

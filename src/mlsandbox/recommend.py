@@ -18,7 +18,41 @@ from mlsandbox import layer1
 from mlsandbox.artifact import Artifact, Support
 from mlsandbox.base import StrictModel
 from mlsandbox.metafeatures import MetaFeatures
-from mlsandbox.methods import METHODS, available
+from mlsandbox.methods import METHODS, Method, available
+
+FLEXIBILITY_LABEL: dict[str, str] = {
+    "linear": "assumes a straight-line relationship",
+    "regularisation": "assumes a straight-line relationship, held back deliberately",
+    "discriminant": "assumes a simple boundary between classes",
+    "dimension-reduction": "assumes a straight-line relationship, in fewer dimensions",
+    "non-linear": "bends to follow curves in the data",
+    "trees": "splits the data repeatedly rather than fitting a single shape",
+    "svm": "assumes a fixed boundary shape",
+    "neural": "bends to follow arbitrary shapes in the data",
+}
+"""Where a method's family sits on the bias-variance axis, in words rather than a number.
+
+Read off the family (D-019's grouping) because that is what actually determines it — a
+linear model is inflexible whether or not it is the one recommended, and restating that
+per suggestion would be the same sentence with the method's name swapped in."""
+
+INTERPRETABILITY_DETAIL: dict[str, str] = {
+    "readable": "you can read the reason for any single answer directly from the model.",
+    "with effort": "the reason for an answer can be recovered, but takes work to extract.",
+    "opaque": "there is no single reason to give for one answer — only patterns across many.",
+}
+
+
+def _position(method: Method) -> tuple[Position, Position]:
+    flexibility = Position(
+        label="flexible" if method.family in ("non-linear", "trees", "neural") else "simple",
+        detail=FLEXIBILITY_LABEL.get(method.family, "follows a fixed shape"),
+    )
+    interpretability = Position(
+        label=method.explainability,
+        detail=INTERPRETABILITY_DETAIL[method.explainability],
+    )
+    return flexibility, interpretability
 
 
 class DecisionFactor(StrictModel):
@@ -45,11 +79,29 @@ class DecisionFactor(StrictModel):
     """
 
 
+class Position(StrictModel):
+    """Where this method sits on one of ISLR's two axes, in the words a user reads.
+
+    Not a definition of the axis — that duplicates what the panel's fixed prose already
+    says. This is the one fact specific to *this* method: where it falls, and the
+    consequence of that for the person reading it.
+    """
+
+    label: str
+    """Where the method sits, e.g. "flexible" or "readable"."""
+
+    detail: str
+    """What that means for this method, in one sentence."""
+
+
 class Suggestion(StrictModel):
     """One method, where it is expected to land, and why it was put there."""
 
     method: str
     label: str
+
+    flexibility: Position
+    interpretability: Position
 
     expected_shortfall: float
     """Predicted distance below the best available method. Zero means "expected to be the
@@ -147,18 +199,22 @@ def for_problem(
     position = {p.method: i for i, p in enumerate(ranked)}
     by_method = {r.method: r for r in scored}
 
-    ordered = [
-        Suggestion(
-            method=p.method,
-            label=METHODS[p.method].label,
-            expected_shortfall=p.expected_shortfall,
-            uncertainty=p.uncertainty,
-            reasons=reasoned.get(p.method, []),
-            factors=_factors_for(by_method.get(p.method), penalised_by, position),
-            excluded_by_constraint=p.method in blocked,
+    ordered = []
+    for p in ranked:
+        flexibility, interpretability = _position(METHODS[p.method])
+        ordered.append(
+            Suggestion(
+                method=p.method,
+                label=METHODS[p.method].label,
+                flexibility=flexibility,
+                interpretability=interpretability,
+                expected_shortfall=p.expected_shortfall,
+                uncertainty=p.uncertainty,
+                reasons=reasoned.get(p.method, []),
+                factors=_factors_for(by_method.get(p.method), penalised_by, position),
+                excluded_by_constraint=p.method in blocked,
+            )
         )
-        for p in ranked
-    ]
 
     allowed = [s for s in ordered if not s.excluded_by_constraint]
     excluded = [s for s in ordered if s.excluded_by_constraint]

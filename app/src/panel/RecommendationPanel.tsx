@@ -51,12 +51,21 @@ export function RecommendationPanel({ result }: { result: Recommendation }) {
         </Box>
       </Section>
 
+      {/* Where THIS method sits, not a definition of the axis. The panel used to show
+          the same paragraph explaining bias-variance to every user regardless of what was
+          recommended — informative about the concept, silent about their own answer. */}
       <Section heading={PANEL['panel.bias-variance.heading']}>
-        <Typography>{renderCopy(PANEL['panel.bias-variance.explanation'])}</Typography>
+        <Typography sx={{ fontWeight: 700 }}>
+          {recommended.label} is {recommended.flexibility.label}
+        </Typography>
+        <Typography color="text.secondary">{recommended.flexibility.detail}</Typography>
       </Section>
 
       <Section heading={PANEL['panel.interpretability.heading']}>
-        <Typography>{renderCopy(PANEL['panel.interpretability.explanation'])}</Typography>
+        <Typography sx={{ fontWeight: 700 }}>
+          {recommended.label} is {recommended.interpretability.label}
+        </Typography>
+        <Typography color="text.secondary">{recommended.interpretability.detail}</Typography>
       </Section>
 
       {/* The tie is marked on the method it applies to, not announced separately above.
