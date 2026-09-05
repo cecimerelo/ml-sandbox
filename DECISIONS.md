@@ -1807,3 +1807,44 @@ given.
 **Not settled here.** The spine also has removal leave existing results stale rather than
 destroyed. There are no results yet, so that half of the transition is untouched and stays
 with #44.
+
+---
+
+## D-049 — Two of the table's five axes are measured, not declared
+
+**Date:** 2026-09-05 · **Status:** accepted · **Departs from:** `DESIGN.md § Method characteristics table` · **Affects:** [#38](https://github.com/cecimerelo/ml-sandbox/issues/38)
+
+**Context.** `DESIGN.md` calls this table *"the qualitative artifact: theory, no data"* —
+five axes, all declared from the method registry. Building it found that only three of the
+five have anything to be declared from.
+
+**Interpretability, handling non-linearity, and handling missing values** read straight off
+properties the registry already carries — `explainability`, `family`, `handles_nan`. Nothing
+invented.
+
+**Accuracy potential and training speed have no such property.** Nothing in the registry
+states an expected accuracy or a relative speed, and writing one by hand would be asserting
+a claim this whole project exists to test rather than assert. Worse, it risks contradicting
+itself: if the table declared *"Random Forest: high accuracy"* as a theoretical judgement
+and the benchmark showed it tying a linear model on half the collection, the panel would
+argue with itself in front of the user it is meant to inform.
+
+**Decision.** Compute both from the benchmark instead of declaring them — the same
+106-dataset run Layer 2 trains on, aggregated per method into a three-step rating.
+
+**Ranked within task, not pooled.** R² and balanced accuracy are not the same scale, and
+pooling them ranked `linear_regression` below `qda` by an accident of which metric it
+happened to be measured on, not by how either performs on its own kind of problem. Every
+method is bucketed against others solving the same kind of problem.
+
+**A lone entrant in its task reads as the best of one, not the worst.** The natural
+comparison — rank against `n / 3` — puts rank 1 of 1 in the bottom third, since `1 ≤ 1/3` is
+false. Caught by a test with a single-method task; fixed by comparing the *proportion*
+through the field instead of the raw rank.
+
+**Consequences.** The table and the rest of the tool now speak from one set of numbers.
+Where Layer 2 predicts a method suits *this* problem and the table shows it as generally
+"lower accuracy potential", both can be true at once — general aggregate performance and a
+prediction conditioned on this problem's meta-features are different claims — but neither
+number is invented, and neither can be caught contradicting a measurement the study
+actually made.
