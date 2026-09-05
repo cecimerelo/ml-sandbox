@@ -1,4 +1,3 @@
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import Paper from '@mui/material/Paper';
@@ -20,8 +19,6 @@ import type { Recommendation, Suggestion, Support } from './types';
  */
 export function RecommendationPanel({ result }: { result: Recommendation }) {
   const { recommended, alternatives, excluded, support, provisional } = result;
-  const tied = alternatives.filter((a) => indistinguishable(recommended, a));
-
   return (
     <Paper variant="outlined" sx={{ p: 3, mt: `${spacing.sectionGap}px` }}>
       <Typography variant="overline" color="text.secondary">
@@ -34,17 +31,6 @@ export function RecommendationPanel({ result }: { result: Recommendation }) {
       <Box sx={{ maxWidth: 260, mb: 3 }}>
         <FitScore shortfall={recommended.expected_shortfall} />
       </Box>
-
-      {/* Said before the ranking is read, not after. Where the intervals overlap, the
-          order between those methods is a coin toss, and presenting it as a ranking would
-          be the confident wrong answer this whole layer exists to avoid. */}
-      {tied.length > 0 && (
-        <Alert severity="info" sx={{ mb: 3 }}>
-          {tied.length === 1 ? 'One other method is' : `${tied.length} other methods are`} too
-          close to call apart from this one — {tied.map((t) => t.label).join(', ')}. Any of
-          them is a reasonable choice.
-        </Alert>
-      )}
 
       <Section heading={PANEL['panel.factors.heading']}>
         {/* The user's own answers, given back to them. The explanation is traceable to
@@ -73,9 +59,17 @@ export function RecommendationPanel({ result }: { result: Recommendation }) {
         <Typography>{renderCopy(PANEL['panel.interpretability.explanation'])}</Typography>
       </Section>
 
+      {/* The tie is marked on the method it applies to, not announced separately above.
+          A banner listing the same names the list repeats underneath gives a reader two
+          places to look and makes the more important half — that these are equivalent —
+          read as a footnote to the less important half. */}
       <Section heading="Other methods worth considering">
         {alternatives.map((s) => (
-          <Alternative key={s.method} suggestion={s} />
+          <Alternative
+            key={s.method}
+            suggestion={s}
+            tiedWith={indistinguishable(recommended, s) ? recommended.label : null}
+          />
         ))}
       </Section>
 
@@ -116,13 +110,27 @@ function Section({ heading, children }: { heading: string; children: React.React
   );
 }
 
-function Alternative({ suggestion }: { suggestion: Suggestion }) {
+function Alternative({
+  suggestion,
+  tiedWith = null,
+}: {
+  suggestion: Suggestion;
+  /** The recommended method this one cannot be told apart from, if that is the case. */
+  tiedWith?: string | null;
+}) {
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1.5 }}>
+    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, mb: 1.5 }}>
       <Box sx={{ minWidth: 90 }}>
         <FitScore shortfall={suggestion.expected_shortfall} compact />
       </Box>
-      <Typography>{suggestion.label}</Typography>
+      <Box>
+        <Typography>{suggestion.label}</Typography>
+        {tiedWith && (
+          <Typography variant="body2" color="text.secondary">
+            too close to call apart from {tiedWith} — either is a reasonable choice
+          </Typography>
+        )}
+      </Box>
     </Box>
   );
 }

@@ -21,6 +21,30 @@ from mlsandbox.metafeatures import MetaFeatures
 from mlsandbox.methods import METHODS, available
 
 
+class DecisionFactor(StrictModel):
+    """One of the user's answers, and what it argued for.
+
+    A claim on its own is a statement about method families: true, and about nobody's
+    problem in particular. Named against the answer that fired it and the method it
+    displaced, it becomes an account of **this** decision — traceable to what the user
+    said rather than to an authority, which is what FR-2.2 asks for and what FR-2.3 makes
+    necessary by forbidding a source.
+    """
+
+    question: str
+    answer: str
+    claim: str
+
+    over: str | None = None
+    """The best-ranked method this same rule pushed down, if any.
+
+    The contrast is what makes the factor concrete. "Fewer than 500 rows favours a
+    decision tree" is a fact; "fewer than 500 rows, so a decision tree rather than a random
+    forest" is an answer to *why not the other one* — which is the question a reader
+    actually has.
+    """
+
+
 class Suggestion(StrictModel):
     """One method, where it is expected to land, and why it was put there."""
 
@@ -45,6 +69,14 @@ class Suggestion(StrictModel):
 
     Produced here rather than reconstructed later, because a score cannot be turned back
     into the reasoning that made it (FR-2.2).
+    """
+
+    factors: list[DecisionFactor] = []
+    """Why this method, in terms of what the user said.
+
+    Only the ones that pushed it **up**. A rule that penalised the recommended method is
+    not why it was recommended, and listing it under "what led to this" says the opposite
+    of what happened — which is what the panel did until someone read it.
     """
 
     excluded_by_constraint: bool = False
@@ -98,19 +130,22 @@ def for_problem(
     # The heuristics deliberately do not vote on the order: a model trained on real
     # results is better placed to judge, and mixing the two would make the study unable to
     # attribute a difference to either.
-    reasoned = {
-        r.method: r.reasons
-        for r in layer1.recommend(
-            features,
-            candidates,
-            explainability=explainability,
-            suspects_non_linearity=suspects_non_linearity,
-            suspects_interactions=suspects_interactions,
-        )
-    }
+    scored = layer1.recommend(
+        features,
+        candidates,
+        explainability=explainability,
+        suspects_non_linearity=suspects_non_linearity,
+        suspects_interactions=suspects_interactions,
+    )
+    reasoned = {r.method: r.reasons for r in scored}
+    penalised_by = _penalised_by(scored)
     blocked = set(
         layer1.excluded_by_constraints(candidates, explainability=explainability)
     )
+
+    ranked = artifact.rank(features, candidates)
+    position = {p.method: i for i, p in enumerate(ranked)}
+    by_method = {r.method: r for r in scored}
 
     ordered = [
         Suggestion(
@@ -119,9 +154,10 @@ def for_problem(
             expected_shortfall=p.expected_shortfall,
             uncertainty=p.uncertainty,
             reasons=reasoned.get(p.method, []),
+            factors=_factors_for(by_method.get(p.method), penalised_by, position),
             excluded_by_constraint=p.method in blocked,
         )
-        for p in artifact.rank(features, candidates)
+        for p in ranked
     ]
 
     allowed = [s for s in ordered if not s.excluded_by_constraint]
@@ -139,3 +175,59 @@ def for_problem(
         support=artifact.support(features),
         provisional=artifact.card.is_provisional,
     )
+
+
+def _penalised_by(
+    scored: list[layer1.Recommendation],
+) -> dict[tuple[str, str], list[str]]:
+    """Which methods each **answer** pushed down.
+
+    Keyed on the answer rather than the rule, because the rules come in pairs: *"few
+    observations favour simple methods"* and *"few observations penalise flexible ones"*
+    are two rules fired by one answer. Grouping by rule finds nothing to contrast with,
+    since a favouring rule penalises nobody by construction.
+
+    The user does not have rules, they have answers. The contrast they want is what their
+    answer argued against.
+    """
+    penalised: dict[tuple[str, str], list[str]] = {}
+    for recommendation in scored:
+        for factor in recommendation.factors:
+            if not factor.favours:
+                penalised.setdefault((factor.question, factor.answer), []).append(
+                    recommendation.method
+                )
+    return penalised
+
+
+def _factors_for(
+    scored: layer1.Recommendation | None,
+    penalised_by: dict[tuple[str, str], list[str]],
+    position: dict[str, int],
+) -> list[DecisionFactor]:
+    """The answers that argued *for* this method, each against what it displaced.
+
+    The contrast is the best-ranked method the **same answer** pushed down — the one the
+    reader would otherwise ask about. Where an answer pushed nothing down, the factor
+    stands alone rather than inventing an opponent.
+    """
+    if scored is None:
+        return []
+
+    factors = []
+    for factor in scored.factors:
+        if not factor.favours:
+            continue
+        displaced = sorted(
+            penalised_by.get((factor.question, factor.answer), []),
+            key=lambda m: position.get(m, len(position)),
+        )
+        factors.append(
+            DecisionFactor(
+                question=factor.question,
+                answer=factor.answer,
+                claim=factor.claim,
+                over=METHODS[displaced[0]].label if displaced else None,
+            )
+        )
+    return factors
