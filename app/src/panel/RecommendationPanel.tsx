@@ -1,5 +1,5 @@
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
@@ -9,7 +9,7 @@ import { renderCopy } from '../copy/render';
 import { spacing } from '../theme/tokens';
 import { FitScore } from './FitScore';
 import { indistinguishable } from './types';
-import type { Recommendation, Suggestion, Support } from './types';
+import type { Position as PositionType, Recommendation, Suggestion, Support } from './types';
 
 /**
  * Block 2 — the recommendation and the reasoning behind it.
@@ -20,8 +20,6 @@ import type { Recommendation, Suggestion, Support } from './types';
  */
 export function RecommendationPanel({ result }: { result: Recommendation }) {
   const { recommended, alternatives, excluded, support, provisional } = result;
-  const tied = alternatives.filter((a) => indistinguishable(recommended, a));
-
   return (
     <Paper variant="outlined" sx={{ p: 3, mt: `${spacing.sectionGap}px` }}>
       <Typography variant="overline" color="text.secondary">
@@ -35,21 +33,13 @@ export function RecommendationPanel({ result }: { result: Recommendation }) {
         <FitScore shortfall={recommended.expected_shortfall} />
       </Box>
 
-      {/* Said before the ranking is read, not after. Where the intervals overlap, the
-          order between those methods is a coin toss, and presenting it as a ranking would
-          be the confident wrong answer this whole layer exists to avoid. */}
-      {tied.length > 0 && (
-        <Alert severity="info" sx={{ mb: 3 }}>
-          {tied.length === 1 ? 'One other method is' : `${tied.length} other methods are`} too
-          close to call apart from this one — {tied.map((t) => t.label).join(', ')}. Any of
-          them is a reasonable choice.
-        </Alert>
-      )}
-
       <Section heading={PANEL['panel.factors.heading']}>
-        {/* The user's own answers, given back to them. The explanation is traceable to
-            what they said, not to an authority — which is also why FR-2.3 forbids naming
-            a source: there is no source to name, only their inputs and a rule. */}
+        {/* The user's own answers first — traceable to what they said, not to an
+            authority, which is also why FR-2.3 forbids naming a source. The method's
+            fixed properties (flexibility, interpretability) close the list: they hold
+            whatever the user answered, so they read as consequences of the recommendation
+            rather than reasons for it. One list, one place to look, instead of three
+            sections making the same kind of claim in three different shapes. */}
         <Box component="ul" sx={{ pl: 3, m: 0 }}>
           {recommended.reasons.map((reason) => (
             <Typography component="li" key={reason} sx={{ mb: 0.5 }}>
@@ -62,20 +52,26 @@ export function RecommendationPanel({ result }: { result: Recommendation }) {
               method that does best on data in general.
             </Typography>
           )}
+          <li>
+            <Position method="The chosen method" position={recommended.flexibility} />
+          </li>
+          <li>
+            <Position method="The chosen method" position={recommended.interpretability} />
+          </li>
         </Box>
       </Section>
 
-      <Section heading={PANEL['panel.bias-variance.heading']}>
-        <Typography>{renderCopy(PANEL['panel.bias-variance.explanation'])}</Typography>
-      </Section>
-
-      <Section heading={PANEL['panel.interpretability.heading']}>
-        <Typography>{renderCopy(PANEL['panel.interpretability.explanation'])}</Typography>
-      </Section>
-
+      {/* The tie is marked on the method it applies to, not announced separately above.
+          A banner listing the same names the list repeats underneath gives a reader two
+          places to look and makes the more important half — that these are equivalent —
+          read as a footnote to the less important half. */}
       <Section heading="Other methods worth considering">
         {alternatives.map((s) => (
-          <Alternative key={s.method} suggestion={s} />
+          <Alternative
+            key={s.method}
+            suggestion={s}
+            tiedWith={indistinguishable(recommended, s) ? recommended.label : null}
+          />
         ))}
       </Section>
 
@@ -95,7 +91,15 @@ export function RecommendationPanel({ result }: { result: Recommendation }) {
 
       <Divider sx={{ my: 2 }} />
 
+      {/* The disclaimer this whole panel needs: nothing here has been trained on the
+          user's own data. Until Epic 4 fits the recommended method on an uploaded
+          dataset, every number is from the benchmark alone, and a reader could otherwise
+          take "based on 106 datasets" to mean their file was one of them. */}
       <Typography variant="body2" color="text.secondary">
+        This suggestion is based only on your answers to the form — nothing here has been
+        trained or tested on your own data.
+      </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
         {evidence(support)}
       </Typography>
       {provisional && (
@@ -104,6 +108,24 @@ export function RecommendationPanel({ result }: { result: Recommendation }) {
         </Typography>
       )}
     </Paper>
+  );
+}
+
+/**
+ * One line: the method's position, then what it means for this method.
+ *
+ * The name identifies whose position this is and is italicised for it; the label
+ * ("flexible", "opaque") is a plain word the sentence already carries and does not need
+ * weight of its own.
+ */
+function Position({ method, position }: { method: string; position: PositionType }) {
+  return (
+    <Typography component="span">
+      <Box component="span" sx={{ fontStyle: 'italic' }}>
+        {method}
+      </Box>{' '}
+      is {position.label} — {position.detail}
+    </Typography>
   );
 }
 
@@ -116,13 +138,32 @@ function Section({ heading, children }: { heading: string; children: React.React
   );
 }
 
-function Alternative({ suggestion }: { suggestion: Suggestion }) {
+function Alternative({
+  suggestion,
+  tiedWith = null,
+}: {
+  suggestion: Suggestion;
+  /** The recommended method this one cannot be told apart from, if that is the case. */
+  tiedWith?: string | null;
+}) {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1.5 }}>
       <Box sx={{ minWidth: 90 }}>
         <FitScore shortfall={suggestion.expected_shortfall} compact />
       </Box>
       <Typography>{suggestion.label}</Typography>
+      {tiedWith && (
+        // A mark, not a sentence: the spec requires that an overlapping ranking not be
+        // shown as a finding, but the earlier full sentence was heavier than the signal
+        // needed. `title` carries the reason for anyone who wants it, without spending a
+        // line of body text on every tied method.
+        <Chip
+          label="≈ tied"
+          size="small"
+          variant="outlined"
+          title={`Too close to call apart from ${tiedWith} — the model does not distinguish them.`}
+        />
+      )}
     </Box>
   );
 }
@@ -133,16 +174,27 @@ function Alternative({ suggestion }: { suggestion: Suggestion }) {
  * Reported because the model's own uncertainty does not carry it: tree spread tracks how
  * hard a region is, not how unfamiliar, and that was measured rather than assumed.
  */
+/** The engine's internal field names, in the words the form actually used to ask. */
+const FIELD_LABEL: Record<string, string> = {
+  task: 'what you are predicting',
+  rows: 'how many rows',
+  features: 'how many columns',
+  feature_types: 'what kind of columns',
+  missing: 'how much is missing',
+  class_balance: 'category sizes',
+};
+
 function evidence(support: Support): string {
+  const field = FIELD_LABEL[support.field] ?? support.field;
   if (support.datasets === 0) {
     return (
-      `No dataset in the study had ${support.field} = ${support.answer}, so this ` +
+      `No dataset in the study had an answer like yours for ${field}, so this ` +
       'suggestion is worked out from neighbouring cases rather than measured on data like ' +
       'yours.'
     );
   }
   return (
     `Based on ${support.total} datasets, of which ${support.datasets} resembled yours on ` +
-    `${support.field}.`
+    `${field}.`
   );
 }

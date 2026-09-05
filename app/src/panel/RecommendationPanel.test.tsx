@@ -19,6 +19,8 @@ function suggestion(overrides: Partial<Suggestion> = {}): Suggestion {
   return {
     method: 'random_forest',
     label: 'Random Forest',
+    flexibility: { label: 'flexible', detail: 'splits the data repeatedly' },
+    interpretability: { label: 'opaque', detail: 'no single reason to give for one answer' },
     expected_shortfall: 0.02,
     uncertainty: 0.005,
     reasons: [],
@@ -90,10 +92,11 @@ describe('when an ordering is not evidence', () => {
     expect(indistinguishable(a, b)).toBe(false);
   });
 
-  it('says so before the ranking is read', () => {
-    // The model is trained on about a hundred datasets. Where the intervals overlap the
-    // order is a coin toss, and presenting it as a ranking is the confident wrong answer
-    // this layer exists to avoid.
+  it('marks the tie with a small chip, not a sentence', () => {
+    // Not a banner above the list, and not a full sentence per method either: the spec
+    // requires that an overlapping ranking not be shown as a finding, but a whole
+    // sentence per tied method was heavier than the signal needed. The reason is still
+    // available — in the chip's title — for anyone who wants it.
     show(
       result({
         alternatives: [
@@ -101,14 +104,38 @@ describe('when an ordering is not evidence', () => {
         ],
       }),
     );
-    expect(screen.getByText(/too close to call apart/i)).toHaveTextContent(
-      /gradient boosting/i,
+    expect(screen.getByText('≈ tied')).toBeInTheDocument();
+    expect(screen.queryByText(/too close to call/i)).toBeNull();
+  });
+
+  it('marks only the methods that are actually tied', () => {
+    show(
+      result({
+        alternatives: [
+          suggestion({ method: 'boosting', label: 'Gradient Boosting', expected_shortfall: 0.022 }),
+          suggestion({ method: 'knn', label: 'K-Nearest Neighbours', expected_shortfall: 0.4 }),
+        ],
+      }),
     );
+    expect(screen.getAllByText('≈ tied')).toHaveLength(1);
+  });
+
+  it('names each method once', () => {
+    // The redundancy this replaced: a banner listing three methods, and a list repeating
+    // the same three underneath it.
+    show(
+      result({
+        alternatives: [
+          suggestion({ method: 'boosting', label: 'Gradient Boosting', expected_shortfall: 0.022 }),
+        ],
+      }),
+    );
+    expect(screen.getAllByText('Gradient Boosting')).toHaveLength(1);
   });
 
   it('says nothing when the methods are clearly apart', () => {
     show();
-    expect(screen.queryByText(/too close to call/i)).toBeNull();
+    expect(screen.queryByText('≈ tied')).toBeNull();
   });
 });
 
@@ -159,9 +186,26 @@ describe('how much the study knows', () => {
     expect(screen.getByText(/106 datasets, of which 30/i)).toBeInTheDocument();
   });
 
+  it('names the field the way the form asked it, not the engine\'s internal name', () => {
+    // 'feature_types' is the field name in the API response; a reader never saw a
+    // question called that.
+    show(result({ support: { field: 'feature_types', answer: 'mixed', datasets: 24, total: 106 } }));
+    expect(screen.getByText(/of which 24 resembled yours on what kind of columns/i)).toBeInTheDocument();
+    expect(screen.queryByText(/feature_types/i)).toBeNull();
+  });
+
+  it('says the recommendation rests on the form alone', () => {
+    // Until Epic 4 trains the recommended method on an uploaded dataset, every number
+    // here comes from the benchmark, not from the user's own file — a reader could
+    // otherwise take "based on 106 datasets" to mean their file was among them.
+    show();
+    expect(screen.getByText(/based only on your answers to the form/i)).toBeInTheDocument();
+  });
+
   it('says plainly when none did', () => {
     show(result({ support: { field: 'missing', answer: 'a lot', datasets: 0, total: 106 } }));
-    expect(screen.getByText(/no dataset in the study had missing/i)).toBeInTheDocument();
+    // Named the way the form asked the question, not the engine's field name.
+    expect(screen.getByText(/no dataset in the study had an answer like yours for how much is missing/i)).toBeInTheDocument();
   });
 
   it('says when the model behind it is unfinished', () => {
@@ -172,5 +216,27 @@ describe('how much the study knows', () => {
   it('says nothing about provisional when the benchmark is done', () => {
     show();
     expect(screen.queryByText(/provisional/i)).toBeNull();
+  });
+});
+
+describe('the method\'s fixed properties, inside "what led to this"', () => {
+  it('say "the chosen method" rather than repeating its name a third time', () => {
+    // The name already appears in the heading and on every alternative card. Repeating
+    // it again here, twice, reads as noise where the name has already been established.
+    show();
+    const text = (_: string, node: Element | null) =>
+      node?.tagName === 'SPAN' &&
+      node.textContent === 'The chosen method is flexible — splits the data repeatedly';
+    expect(screen.getByText(text)).toBeInTheDocument();
+  });
+
+  it('close the same list the user\'s own reasons open', () => {
+    // One list, one place to look, instead of three sections making the same kind of
+    // claim in three different shapes.
+    show(result({ recommended: suggestion({ reasons: ['Some reason fired.'] }) }));
+    const list = screen.getByText('Some reason fired.').closest('ul');
+    expect(list).not.toBeNull();
+    expect(list?.textContent).toContain('The chosen method is flexible');
+    expect(list?.textContent).toContain('The chosen method is opaque');
   });
 });
