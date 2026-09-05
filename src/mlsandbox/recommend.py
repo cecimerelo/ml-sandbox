@@ -17,6 +17,7 @@ from __future__ import annotations
 from mlsandbox import layer1
 from mlsandbox.artifact import Artifact, Support
 from mlsandbox.base import StrictModel
+from mlsandbox.characteristics import Characteristics
 from mlsandbox.metafeatures import MetaFeatures
 from mlsandbox.methods import METHODS, Method, available
 
@@ -123,6 +124,11 @@ class Suggestion(StrictModel):
     into the reasoning that made it (FR-2.2).
     """
 
+    characteristics: Characteristics | None = None
+    """This method's row in the qualitative comparison table (D-049), when the benchmark
+    has produced one. `None` rather than a missing field: a method absent from the table
+    is a fact worth being able to see, not a reason to error."""
+
     factors: list[DecisionFactor] = []
     """Why this method, in terms of what the user said.
 
@@ -168,6 +174,7 @@ def for_problem(
     explainability: layer1.Explainability = "not important",
     suspects_non_linearity: layer1.Suspicion = "no",
     suspects_interactions: layer1.Suspicion = "no",
+    characteristics: dict[str, Characteristics] | None = None,
 ) -> Recommendation:
     """Rank the methods that apply to this problem, best first.
 
@@ -211,6 +218,7 @@ def for_problem(
                 expected_shortfall=p.expected_shortfall,
                 uncertainty=p.uncertainty,
                 reasons=reasoned.get(p.method, []),
+                characteristics=(characteristics or {}).get(p.method),
                 factors=_factors_for(by_method.get(p.method), penalised_by, position),
                 excluded_by_constraint=p.method in blocked,
             )

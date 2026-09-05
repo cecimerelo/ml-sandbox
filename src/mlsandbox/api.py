@@ -10,13 +10,14 @@ Only the health endpoint lives here so far. `/recommend` arrives with 2.2.
 
 from __future__ import annotations
 
+import json
 from functools import lru_cache
 from pathlib import Path
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 
-from mlsandbox import artifact, detection, layer1, recommend, upload
+from mlsandbox import artifact, characteristics, detection, layer1, recommend, upload
 from mlsandbox.base import StrictModel
 from mlsandbox.config import load_config
 from mlsandbox.metafeatures import (
@@ -33,9 +34,16 @@ from mlsandbox.methods import METHODS
 MODEL_PATH_PARTS = ("model", "layer2.joblib")
 """Where `scripts/package_model.py` writes the artifact, relative to the data directory."""
 
+CHARACTERISTICS_PATH_PARTS = ("model", "characteristics.json")
+"""Where `scripts/package_model.py` writes the method characteristics table."""
+
 
 def model_path() -> Path:
     return load_config().paths.datasets.parent.joinpath(*MODEL_PATH_PARTS)
+
+
+def characteristics_path() -> Path:
+    return load_config().paths.datasets.parent.joinpath(*CHARACTERISTICS_PATH_PARTS)
 
 
 @lru_cache(maxsize=1)
@@ -62,6 +70,24 @@ def get_model() -> artifact.Artifact:
             "produced results first."
         )
     return artifact.load(path)
+
+
+@lru_cache(maxsize=1)
+def get_characteristics() -> dict[str, characteristics.Characteristics]:
+    """The method characteristics table, loaded once and kept.
+
+    A different file from the model, on purpose: this is derived data computed by
+    `scripts/package_model.py` from the same benchmark run, not something the artifact
+    itself needs to answer a recommendation. Loading it separately means a table rebuild
+    does not require re-fitting Layer 2, and vice versa.
+    """
+    path = characteristics_path()
+    if not path.exists():
+        raise RuntimeError(
+            f"No characteristics table at {path}. Run scripts/package_model.py."
+        )
+    payload = json.loads(path.read_text())
+    return {name: characteristics.Characteristics(**row) for name, row in payload.items()}
 
 
 app = FastAPI(
@@ -238,6 +264,9 @@ class RecommendationRequest(StrictModel):
 def recommend_method(
     request: RecommendationRequest,
     model: Annotated[artifact.Artifact, Depends(get_model)],
+    table: Annotated[
+        dict[str, characteristics.Characteristics], Depends(get_characteristics)
+    ],
 ) -> recommend.Recommendation:
     """Recommend a method for the problem the form describes.
 
@@ -258,4 +287,5 @@ def recommend_method(
         explainability=request.explainability,
         suspects_non_linearity=request.suspects_non_linearity,
         suspects_interactions=request.suspects_interactions,
+        characteristics=table,
     )
