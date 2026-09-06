@@ -63,11 +63,12 @@ export function RecommendationPanel({ result }: { result: Recommendation }) {
         </Box>
       </Section>
 
-      {/* The flowchart — "what led to this" as a diagram rather than a list. Built from
-          the same factors above, in the same order: it is not a second account of the
-          decision, it is the first one drawn. */}
+      {/* The flowchart — every question the engine checked, not just the ones the "what
+          led to this" list above shows. That list only carries rules that favoured the
+          recommended method, so typical answers leave it empty; checkpoints is the full
+          set, so there is always something here to check the recommendation against. */}
       <Section heading="How the engine got here">
-        <Flowchart method={recommended.label} factors={recommended.factors} />
+        <Flowchart method={recommended.label} checkpoints={result.checkpoints} />
       </Section>
 
       {/* The tie is marked on the method it applies to, not announced separately above.

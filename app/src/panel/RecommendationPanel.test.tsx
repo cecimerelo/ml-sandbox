@@ -39,6 +39,7 @@ function result(overrides: Partial<Recommendation> = {}): Recommendation {
       suggestion({ method: 'knn', label: 'K-Nearest Neighbours', expected_shortfall: 0.15 }),
     ],
     excluded: [],
+    checkpoints: [],
     support: { field: 'rows', answer: '500-10k', datasets: 30, total: 106 },
     provisional: false,
     ...overrides,

@@ -78,10 +78,27 @@ export interface Support {
   total: number;
 }
 
+export interface Checkpoint {
+  question: string;
+  answer: string;
+  fired: boolean;
+  /** What the rule argues (if fired), or a stated reason nothing applied (if not). */
+  claim: string;
+}
+
 export interface Recommendation {
   recommended: Suggestion;
   alternatives: Suggestion[];
   excluded: Suggestion[];
+  /**
+   * Every question ISLR was asked about this problem, whether or not it fired.
+   *
+   * `recommended.factors` only lists rules that favoured the recommended method, so
+   * typical answers leave it empty with nothing to explain why. This is the full set: the
+   * flowchart is built from it so a reader always has something to check the
+   * recommendation against, not just a message saying nothing happened.
+   */
+  checkpoints: Checkpoint[];
   support: Support;
   provisional: boolean;
 }
