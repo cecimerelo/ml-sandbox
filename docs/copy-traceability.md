@@ -52,6 +52,17 @@ James, Witten, Hastie & Tibshirani, *An Introduction to Statistical Learning*, 2
 | `panel.bias-variance.explanation` | Methods trade steadiness against the ability to follow detail, and neither end is right in general | Ch. 2, *Assessing Model Accuracy* — the bias-variance trade-off | the flexibility rules as a set |
 | `panel.interpretability.explanation` | Whether a prediction can be explained is separate from whether it is accurate | Ch. 2, *Prediction Accuracy vs. Model Interpretability* | `Method.explainability` |
 
+## Panel structure and status text
+
+Headings, column labels and status sentences — `panel.suggested-method.label` through
+`panel.provisional` in `catalogue.ts`. These carry no theoretical claim, so there is no
+source to cite: `panel.stale` says the form has moved on since the recommendation was
+computed, `panel.evidence.*` reports how much of the benchmark resembled this problem,
+`panel.tied.*` marks two methods the model cannot separate. Each is checked by
+`catalogue.test.ts`'s general constraints (citation-free, no unglossed jargon, no verdict
+stronger than the engine supports) the same as every other entry — there is simply no
+"Source" cell to fill in, because the sentence asserts nothing from the reference text.
+
 ## Disabled reasons
 
 Generated from the method registry rather than written here, so the study and the interface

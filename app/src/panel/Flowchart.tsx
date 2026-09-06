@@ -5,6 +5,7 @@ import Box from '@mui/material/Box';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import Typography from '@mui/material/Typography';
 
+import { PANEL, fill } from '../copy/catalogue';
 import { chart, series, spacing } from '../theme/tokens';
 import type { Checkpoint } from './types';
 
@@ -63,8 +64,7 @@ export function Flowchart({
         </Box>
       ) : (
         <Typography sx={{ mb: 2 }}>
-          None of your answers pushed this choice in particular — {method} is simply the
-          strongest performer on data in general, based on the benchmark.
+          {fill(PANEL['panel.flowchart.no-checkpoints'], { method })}
         </Typography>
       )}
 
@@ -77,7 +77,7 @@ export function Flowchart({
         >
           <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ px: 0 }}>
             <Typography variant="body2" color="text.secondary">
-              What we discarded
+              {PANEL['panel.flowchart.discarded-heading']}
             </Typography>
           </AccordionSummary>
           <AccordionDetails sx={{ px: 0 }}>
@@ -131,7 +131,7 @@ function TerminalNode({ method }: { method: string }) {
       <Node terminal>
         <Typography sx={{ fontWeight: 700 }}>{method}</Typography>
         <Typography variant="body2" color="text.secondary">
-          recommended
+          {PANEL['panel.flowchart.recommended']}
         </Typography>
       </Node>
     </Box>

@@ -6,6 +6,7 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 
+import { PANEL } from '../copy/catalogue';
 import { chrome } from '../theme/tokens';
 import type { Axis, Suggestion } from './types';
 
@@ -40,12 +41,12 @@ export function CharacteristicsTable({
       <Table size="small" sx={{ minWidth: 560 }}>
         <TableHead>
           <TableRow>
-            <TableCell>Method</TableCell>
-            <TableCell>Interpretability</TableCell>
-            <TableCell>Handles non-linearity</TableCell>
-            <TableCell>Handles missing values</TableCell>
-            <TableCell>Accuracy potential</TableCell>
-            <TableCell>Training speed</TableCell>
+            <TableCell>{PANEL['panel.characteristics.column.method']}</TableCell>
+            <TableCell>{PANEL['panel.characteristics.column.interpretability']}</TableCell>
+            <TableCell>{PANEL['panel.characteristics.column.non-linearity']}</TableCell>
+            <TableCell>{PANEL['panel.characteristics.column.missing-values']}</TableCell>
+            <TableCell>{PANEL['panel.characteristics.column.accuracy']}</TableCell>
+            <TableCell>{PANEL['panel.characteristics.column.speed']}</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
