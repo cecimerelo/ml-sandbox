@@ -1,3 +1,4 @@
+import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
@@ -20,10 +21,29 @@ import type { Position as PositionType, Recommendation, Suggestion, Support } fr
  * trained on the user's data. It works with or without an uploaded dataset, which is the
  * whole of the advice-only product.
  */
-export function RecommendationPanel({ result }: { result: Recommendation }) {
+export function RecommendationPanel({
+  result,
+  stale = false,
+}: {
+  result: Recommendation;
+  /**
+   * Whether the form's answers have moved on since this recommendation was worked out.
+   *
+   * The recommendation itself is never recomputed on change (FR-1.7) — this only says so,
+   * so a reader doesn't mistake an answer they've since changed for the one this was built
+   * from.
+   */
+  stale?: boolean;
+}) {
   const { recommended, alternatives, excluded, support, provisional } = result;
   return (
     <Paper variant="outlined" sx={{ p: 3, mt: `${spacing.sectionGap}px` }}>
+      {stale && (
+        <Alert severity="warning" sx={{ mb: 3 }}>
+          Your answers have changed since this recommendation was worked out. Press "Get
+          Recommendation" again to update it.
+        </Alert>
+      )}
       <Typography variant="overline" color="text.secondary">
         Suggested method
       </Typography>

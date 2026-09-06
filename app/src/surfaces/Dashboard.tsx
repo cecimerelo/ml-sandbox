@@ -24,11 +24,13 @@ import { spacing } from '../theme/tokens';
 export function Dashboard() {
   const [result, setResult] = useState<Recommendation | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
+  const [stale, setStale] = useState(false);
   const [dataset, setDataset] = useState<{ file: File; summary: DatasetSummary } | null>(null);
   const [detection, setDetection] = useState<Detection | null>(null);
 
   async function ask(request: RecommendationRequest) {
     setFailed(null);
+    setStale(false);
     // Cleared before the request. Leaving the previous recommendation on screen while a
     // new one is computed shows an answer to a question the user has already changed.
     setResult(null);
@@ -102,7 +104,14 @@ export function Dashboard() {
           />
         )}
 
-        <ProblemForm onSubmit={ask} detection={detection} />
+        <ProblemForm
+          onSubmit={ask}
+          detection={detection}
+          // Only meaningful once there is a recommendation on screen for the answers to
+          // outrun. The form itself never recomputes on change (FR-1.7) — this only flags
+          // that what's showing was worked out from answers that no longer match.
+          {...(result ? { onChange: () => setStale(true) } : {})}
+        />
 
         {failed && (
           <Alert severity="error" sx={{ mt: 4 }}>
@@ -110,7 +119,7 @@ export function Dashboard() {
           </Alert>
         )}
       </Box>
-      <DashboardResult result={result} failed={failed} />
+      <DashboardResult result={result} failed={failed} stale={stale} />
     </>
   );
 }
@@ -118,9 +127,11 @@ export function Dashboard() {
 function DashboardResult({
   result,
   failed,
+  stale,
 }: {
   result: Recommendation | null;
   failed: string | null;
+  stale: boolean;
 }) {
   if (!result || failed) return null;
   // Wider than the reading column above it, and sized to its own content rather than a
@@ -129,7 +140,7 @@ function DashboardResult({
   // be, not narrower with a scrollbar or wider with empty margin.
   return (
     <Box sx={{ width: 'fit-content', maxWidth: spacing.contentMax, mx: 'auto' }}>
-      <RecommendationPanel result={result} />
+      <RecommendationPanel result={result} stale={stale} />
     </Box>
   );
 }

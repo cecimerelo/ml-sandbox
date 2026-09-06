@@ -46,10 +46,10 @@ function result(overrides: Partial<Recommendation> = {}): Recommendation {
   };
 }
 
-function show(r: Recommendation = result()) {
+function show(r: Recommendation = result(), stale = false) {
   render(
     <ThemeProvider theme={theme}>
-      <RecommendationPanel result={r} />
+      <RecommendationPanel result={r} stale={stale} />
     </ThemeProvider>,
   );
 }
@@ -241,6 +241,21 @@ describe('the method\'s fixed properties, inside "what led to this"', () => {
     expect(list).not.toBeNull();
     expect(list?.textContent).toContain('The chosen method is flexible');
     expect(list?.textContent).toContain('The chosen method is opaque');
+  });
+});
+
+describe('a stale recommendation', () => {
+  it('says nothing when the answers still match what produced it', () => {
+    show(result(), false);
+    expect(screen.queryByText(/answers have changed/i)).toBeNull();
+  });
+
+  it('warns that the answers have moved on, without hiding the recommendation itself', () => {
+    show(result(), true);
+    expect(screen.getByText(/answers have changed/i)).toBeInTheDocument();
+    // The stale recommendation is still shown in full — FR-1.7 means it is never silently
+    // recomputed or withdrawn, only flagged.
+    expect(screen.getByText('Random Forest')).toBeInTheDocument();
   });
 });
 

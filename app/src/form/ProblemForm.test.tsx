@@ -151,6 +151,36 @@ describe('nothing happens until asked', () => {
   });
 });
 
+describe('the onChange callback', () => {
+  it('fires on every answer, so a stale recommendation can be flagged elsewhere', async () => {
+    const onSubmit = vi.fn();
+    const onChange = vi.fn();
+    render(
+      <ThemeProvider theme={theme}>
+        <ProblemForm onSubmit={onSubmit} onChange={onChange} />
+      </ThemeProvider>,
+    );
+    const user = userEvent.setup();
+    await answer(user, /what are you trying to predict/i, 'A number');
+    expect(onChange).toHaveBeenCalledTimes(1);
+    await answer(user, /how many rows/i, '500 to 10,000');
+    expect(onChange).toHaveBeenCalledTimes(2);
+  });
+
+  it('never recomputes the recommendation itself — only onSubmit does that', async () => {
+    const onSubmit = vi.fn();
+    const onChange = vi.fn();
+    render(
+      <ThemeProvider theme={theme}>
+        <ProblemForm onSubmit={onSubmit} onChange={onChange} />
+      </ThemeProvider>,
+    );
+    const user = userEvent.setup();
+    await answer(user, /what are you trying to predict/i, 'A number');
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+});
+
 describe('the explanations', () => {
   it('are visible without being asked for', () => {
     setup();

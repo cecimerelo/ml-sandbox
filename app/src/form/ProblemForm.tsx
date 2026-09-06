@@ -72,9 +72,16 @@ const copy = Object.fromEntries(FORM_QUESTIONS.map((q) => [q.id, q]));
 
 export function ProblemForm({
   onSubmit,
+  onChange,
   detection,
 }: {
   onSubmit: (request: RecommendationRequest) => void;
+  /**
+   * Fired whenever an answer changes by the user's own hand — not on the initial fill from
+   * a detection. Exists so a stale recommendation on screen can be flagged; it never
+   * triggers a recompute itself (FR-1.7 still holds).
+   */
+  onChange?: () => void;
   /**
    * What was read from an uploaded file, when there is one.
    *
@@ -187,6 +194,7 @@ export function ProblemForm({
           // Editing a flagged answer is itself a confirmation: the user has looked.
           setConfirmed((current) => new Set(current).add(key));
           set(key)(value);
+          onChange?.();
         }}
         {...(detection && detail ? { detected: detail } : {})}
         {...(unsure ? { uncertain: true, onConfirm: () => setConfirmed((c) => new Set(c).add(key)) } : {})}
