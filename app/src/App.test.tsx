@@ -268,11 +268,124 @@ describe('removing a dataset', () => {
     await user.click(screen.getByRole('button', { name: /get recommendation/i }));
     await screen.findByText('Suggested method');
 
+    // The form collapses to its one-line summary once a recommendation exists.
+    await user.click(screen.getByRole('button', { name: /^edit$/i }));
+
     await user.upload(screen.getByLabelText(/upload a csv/i), file('good.csv'));
     await screen.findByText('good.csv');
     await user.click(screen.getByRole('button', { name: /^remove$/i }));
 
     expect(screen.queryByText('Suggested method')).toBeNull();
+    vi.unstubAllGlobals();
+  });
+});
+
+describe('the form summary bar', () => {
+  function stubFetch() {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: true, json: async () => recommendation() }),
+    );
+  }
+
+  async function getRecommendation(user: ReturnType<typeof userEvent.setup>) {
+    await answer(user, /what are you trying to predict/i, 'A number');
+    await answer(user, /how many rows/i, '500 to 10,000');
+    await answer(user, /how many columns/i, '10 to 50');
+    await answer(user, /what kind of columns/i, 'Numbers');
+    await answer(user, /how much of your data is missing/i, 'None');
+    await answer(user, /explain individual predictions/i, 'Not important');
+    await answer(user, /straight line/i, "I don't know");
+    await answer(user, /only matter in combination/i, 'No');
+    await user.click(screen.getByRole('button', { name: /get recommendation/i }));
+    await screen.findByText('Suggested method');
+  }
+
+  it('replaces the expanded form with a one-line summary once a recommendation exists', async () => {
+    stubFetch();
+    const user = userEvent.setup();
+    renderAt('/');
+    expect(screen.getByLabelText(/upload a csv/i)).toBeInTheDocument();
+
+    await getRecommendation(user);
+
+    expect(screen.queryByRole('radiogroup')).toBeNull();
+    expect(screen.getByRole('button', { name: /^edit$/i })).toBeInTheDocument();
+    vi.unstubAllGlobals();
+  });
+
+  it('says the form is collapsed, not a dump of the raw answers', async () => {
+    // Nine bare values with no question beside them read as noise, not as a summary —
+    // confirmed against the actual thing once it was on screen.
+    stubFetch();
+    const user = userEvent.setup();
+    renderAt('/');
+    await getRecommendation(user);
+
+    expect(screen.getByText('Your answers')).toBeInTheDocument();
+    vi.unstubAllGlobals();
+  });
+
+  it('re-expands the form on Edit, with the results still showing below', async () => {
+    stubFetch();
+    const user = userEvent.setup();
+    renderAt('/');
+    await getRecommendation(user);
+
+    await user.click(screen.getByRole('button', { name: /^edit$/i }));
+
+    expect(screen.getByLabelText(/upload a csv/i)).toBeInTheDocument();
+    expect(screen.getByText('Suggested method')).toBeInTheDocument();
+    vi.unstubAllGlobals();
+  });
+
+  it('moves focus to the first field on Edit', async () => {
+    stubFetch();
+    const user = userEvent.setup();
+    renderAt('/');
+    await getRecommendation(user);
+
+    await user.click(screen.getByRole('button', { name: /^edit$/i }));
+
+    expect(screen.getAllByRole('radio')[0]).toHaveFocus();
+    vi.unstubAllGlobals();
+  });
+
+  it('collapses again on Done, without submitting', async () => {
+    stubFetch();
+    const user = userEvent.setup();
+    renderAt('/');
+    await getRecommendation(user);
+    await user.click(screen.getByRole('button', { name: /^edit$/i }));
+
+    await user.click(screen.getByRole('button', { name: /^done$/i }));
+
+    expect(screen.queryByRole('radiogroup')).toBeNull();
+    expect(screen.getByRole('button', { name: /^edit$/i })).toBeInTheDocument();
+    vi.unstubAllGlobals();
+  });
+
+  it('collapses automatically on the next Get Recommendation, without a separate Done click', async () => {
+    stubFetch();
+    const user = userEvent.setup();
+    renderAt('/');
+    await getRecommendation(user);
+    await user.click(screen.getByRole('button', { name: /^edit$/i }));
+
+    await user.click(screen.getByRole('button', { name: /get recommendation/i }));
+    await screen.findByRole('button', { name: /^edit$/i });
+
+    expect(screen.queryByRole('radiogroup')).toBeNull();
+    vi.unstubAllGlobals();
+  });
+
+  it('moves focus to the recommendation heading on a successful run', async () => {
+    stubFetch();
+    const user = userEvent.setup();
+    renderAt('/');
+    await getRecommendation(user);
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Random Forest' })).toHaveFocus();
     vi.unstubAllGlobals();
   });
 });

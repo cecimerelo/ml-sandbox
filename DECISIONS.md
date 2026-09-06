@@ -1895,6 +1895,50 @@ question can be re-asked as it stands, which it cannot once the file is gone.
 
 ---
 
+## D-051 — The top bar is sticky after all
+
+**Date:** 2026-09-06 · **Status:** accepted · **Departs from:** `EXPERIENCE.md § Information Architecture`, `§ App Bar` · **Affects:** [#44](https://github.com/cecimerelo/ml-sandbox/issues/44)
+
+**Context.** The spine settled, explicitly, that the top bar does not stick — the
+collapsed form summary bar built in #44 was reasoned to be the product's one sticky
+element, and a second permanently-parked bar was expected to compete with it for the same
+scroll edge.
+
+Tried as specified, then reversed once the summary bar actually existed to scroll past: on
+a long recommendation panel, losing the way back to the product's name and home link read
+as the page having lost its own chrome, not as restraint.
+
+**Decision.** `TopBar` is `position="sticky"` rather than `static`. The form summary bar
+sticks to `top: spacing.appBarHeight` instead of `top: 0`, so the two stack — each pinned
+to its own edge — rather than the second competing with or hiding behind the first.
+
+**Not two competing sticky bars in practice**, which is what the original reasoning
+guarded against: they occupy different, adjacent bands of the viewport by construction, not
+overlapping regions asking to be resolved by z-index.
+
+---
+
+## D-052 — The form summary bar is not sticky after all
+
+**Date:** 2026-09-06 · **Status:** accepted · **Amends:** [D-051](#d-051--the-top-bar-is-sticky-after-all) · **Affects:** [#44](https://github.com/cecimerelo/ml-sandbox/issues/44)
+
+**Context.** D-051 made the top bar sticky and kept the form summary bar sticky too,
+stacked beneath it, reasoning that two sticky bars pinned to adjacent, non-overlapping
+bands would not compete the way the original single-sticky-element design worried about.
+
+Tried, then reversed by direct instruction the same session: the summary bar's stickiness
+was not working as intended in practice, and once the top bar alone was confirmed sticky
+and sufficient as the one-click way back to the top of the page, keeping a second sticky
+element added complexity the first no longer needed to share the job with.
+
+**Decision.** `FormSummaryBar` drops `position: sticky` entirely. It scrolls away with the
+rest of the page, like everything below the top bar. The top bar remains the product's
+only sticky element — which is the rule D-051 departed from and this restores, just not by
+reverting D-051 itself: the top bar staying sticky was confirmed correct independently of
+whether the summary bar also is.
+
+---
+
 ## D-049 — Two of the table's five axes are measured, not declared
 
 **Date:** 2026-09-05 · **Status:** accepted · **Departs from:** `DESIGN.md § Method characteristics table` · **Affects:** [#38](https://github.com/cecimerelo/ml-sandbox/issues/38)
