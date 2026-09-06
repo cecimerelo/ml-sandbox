@@ -216,9 +216,10 @@ describe('removing a dataset', () => {
     vi.unstubAllGlobals();
   });
 
-  it('keeps the answers the user gave themselves', async () => {
-    // Explainability, non-linearity and interactions were never the file's to fill in, and
-    // removing a CSV is no reason to make someone say again what they need.
+  it('leaves manual answers alone when no target was ever confirmed', async () => {
+    // No detection ever completed here — the file was removed before a target column was
+    // picked — so there is nothing this reset the way `ProblemForm.test.tsx` covers
+    // explicitly for a detection that did land.
     const user = userEvent.setup();
     vi.stubGlobal(
       'fetch',
@@ -239,4 +240,183 @@ describe('removing a dataset', () => {
     expect(within(after).getByRole('radio', { name: 'Critical' })).toBeChecked();
     vi.unstubAllGlobals();
   });
+
+  it('clears an existing recommendation rather than leaving it stale', async () => {
+    // Removing the file took the premise the recommendation was worked out from, not just
+    // made an answer old — dimming it and offering "press Get Recommendation again" would
+    // point at a question the form can no longer even ask.
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => {
+        if (url === '/api/dataset') {
+          return { ok: true, json: async () => ({ columns: ['a', 'b'], rows: 5, skipped: [] }) };
+        }
+        return { ok: true, json: async () => recommendation() };
+      }),
+    );
+    renderAt('/');
+
+    await answer(user, /what are you trying to predict/i, 'A number');
+    await answer(user, /how many rows/i, '500 to 10,000');
+    await answer(user, /how many columns/i, '10 to 50');
+    await answer(user, /what kind of columns/i, 'Numbers');
+    await answer(user, /how much of your data is missing/i, 'None');
+    await answer(user, /explain individual predictions/i, 'Not important');
+    await answer(user, /straight line/i, "I don't know");
+    await answer(user, /only matter in combination/i, 'No');
+    await user.click(screen.getByRole('button', { name: /get recommendation/i }));
+    await screen.findByText('Suggested method');
+
+    // The form collapses to its one-line summary once a recommendation exists.
+    await user.click(screen.getByRole('button', { name: /^edit$/i }));
+
+    await user.upload(screen.getByLabelText(/upload a csv/i), file('good.csv'));
+    await screen.findByText('good.csv');
+    await user.click(screen.getByRole('button', { name: /^remove$/i }));
+
+    expect(screen.queryByText('Suggested method')).toBeNull();
+    vi.unstubAllGlobals();
+  });
 });
+
+describe('the form summary bar', () => {
+  function stubFetch() {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: true, json: async () => recommendation() }),
+    );
+  }
+
+  async function getRecommendation(user: ReturnType<typeof userEvent.setup>) {
+    await answer(user, /what are you trying to predict/i, 'A number');
+    await answer(user, /how many rows/i, '500 to 10,000');
+    await answer(user, /how many columns/i, '10 to 50');
+    await answer(user, /what kind of columns/i, 'Numbers');
+    await answer(user, /how much of your data is missing/i, 'None');
+    await answer(user, /explain individual predictions/i, 'Not important');
+    await answer(user, /straight line/i, "I don't know");
+    await answer(user, /only matter in combination/i, 'No');
+    await user.click(screen.getByRole('button', { name: /get recommendation/i }));
+    await screen.findByText('Suggested method');
+  }
+
+  it('replaces the expanded form with a one-line summary once a recommendation exists', async () => {
+    stubFetch();
+    const user = userEvent.setup();
+    renderAt('/');
+    expect(screen.getByLabelText(/upload a csv/i)).toBeInTheDocument();
+
+    await getRecommendation(user);
+
+    expect(screen.queryByRole('radiogroup')).toBeNull();
+    expect(screen.getByRole('button', { name: /^edit$/i })).toBeInTheDocument();
+    vi.unstubAllGlobals();
+  });
+
+  it('says the form is collapsed, not a dump of the raw answers', async () => {
+    // Nine bare values with no question beside them read as noise, not as a summary —
+    // confirmed against the actual thing once it was on screen.
+    stubFetch();
+    const user = userEvent.setup();
+    renderAt('/');
+    await getRecommendation(user);
+
+    expect(screen.getByText('Your answers')).toBeInTheDocument();
+    vi.unstubAllGlobals();
+  });
+
+  it('re-expands the form on Edit, with the results still showing below', async () => {
+    stubFetch();
+    const user = userEvent.setup();
+    renderAt('/');
+    await getRecommendation(user);
+
+    await user.click(screen.getByRole('button', { name: /^edit$/i }));
+
+    expect(screen.getByLabelText(/upload a csv/i)).toBeInTheDocument();
+    expect(screen.getByText('Suggested method')).toBeInTheDocument();
+    vi.unstubAllGlobals();
+  });
+
+  it('moves focus to the first field on Edit', async () => {
+    stubFetch();
+    const user = userEvent.setup();
+    renderAt('/');
+    await getRecommendation(user);
+
+    await user.click(screen.getByRole('button', { name: /^edit$/i }));
+
+    expect(screen.getAllByRole('radio')[0]).toHaveFocus();
+    vi.unstubAllGlobals();
+  });
+
+  it('collapses again on Done, without submitting', async () => {
+    stubFetch();
+    const user = userEvent.setup();
+    renderAt('/');
+    await getRecommendation(user);
+    await user.click(screen.getByRole('button', { name: /^edit$/i }));
+
+    await user.click(screen.getByRole('button', { name: /^done$/i }));
+
+    expect(screen.queryByRole('radiogroup')).toBeNull();
+    expect(screen.getByRole('button', { name: /^edit$/i })).toBeInTheDocument();
+    vi.unstubAllGlobals();
+  });
+
+  it('collapses automatically on the next Get Recommendation, without a separate Done click', async () => {
+    stubFetch();
+    const user = userEvent.setup();
+    renderAt('/');
+    await getRecommendation(user);
+    await user.click(screen.getByRole('button', { name: /^edit$/i }));
+
+    await user.click(screen.getByRole('button', { name: /get recommendation/i }));
+    await screen.findByRole('button', { name: /^edit$/i });
+
+    expect(screen.queryByRole('radiogroup')).toBeNull();
+    vi.unstubAllGlobals();
+  });
+
+  it('moves focus to the recommendation heading on a successful run', async () => {
+    stubFetch();
+    const user = userEvent.setup();
+    renderAt('/');
+    await getRecommendation(user);
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Random Forest' })).toHaveFocus();
+    vi.unstubAllGlobals();
+  });
+});
+
+/** Answer a question by its visible label — mirrors `ProblemForm.test.tsx`'s own helper. */
+async function answer(user: ReturnType<typeof userEvent.setup>, group: RegExp, option: string) {
+  const fieldset = screen.getByRole('radiogroup', { name: group });
+  await user.click(within(fieldset).getByRole('radio', { name: option }));
+}
+
+/** A minimal but shape-complete `/api/recommend` response. */
+function recommendation() {
+  const suggestion = (overrides: Record<string, unknown> = {}) => ({
+    method: 'random_forest',
+    label: 'Random Forest',
+    flexibility: { label: 'flexible', detail: 'splits the data repeatedly' },
+    interpretability: { label: 'opaque', detail: 'no single reason to give for one answer' },
+    expected_shortfall: 0.02,
+    uncertainty: 0.005,
+    reasons: [],
+    factors: [],
+    characteristics: null,
+    excluded_by_constraint: false,
+    ...overrides,
+  });
+  return {
+    recommended: suggestion(),
+    alternatives: [],
+    excluded: [],
+    checkpoints: [],
+    support: { field: 'rows', answer: '500-10k', datasets: 30, total: 106 },
+    provisional: false,
+  };
+}

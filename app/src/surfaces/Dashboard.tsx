@@ -1,9 +1,11 @@
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import type { RecommendationRequest } from '../api/types';
+import { FormSummaryBar } from '../form/FormSummaryBar';
 import { ProblemForm } from '../form/ProblemForm';
 import { RecommendationPanel } from '../panel/RecommendationPanel';
 import type { Recommendation } from '../panel/types';
@@ -27,6 +29,12 @@ export function Dashboard() {
   const [stale, setStale] = useState(false);
   const [dataset, setDataset] = useState<{ file: File; summary: DatasetSummary } | null>(null);
   const [detection, setDetection] = useState<Detection | null>(null);
+  // Whether the full form is on screen rather than its collapsed one-line summary.
+  // Irrelevant until a recommendation exists — there is nothing yet to collapse to, so the
+  // form always renders expanded before the first successful run regardless of this.
+  const [editing, setEditing] = useState(true);
+  const formRef = useRef<HTMLDivElement>(null);
+  const resultRef = useRef<HTMLDivElement>(null);
 
   async function ask(request: RecommendationRequest) {
     setFailed(null);
@@ -45,6 +53,10 @@ export function Dashboard() {
         return;
       }
       setResult(await response.json());
+      // Collapsing here, not only via `Done`, is what "or automatically on the next Get
+      // Recommendation" means: a re-run from the expanded form puts the summary bar back
+      // without a second click.
+      setEditing(false);
     } catch {
       setFailed(
         "We couldn't reach the server, so nothing has been worked out yet. If you're " +
@@ -52,6 +64,38 @@ export function Dashboard() {
       );
     }
   }
+
+  // Moves focus to the first field on `Edit`. Not on the initial mount, where nothing has
+  // been collapsed yet and stealing focus from wherever the page landed would be its own
+  // surprise.
+  const editingRef = useRef(editing);
+  useEffect(() => {
+    if (editing && !editingRef.current) {
+      formRef.current?.querySelector<HTMLElement>('input[type="radio"]')?.focus();
+    }
+    editingRef.current = editing;
+  }, [editing]);
+
+  // On a successful run, the page scrolls to the top and focus moves to the recommendation
+  // heading — the spine's own focus contract, not merely a nicety: someone who cannot see
+  // the page (a screen reader, a zoomed viewport) is otherwise left exactly where they
+  // clicked, with no way to tell the click did anything.
+  //
+  // To the top of the page, not the heading scrolled into view: the form collapsing to
+  // the summary bar shortens everything above the panel, and scrolling only the heading
+  // into view can leave the reader mid-page with the summary bar and top bar off-screen
+  // above them, no less disorienting than not scrolling at all.
+  useEffect(() => {
+    if (!result) return;
+    window.scrollTo({ top: 0 });
+    const heading = resultRef.current?.querySelector<HTMLElement>('h2');
+    if (!heading) return;
+    heading.tabIndex = -1;
+    // `preventScroll`: the window scroll above is already the scroll this needs: focusing
+    // without it would let the browser scroll the heading to its own idea of "into view",
+    // fighting the scroll just set.
+    heading.focus({ preventScroll: true });
+  }, [result]);
 
   return (
     <>
@@ -71,55 +115,82 @@ export function Dashboard() {
           behind it. You do not need to upload anything.
         </Typography>
 
-        {/* Above the form, because it is what decides the form's shape.
+        {/* Once a recommendation exists, the form itself is the exception rather than the
+            rule: most of a long results page is spent reading below it, and the summary
+            bar is the one-click way back up. Before that first run there is nothing to
+            collapse to, so the summary bar never shows regardless of `editing`.
+            Hidden with `display`, not unmounted: `ProblemForm` owns its own answer state,
+            and swapping it out of the tree for the summary bar would lose every answer
+            the moment `Edit` tried to bring it back. */}
+        {result && !editing && <FormSummaryBar onEdit={() => setEditing(true)} />}
+        <Box ref={formRef} sx={{ display: result && !editing ? 'none' : 'block' }}>
+          {/* Above the form, because it is what decides the form's shape.
 
-            Accepting a file does not change that shape yet — the questions still have to be
-            answered by hand until detection lands. It is shown anyway so the control can be
-            exercised, and that is a real cost worth naming: someone who uploads a file and
-            then answers the same questions by hand has been given the impression the file
-            was used. Detection is what closes it. */}
-        <Dropzone
-          onAccepted={(file, summary) => {
-            setDataset({ file, summary });
-            // A new file invalidates the old reading. Leaving it would fill the questions
-            // with properties of a dataset nobody uploaded.
-            setDetection(null);
-          }}
-          onCleared={() => {
-            setDataset(null);
-            setDetection(null);
-          }}
-        />
-
-        {/* Choosing the outcome comes before anything else the file can say, because every
-            other reading depends on it. The questions below still have to be answered by
-            hand — carrying the detections into them is the shape switch, which is its own
-            task. */}
-        {dataset && (
-          <DatasetPanel
-            file={dataset.file}
-            columns={dataset.summary.columns}
-            unusable={dataset.summary.skipped}
-            onDetected={setDetection}
+              Accepting a file does not change that shape yet — the questions still have
+              to be answered by hand until detection lands. It is shown anyway so the
+              control can be exercised, and that is a real cost worth naming: someone who
+              uploads a file and then answers the same questions by hand has been given
+              the impression the file was used. Detection is what closes it. */}
+          <Dropzone
+            onAccepted={(file, summary) => {
+              setDataset({ file, summary });
+              // A new file invalidates the old reading. Leaving it would fill the
+              // questions with properties of a dataset nobody uploaded.
+              setDetection(null);
+            }}
+            onCleared={() => {
+              setDataset(null);
+              setDetection(null);
+              // The recommendation was worked out from this file's detections. Marking
+              // it stale rather than clearing it would leave a reader looking at a
+              // dimmed answer to a question the form can no longer even ask — removing
+              // the file took the premise with it, not just made the answer old.
+              setResult(null);
+              setStale(false);
+            }}
           />
-        )}
 
-        <ProblemForm
-          onSubmit={ask}
-          detection={detection}
-          // Only meaningful once there is a recommendation on screen for the answers to
-          // outrun. The form itself never recomputes on change (FR-1.7) — this only flags
-          // that what's showing was worked out from answers that no longer match.
-          {...(result ? { onChange: () => setStale(true) } : {})}
-        />
+          {/* Choosing the outcome comes before anything else the file can say, because
+              every other reading depends on it. The questions below still have to be
+              answered by hand — carrying the detections into them is the shape switch,
+              which is its own task. */}
+          {dataset && (
+            <DatasetPanel
+              file={dataset.file}
+              columns={dataset.summary.columns}
+              unusable={dataset.summary.skipped}
+              onDetected={setDetection}
+            />
+          )}
 
-        {failed && (
-          <Alert severity="error" sx={{ mt: 4 }}>
-            {failed}
-          </Alert>
-        )}
+          <ProblemForm
+            onSubmit={ask}
+            detection={detection}
+            // Only meaningful once there is a recommendation on screen for the answers
+            // to outrun. The form itself never recomputes on change (FR-1.7) — this
+            // only flags that what's showing was worked out from answers that no
+            // longer match.
+            {...(result ? { onChange: () => setStale(true) } : {})}
+          />
+
+          {/* Only once there is something to collapse back to — re-expanding via `Edit`
+              is not itself a reason to force a re-run through `Get Recommendation`. */}
+          {result && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+              <Button onClick={() => setEditing(false)}>Done</Button>
+            </Box>
+          )}
+
+          {failed && (
+            <Alert severity="error" sx={{ mt: 4 }}>
+              {failed}
+            </Alert>
+          )}
+        </Box>
       </Box>
-      <DashboardResult result={result} failed={failed} stale={stale} />
+      <div ref={resultRef}>
+        <DashboardResult result={result} failed={failed} stale={stale} />
+      </div>
     </>
   );
 }

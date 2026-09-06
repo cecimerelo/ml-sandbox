@@ -9,10 +9,11 @@ import { SkipLink } from './SkipLink';
 /**
  * Block 0 — the product's only navigation furniture, on both surfaces.
  *
- * **Not sticky, and that is load-bearing.** The collapsed form summary bar is the single
- * sticky element in the product: it is the one-click route back to the inputs from the
- * bottom of a very long page. A second permanently-parked bar would compete with it for
- * the same edge on the same scroll, so this one scrolls away.
+ * **Sticky**, by direct instruction (D-051) — it used to scroll away on the reasoning
+ * that the collapsed form summary bar was the product's one sticky element and a second
+ * one would compete with it for the same edge. In practice, losing the way back to the
+ * product's name and home link on a long results page read as broken, not as restraint.
+ * The product's only sticky element, now (D-052) — the summary bar itself is not.
  *
  * It sits above the page plane by position and its divider, never by shadow — hence
  * `elevation={0}`.
@@ -23,7 +24,7 @@ import { SkipLink } from './SkipLink';
 export function TopBar() {
   return (
     <AppBar
-      position="static"
+      position="sticky"
       elevation={0}
       // A coloured bar separates itself from the page; the divider hairline the white
       // version needed would be drawing a line that is already there.

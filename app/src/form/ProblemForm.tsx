@@ -118,8 +118,11 @@ export function ProblemForm({
     // user never gave, with nothing on screen saying where they came from — and the
     // caption that used to explain them has gone with the detection.
     //
-    // The three always-asked questions survive: they were the user's own answers, and a
-    // file failing to load is no reason to make someone say again what they need.
+    // The three always-asked questions reset too. `detection` goes null here whether the
+    // file was removed outright, is being replaced by a different one, or just had its
+    // target column re-picked — every one of those is a change to what the file means,
+    // and an answer given about the file as it was a moment ago is not safe to keep
+    // presenting as still true.
     setFilledFrom(null);
     setConfirmed(new Set());
     setAnswers((current) => ({
@@ -130,6 +133,9 @@ export function ProblemForm({
       feature_types: '',
       missing: '',
       class_balance: '',
+      explainability: '',
+      suspects_non_linearity: '',
+      suspects_interactions: '',
     }));
   }
   const set = <K extends keyof Answers>(key: K) => (value: Answers[K]) =>
