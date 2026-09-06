@@ -1864,6 +1864,37 @@ with #44.
 
 ---
 
+## D-050 — Both halves of D-047 reversed once the recommendation existed
+
+**Date:** 2026-09-06 · **Status:** accepted · **Amends:** [D-047](#d-047--removing-a-dataset-removes-what-it-put-there) · **Affects:** [#44](https://github.com/cecimerelo/ml-sandbox/issues/44)
+
+**Context.** D-047 shipped before the recommendation panel did, and left both of its edge
+cases for #44 to settle once one existed: whether the three always-asked questions survive
+a dataset change, and what happens to an existing recommendation when the dataset that
+produced it goes away.
+
+**The three questions no longer survive.** D-047's reasoning was that explainability,
+suspected non-linearity and suspected interactions are the user's own answers, never the
+file's to fill in, so a file failing to load was no reason to make someone repeat them.
+Overridden by direct instruction once a second dataset entered the picture: an answer given
+about one file's columns and carried over silently to a different one is presented as still
+true of a dataset it was never given for, which is the same misattribution D-047 already
+ruled out for the six detected fields. Kept as one rule rather than two — **`detection`
+going `null` resets all nine answers, whatever put it there:** removed, replaced, or the
+same file's target column re-picked. The three are not distinguished by cause, because
+`detection` alone cannot tell a genuine removal apart from the transient clear before a
+replacement resolves (`Dashboard`'s `onAccepted` and `DatasetPanel`'s `choose` both null it
+the same way), and a rule that needed to tell them apart would need a wider signal than
+`detection` to work correctly at all.
+
+**An existing recommendation is cleared, not left stale.** The spine's dimmed-plus-banner
+treatment — reused from the form-answer-changed case (#38) — was rejected: removing the
+file took away the premise the recommendation was worked out from, not just made an answer
+old, and a dimmed panel pointing at "press Get Recommendation again" still implies the
+question can be re-asked as it stands, which it cannot once the file is gone.
+
+---
+
 ## D-049 — Two of the table's five axes are measured, not declared
 
 **Date:** 2026-09-05 · **Status:** accepted · **Departs from:** `DESIGN.md § Method characteristics table` · **Affects:** [#38](https://github.com/cecimerelo/ml-sandbox/issues/38)

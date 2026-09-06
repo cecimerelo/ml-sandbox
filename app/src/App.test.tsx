@@ -216,9 +216,10 @@ describe('removing a dataset', () => {
     vi.unstubAllGlobals();
   });
 
-  it('keeps the answers the user gave themselves', async () => {
-    // Explainability, non-linearity and interactions were never the file's to fill in, and
-    // removing a CSV is no reason to make someone say again what they need.
+  it('leaves manual answers alone when no target was ever confirmed', async () => {
+    // No detection ever completed here — the file was removed before a target column was
+    // picked — so there is nothing this reset the way `ProblemForm.test.tsx` covers
+    // explicitly for a detection that did land.
     const user = userEvent.setup();
     vi.stubGlobal(
       'fetch',

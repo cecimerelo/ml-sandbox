@@ -9,6 +9,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { ProblemForm } from './ProblemForm';
 import { theme } from '../theme/theme';
+import type { Detection } from '../detect/types';
 
 function setup() {
   const onSubmit = vi.fn();
@@ -328,14 +329,18 @@ describe('when the file goes away', () => {
     }
   });
 
-  it('keeps what the user answered themselves', async () => {
-    // A file failing to load is no reason to make someone say again what they need.
+  it('resets what the user answered themselves too', async () => {
+    // Whatever caused `detection` to go null — removed, replaced, or the target column
+    // re-picked — the answer was given about the file as it was a moment ago, and none of
+    // those leave it safe to keep presenting as still true.
     const { user, clear } = rerenderWith(null);
     await answer(user, /explain individual predictions/i, 'Critical');
 
     clear();
     const control = screen.getByRole('radiogroup', { name: /explain individual predictions/i });
-    expect(within(control).getByRole('radio', { name: 'Critical' })).toBeChecked();
+    for (const radio of within(control).getAllByRole('radio')) {
+      expect(radio).not.toBeChecked();
+    }
   });
 
   it('leaves no detected caption behind', async () => {
@@ -343,5 +348,58 @@ describe('when the file goes away', () => {
     expect(screen.getByText(/8,412 rows in your file/)).toBeInTheDocument();
     clear();
     expect(screen.queryByText(/in your file/)).toBeNull();
+  });
+});
+
+describe('replacing one dataset with another', () => {
+  const OTHER_DETECTION: Detection = {
+    ...DETECTION,
+    task: 'binary classification',
+    class_balance: 'roughly equal',
+    n_rows: 120,
+    n_classes: 2,
+  };
+
+  /**
+   * Mirrors the real sequence: the caller nulls `detection` the moment a new file is
+   * accepted, before the new reading resolves. A test that skips the null step tests a
+   * sequence the app never actually produces.
+   */
+  function setup() {
+    const onSubmit = vi.fn();
+    const { rerender } = render(
+      <ThemeProvider theme={theme}>
+        <ProblemForm onSubmit={onSubmit} detection={DETECTION} />
+      </ThemeProvider>,
+    );
+    const show = (detection: Detection | null) =>
+      rerender(
+        <ThemeProvider theme={theme}>
+          <ProblemForm onSubmit={onSubmit} detection={detection} />
+        </ThemeProvider>,
+      );
+    return { user: userEvent.setup(), show };
+  }
+
+  it('re-detects rather than keeping the first file\'s readings', () => {
+    const { show } = setup();
+    expect(screen.getByText(/8,412 rows in your file/)).toBeInTheDocument();
+
+    show(null);
+    show(OTHER_DETECTION);
+    expect(screen.queryByText(/8,412 rows in your file/)).toBeNull();
+    expect(screen.getByText(/120 rows in your file/)).toBeInTheDocument();
+  });
+
+  it('resets the three questions no file answers, since they were about the old dataset', async () => {
+    const { user, show } = setup();
+    await answer(user, /explain individual predictions/i, 'Critical');
+
+    show(null);
+    show(OTHER_DETECTION);
+    const control = screen.getByRole('radiogroup', { name: /explain individual predictions/i });
+    for (const radio of within(control).getAllByRole('radio')) {
+      expect(radio).not.toBeChecked();
+    }
   });
 });
