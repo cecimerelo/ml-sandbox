@@ -169,3 +169,16 @@ def test_a_suggestion_with_no_table_row_reports_none_rather_than_erroring(model)
     """A method absent from the table is a fact worth being able to see, not a crash."""
     result = recommend.for_problem(problem(), model, characteristics={})
     assert result.recommended.characteristics is None
+
+
+def test_the_recommendation_carries_the_full_checkpoint_list(model):
+    """Not per-suggestion: it is about the problem's answers, not any one method's ranking,
+    so it lives once on the Recommendation rather than repeated on each Suggestion."""
+    result = recommend.for_problem(problem(), model)
+    assert len(result.checkpoints) == 10
+
+
+def test_checkpoints_reflect_the_actual_answers_given(model):
+    result = recommend.for_problem(problem(rows="<500"), model)
+    rows_checkpoint = next(c for c in result.checkpoints if c.question == "how many rows")
+    assert rows_checkpoint.fired

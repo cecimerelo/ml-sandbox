@@ -152,6 +152,16 @@ class Recommendation(StrictModel):
     alternatives: list[Suggestion]
     excluded: list[Suggestion]
 
+    checkpoints: list[layer1.Checkpoint]
+    """Every question ISLR was asked about this problem, whether or not it fired.
+
+    `recommended.factors` only ever lists rules that favoured the recommended method, which
+    is correct for "what led to this" but leaves entirely typical answers with an empty
+    list and no way to tell "the engine ignored my answers" from "nothing about them
+    mattered". This is the full set, so a reader always has something to check the
+    recommendation against.
+    """
+
     support: Support
     """How much evidence the study has for a problem shaped like this one.
 
@@ -236,6 +246,12 @@ def for_problem(
         recommended=usable[0],
         alternatives=usable[1 : 1 + ALTERNATIVES],
         excluded=excluded if allowed else [],
+        checkpoints=layer1.checkpoints(
+            features,
+            explainability=explainability,
+            suspects_non_linearity=suspects_non_linearity,
+            suspects_interactions=suspects_interactions,
+        ),
         support=artifact.support(features),
         provisional=artifact.card.is_provisional,
     )
