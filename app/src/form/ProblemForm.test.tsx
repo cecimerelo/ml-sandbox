@@ -198,6 +198,7 @@ describe('the explanations', () => {
 });
 
 const DETECTION = {
+  target: 'price',
   task: 'regression' as const,
   rows: '500-10k' as const,
   features: '10-50' as const,

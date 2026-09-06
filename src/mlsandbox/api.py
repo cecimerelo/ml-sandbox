@@ -17,7 +17,7 @@ from typing import Annotated
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 
-from mlsandbox import artifact, characteristics, detection, layer1, recommend, upload
+from mlsandbox import artifact, characteristics, detection, eda, layer1, recommend, upload
 from mlsandbox.base import StrictModel
 from mlsandbox.config import load_config
 from mlsandbox.metafeatures import (
@@ -228,6 +228,79 @@ async def detect_dataset(
         missing_rate=result.missing_rate,
         dropped_rows=result.dropped_rows,
         uncertain=result.uncertain,
+    )
+
+
+class ColumnInventory(StrictModel):
+    """Every feature's name and chart form, target excluded — the feature picker's stock.
+
+    Cheap to compute (a dtype check per column, no aggregation) so the picker can
+    paginate a 500-column file before any column's actual distribution is asked for.
+    """
+
+    columns: list[eda.ColumnKind]
+    total: int
+
+
+@app.post("/api/dataset/eda/columns")
+async def eda_columns(
+    file: Annotated[UploadFile, File()], target: Annotated[str, Form()]
+) -> ColumnInventory:
+    """List the dataset's features and which chart form each gets.
+
+    The file is sent again rather than remembered, the same as every other dataset
+    endpoint (FR-7.2) — the server keeps it for the length of this call and no longer.
+    """
+    parsed = upload.read(await file.read(), filename=file.filename or "")
+    if isinstance(parsed, upload.Rejected):
+        raise HTTPException(
+            status_code=422, detail={"reason": parsed.reason, "message": parsed.message}
+        )
+    kinds = eda.column_kinds(parsed.frame, target=target)
+    return ColumnInventory(columns=kinds, total=len(kinds))
+
+
+class DistributionsResult(StrictModel):
+    target: eda.Histogram | eda.CategoricalBars
+    features: list[eda.Histogram | eda.CategoricalBars]
+
+
+@app.post("/api/dataset/eda/distributions")
+async def eda_distributions(
+    file: Annotated[UploadFile, File()],
+    target: Annotated[str, Form()],
+    columns: Annotated[list[str] | None, Form()] = None,
+) -> DistributionsResult:
+    """Summarise the requested feature columns, plus the target's own distribution.
+
+    Only the columns actually asked for — the feature picker's current page — are
+    computed. A 500-column file does not mean 500 histograms cross the wire on every
+    request; the picker asks again for the next page.
+
+    **Never a row.** Every summary here is bins and counts (`mlsandbox.eda`), which is
+    what makes this endpoint unable to leak one by accident rather than merely
+    promising not to.
+    """
+    parsed = upload.read(await file.read(), filename=file.filename or "")
+    if isinstance(parsed, upload.Rejected):
+        raise HTTPException(
+            status_code=422, detail={"reason": parsed.reason, "message": parsed.message}
+        )
+
+    requested = columns or []
+    unknown = [c for c in [target, *requested] if c not in parsed.frame.columns]
+    if unknown:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "reason": "unknown-column",
+                "message": f"Not a column in this file: {', '.join(unknown)}.",
+            },
+        )
+
+    return DistributionsResult(
+        target=eda.summarise_column(parsed.frame[target]),
+        features=[eda.summarise_column(parsed.frame[c]) for c in requested],
     )
 
 

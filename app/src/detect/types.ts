@@ -21,6 +21,12 @@ import type {
 } from '../api/types';
 
 export interface Detection {
+  /** The column the user picked as the outcome. Not part of the server's response — the
+   * caller already knows it, since it sent it — attached here so anything downstream
+   * that needs to name the target (the EDA block's own distribution) doesn't need a
+   * second channel just to carry one string. */
+  target: string;
+
   task: Task;
   rows: RowBand;
   features: FeatureBand;

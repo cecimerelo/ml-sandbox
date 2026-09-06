@@ -5,6 +5,7 @@ import Typography from '@mui/material/Typography';
 import { useEffect, useRef, useState } from 'react';
 
 import type { RecommendationRequest } from '../api/types';
+import { EdaBlock } from '../eda/EdaBlock';
 import { FormSummaryBar } from '../form/FormSummaryBar';
 import { ProblemForm } from '../form/ProblemForm';
 import { RecommendationPanel } from '../panel/RecommendationPanel';
@@ -115,6 +116,40 @@ export function Dashboard() {
           behind it. You do not need to upload anything.
         </Typography>
 
+        {/* Above the form, and above the summary bar it collapses to — never hidden by
+            either, so removing or replacing the dataset is always reachable, and so is
+            what's below it. */}
+        <Dropzone
+          onAccepted={(file, summary) => {
+            setDataset({ file, summary });
+            // A new file invalidates the old reading. Leaving it would fill the
+            // questions with properties of a dataset nobody uploaded.
+            setDetection(null);
+          }}
+          onCleared={() => {
+            setDataset(null);
+            setDetection(null);
+            // The recommendation was worked out from this file's detections. Marking
+            // it stale rather than clearing it would leave a reader looking at a
+            // dimmed answer to a question the form can no longer even ask — removing
+            // the file took the premise with it, not just made the answer old.
+            setResult(null);
+            setStale(false);
+          }}
+        />
+
+        {/* Block 3. Right after the upload's own summary line ("400 rows, 5 usable
+            columns"), not after the whole form or the recommendation below it — a
+            reader who just uploaded a file is looking at this part of the screen, and
+            anywhere further down was going undiscovered. Present only with a dataset
+            and a chosen target (FR-3.1). Also outside the collapsible section below,
+            same reason as the dropzone: collapsing the answered questions to their
+            one-line summary is not a reason to also hide the data explorer that answers
+            a different question entirely. */}
+        {dataset && detection && (
+          <EdaBlock file={dataset.file} target={detection.target} />
+        )}
+
         {/* Once a recommendation exists, the form itself is the exception rather than the
             rule: most of a long results page is spent reading below it, and the summary
             bar is the one-click way back up. Before that first run there is nothing to
@@ -124,32 +159,6 @@ export function Dashboard() {
             the moment `Edit` tried to bring it back. */}
         {result && !editing && <FormSummaryBar onEdit={() => setEditing(true)} />}
         <Box ref={formRef} sx={{ display: result && !editing ? 'none' : 'block' }}>
-          {/* Above the form, because it is what decides the form's shape.
-
-              Accepting a file does not change that shape yet — the questions still have
-              to be answered by hand until detection lands. It is shown anyway so the
-              control can be exercised, and that is a real cost worth naming: someone who
-              uploads a file and then answers the same questions by hand has been given
-              the impression the file was used. Detection is what closes it. */}
-          <Dropzone
-            onAccepted={(file, summary) => {
-              setDataset({ file, summary });
-              // A new file invalidates the old reading. Leaving it would fill the
-              // questions with properties of a dataset nobody uploaded.
-              setDetection(null);
-            }}
-            onCleared={() => {
-              setDataset(null);
-              setDetection(null);
-              // The recommendation was worked out from this file's detections. Marking
-              // it stale rather than clearing it would leave a reader looking at a
-              // dimmed answer to a question the form can no longer even ask — removing
-              // the file took the premise with it, not just made the answer old.
-              setResult(null);
-              setStale(false);
-            }}
-          />
-
           {/* Choosing the outcome comes before anything else the file can say, because
               every other reading depends on it. The questions below still have to be
               answered by hand — carrying the detections into them is the shape switch,

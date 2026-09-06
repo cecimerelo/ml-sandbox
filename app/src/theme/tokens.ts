@@ -137,6 +137,19 @@ export const spacing = {
   /** Between major blocks — the largest gap in the system. It says a new idea started. */
   sectionGap: 40,
   fieldGap: 16,
+
+  /** Between plot panels in a grid, and a panel's own default internal padding. */
+  plotGap: 24,
+  /** The panel border-box width floor every breakpoint in the responsive spec is derived
+   * from — not the drawing area, not the SVG. */
+  plotMinWidth: 320,
+  plotPanelPadding: 24,
+  /** Below 400px panel width — every comparison column at every breakpoint. */
+  plotPanelPaddingCompact: 16,
+  /** The default plot box. Decision boundaries, correlation heatmaps and confusion
+   * matrices use 1/1 instead, because both axes are the same kind of thing. */
+  plotAspect: '4 / 3',
+  plotAspectSquare: '1 / 1',
 } as const;
 
 /**
