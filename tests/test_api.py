@@ -215,6 +215,91 @@ def test_a_target_that_is_not_a_column_says_so():
     assert "nonexistent" in response.json()["detail"]["message"]
 
 
+# The EDA block
+
+
+def _houses() -> bytes:
+    from mlsandbox.config import PROJECT_ROOT
+
+    return (PROJECT_ROOT / "examples" / "houses.csv").read_bytes()
+
+
+def eda_columns(target: str = "price"):
+    return client.post(
+        "/api/dataset/eda/columns",
+        files={"file": ("houses.csv", _houses(), "text/csv")},
+        data={"target": target},
+    )
+
+
+def eda_distributions(columns: list[str], target: str = "price"):
+    return client.post(
+        "/api/dataset/eda/distributions",
+        files={"file": ("houses.csv", _houses(), "text/csv")},
+        data={"target": target, "columns": columns},
+    )
+
+
+def test_the_column_inventory_excludes_the_target():
+    body = eda_columns().json()
+    assert "price" not in [c["column"] for c in body["columns"]]
+    assert body["total"] == len(body["columns"]) == 4
+
+
+def test_the_column_inventory_names_each_column_s_chart_form():
+    body = eda_columns().json()
+    kinds = {c["column"]: c["kind"] for c in body["columns"]}
+    assert kinds["size_m2"] == "numeric"
+    assert kinds["city"] == "categorical"
+
+
+def test_distributions_are_computed_only_for_the_requested_columns():
+    body = eda_distributions(["size_m2"]).json()
+    assert [f["column"] for f in body["features"]] == ["size_m2"]
+
+
+def test_the_target_s_own_distribution_is_always_included():
+    body = eda_distributions([]).json()
+    assert body["target"]["column"] == "price"
+
+
+def test_a_numeric_feature_is_a_histogram():
+    body = eda_distributions(["size_m2"]).json()
+    feature = body["features"][0]
+    assert feature["kind"] == "numeric"
+    assert sum(b["count"] for b in feature["bins"]) == 400
+
+
+def test_a_categorical_feature_is_bars():
+    body = eda_distributions(["city"]).json()
+    feature = body["features"][0]
+    assert feature["kind"] == "categorical"
+    assert sum(c["count"] for c in feature["categories"]) == 400
+
+
+def test_neither_endpoint_can_return_a_row():
+    """The privacy claim, checked against the actual response shape rather than
+    promised: nothing on either endpoint carries a field wide enough for a row."""
+    columns_body = eda_columns().json()
+    assert set(columns_body) == {"columns", "total"}
+    assert set(columns_body["columns"][0]) == {"column", "kind"}
+
+    dist_body = eda_distributions(["size_m2", "city"]).json()
+    assert set(dist_body) == {"target", "features"}
+
+
+def test_an_unknown_column_is_422_naming_it():
+    response = eda_distributions(["not_a_real_column"])
+    assert response.status_code == 422
+    assert "not_a_real_column" in response.json()["detail"]["message"]
+
+
+def test_an_unknown_target_is_422_naming_it():
+    response = eda_distributions([], target="not_a_real_column")
+    assert response.status_code == 422
+    assert "not_a_real_column" in response.json()["detail"]["message"]
+
+
 # Recommending a method
 
 
