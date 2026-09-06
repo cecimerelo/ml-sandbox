@@ -239,4 +239,70 @@ describe('removing a dataset', () => {
     expect(within(after).getByRole('radio', { name: 'Critical' })).toBeChecked();
     vi.unstubAllGlobals();
   });
+
+  it('clears an existing recommendation rather than leaving it stale', async () => {
+    // Removing the file took the premise the recommendation was worked out from, not just
+    // made an answer old — dimming it and offering "press Get Recommendation again" would
+    // point at a question the form can no longer even ask.
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => {
+        if (url === '/api/dataset') {
+          return { ok: true, json: async () => ({ columns: ['a', 'b'], rows: 5, skipped: [] }) };
+        }
+        return { ok: true, json: async () => recommendation() };
+      }),
+    );
+    renderAt('/');
+
+    await answer(user, /what are you trying to predict/i, 'A number');
+    await answer(user, /how many rows/i, '500 to 10,000');
+    await answer(user, /how many columns/i, '10 to 50');
+    await answer(user, /what kind of columns/i, 'Numbers');
+    await answer(user, /how much of your data is missing/i, 'None');
+    await answer(user, /explain individual predictions/i, 'Not important');
+    await answer(user, /straight line/i, "I don't know");
+    await answer(user, /only matter in combination/i, 'No');
+    await user.click(screen.getByRole('button', { name: /get recommendation/i }));
+    await screen.findByText('Suggested method');
+
+    await user.upload(screen.getByLabelText(/upload a csv/i), file('good.csv'));
+    await screen.findByText('good.csv');
+    await user.click(screen.getByRole('button', { name: /^remove$/i }));
+
+    expect(screen.queryByText('Suggested method')).toBeNull();
+    vi.unstubAllGlobals();
+  });
 });
+
+/** Answer a question by its visible label — mirrors `ProblemForm.test.tsx`'s own helper. */
+async function answer(user: ReturnType<typeof userEvent.setup>, group: RegExp, option: string) {
+  const fieldset = screen.getByRole('radiogroup', { name: group });
+  await user.click(within(fieldset).getByRole('radio', { name: option }));
+}
+
+/** A minimal but shape-complete `/api/recommend` response. */
+function recommendation() {
+  const suggestion = (overrides: Record<string, unknown> = {}) => ({
+    method: 'random_forest',
+    label: 'Random Forest',
+    flexibility: { label: 'flexible', detail: 'splits the data repeatedly' },
+    interpretability: { label: 'opaque', detail: 'no single reason to give for one answer' },
+    expected_shortfall: 0.02,
+    uncertainty: 0.005,
+    reasons: [],
+    factors: [],
+    characteristics: null,
+    excluded_by_constraint: false,
+    ...overrides,
+  });
+  return {
+    recommended: suggestion(),
+    alternatives: [],
+    excluded: [],
+    checkpoints: [],
+    support: { field: 'rows', answer: '500-10k', datasets: 30, total: 106 },
+    provisional: false,
+  };
+}

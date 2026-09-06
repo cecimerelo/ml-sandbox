@@ -88,6 +88,12 @@ export function Dashboard() {
           onCleared={() => {
             setDataset(null);
             setDetection(null);
+            // The recommendation was worked out from this file's detections. Marking it
+            // stale rather than clearing it would leave a reader looking at a dimmed
+            // answer to a question the form can no longer even ask — removing the file
+            // took the premise with it, not just made the answer old.
+            setResult(null);
+            setStale(false);
           }}
         />
 
