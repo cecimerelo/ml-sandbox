@@ -13,6 +13,41 @@ export interface Position {
   detail: string;
 }
 
+export interface Axis {
+  /** e.g. "high", "moderate", "opaque". */
+  word: string;
+  /** 1 (worst/lowest) to 3 (best/highest), never coloured — an ordinal rating, not a
+   * red/amber/green judgement. */
+  step: 1 | 2 | 3;
+}
+
+export interface Characteristics {
+  method: string;
+  label: string;
+  interpretability: Axis;
+  handles_non_linearity: Axis;
+  handles_missing_values: Axis;
+  /**
+   * Computed from the benchmark, not declared from theory (D-049): nothing in the method
+   * registry states an expected accuracy, and asserting one by hand risked contradicting
+   * a measurement the study actually made.
+   */
+  accuracy_potential: Axis;
+  /** Also computed from the benchmark, for the same reason. */
+  training_speed: Axis;
+}
+
+export interface DecisionFactor {
+  /** The form question whose answer fired this, in the words that question uses. */
+  question: string;
+  /** What the user said. */
+  answer: string;
+  /** What that answer argues, in the words shown to the user. */
+  claim: string;
+  /** The best-ranked method this same answer pushed down, if any. */
+  over: string | null;
+}
+
 export interface Suggestion {
   method: string;
   label: string;
@@ -24,6 +59,15 @@ export interface Suggestion {
   uncertainty: number;
   /** The claims that fired, in the words shown to the user. */
   reasons: string[];
+  /**
+   * The same claims as `reasons`, each tied to the answer that fired it and the method it
+   * beat. What the flowchart is built from: it is literally the path the engine took, not
+   * a diagram redrawn from it.
+   */
+  factors: DecisionFactor[];
+  /** This method's row in the comparison table, or `null` if the benchmark has no row for
+   * it — a fact worth being able to see, not a reason to hide the rest of the panel. */
+  characteristics: Characteristics | null;
   excluded_by_constraint: boolean;
 }
 
@@ -34,10 +78,27 @@ export interface Support {
   total: number;
 }
 
+export interface Checkpoint {
+  question: string;
+  answer: string;
+  fired: boolean;
+  /** What the rule argues (if fired), or a stated reason nothing applied (if not). */
+  claim: string;
+}
+
 export interface Recommendation {
   recommended: Suggestion;
   alternatives: Suggestion[];
   excluded: Suggestion[];
+  /**
+   * Every question ISLR was asked about this problem, whether or not it fired.
+   *
+   * `recommended.factors` only lists rules that favoured the recommended method, so
+   * typical answers leave it empty with nothing to explain why. This is the full set: the
+   * flowchart is built from it so a reader always has something to check the
+   * recommendation against, not just a message saying nothing happened.
+   */
+  checkpoints: Checkpoint[];
   support: Support;
   provisional: boolean;
 }

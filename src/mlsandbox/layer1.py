@@ -350,6 +350,28 @@ def applicable_rules(
     return rules
 
 
+class Checkpoint(StrictModel):
+    """One thing the engine checked, whether or not it moved anything.
+
+    `recommend()`'s `factors` only ever lists rules that fired **in a method's favour** —
+    which is correct for "what led to this", but leaves no trace of the questions that were
+    asked and turned out not to matter. A user with entirely typical answers sees an empty
+    factors list and nothing to explain why: whether that means the engine skipped their
+    answers or found nothing worth saying about them looks identical from the outside.
+
+    This exists to make that distinction visible. There is one `Checkpoint` per question
+    the engine actually evaluates, always — the fired ones carry the same claim `factors`
+    would show; the ones that did not fire say plainly that this particular answer sat
+    inside the range ISLR has no opinion about.
+    """
+
+    question: str
+    answer: str
+    fired: bool
+    claim: str
+    """What the rule argues (if fired), or a stated reason nothing applied (if not)."""
+
+
 def _fire(
     features: MetaFeatures,
     *,
@@ -469,6 +491,193 @@ def _fire(
         else by_name[name]
         for name in fired
     ], triggers
+
+
+def checkpoints(
+    features: MetaFeatures,
+    *,
+    explainability: Explainability = "not important",
+    suspects_non_linearity: Suspicion = "no",
+    suspects_interactions: Suspicion = "no",
+) -> list[Checkpoint]:
+    """Every question the engine checks, in a fixed order, whether or not it fired.
+
+    Mirrors `_fire`'s conditions exactly rather than reusing its output, because `_fire`
+    only records what it needed to score a ranking — the branches that evaluated false left
+    no trace to report on. There is one entry per distinct question `_fire` names, so a
+    reader sees the full set of things ISLR was asked about, not only the ones with
+    something to say.
+    """
+    by_name = {rule.name: rule for rule in RULES}
+
+    small_sample = features.rows == "<500"
+    checkpoints_: list[Checkpoint] = [
+        Checkpoint(
+            question="how many rows",
+            answer=features.rows,
+            fired=small_sample,
+            claim=(
+                by_name["small-sample-favours-simple"].claim
+                if small_sample
+                else "500 rows or more is enough for a flexible method to be trusted, so "
+                "this does not push toward simpler ones."
+            ),
+        )
+    ]
+
+    regime_answer = f"{features.rows} rows against {features.features} columns"
+    if features.regime == "high-dimensional":
+        checkpoints_.append(
+            Checkpoint(
+                question="how many rows and columns",
+                answer=regime_answer,
+                fired=True,
+                claim=by_name["high-dimensional-favours-regularisation"].claim,
+            )
+        )
+    elif features.regime == "data-rich":
+        checkpoints_.append(
+            Checkpoint(
+                question="how many rows and columns",
+                answer=regime_answer,
+                fired=True,
+                claim=by_name["data-rich-affords-flexibility"].claim,
+            )
+        )
+    else:
+        checkpoints_.append(
+            Checkpoint(
+                question="how many rows and columns",
+                answer=regime_answer,
+                fired=False,
+                claim="Your rows-to-columns ratio is not extreme enough to particularly "
+                "favour regularised or flexible methods.",
+            )
+        )
+
+    interpretability_fired = bool(EXPLAINABILITY_STRENGTH[explainability])
+    checkpoints_.append(
+        Checkpoint(
+            question="explaining individual predictions",
+            answer=explainability,
+            fired=interpretability_fired,
+            claim=(
+                by_name["interpretability-required"].claim
+                if interpretability_fired
+                else "You said explaining individual predictions matters little, so this "
+                "does not rule any method out."
+            ),
+        )
+    )
+
+    missing_fired = bool(MISSING_STRENGTH[features.missing])
+    checkpoints_.append(
+        Checkpoint(
+            question="how much is missing",
+            answer=features.missing,
+            fired=missing_fired,
+            claim=(
+                by_name["missing-values-favour-trees"].claim
+                if missing_fired
+                else "No missing values means there is nothing here for tree-based methods "
+                "to have an advantage on."
+            ),
+        )
+    )
+
+    if features.feature_types == "categorical":
+        feature_types_claim = by_name["all-categorical-penalises-distance-methods"].claim
+        feature_types_fired = True
+    elif features.feature_types == "mixed":
+        feature_types_claim = by_name["categorical-features-favour-trees"].claim
+        feature_types_fired = True
+    else:
+        feature_types_claim = (
+            "All-numeric columns mean there is nothing here that favours tree-based "
+            "encoding over any other method."
+        )
+        feature_types_fired = False
+    checkpoints_.append(
+        Checkpoint(
+            question="what kind of columns",
+            answer=features.feature_types,
+            fired=feature_types_fired,
+            claim=feature_types_claim,
+        )
+    )
+
+    many_features = features.features == ">50"
+    checkpoints_.append(
+        Checkpoint(
+            question="how many columns",
+            answer=features.features,
+            fired=many_features,
+            claim=(
+                by_name["many-features-favour-fewer-of-them"].claim
+                if many_features
+                else f"{features.features} columns is not enough on its own to favour "
+                "methods that shrink or combine them."
+            ),
+        )
+    )
+
+    for answer, question, favours_name, not_fired_claim in (
+        (
+            suspects_non_linearity,
+            "whether the pattern is a straight line",
+            "non-linearity-favours-flexible",
+            "You said the pattern looks like a straight line, so this does not favour "
+            "methods that bend to follow curves.",
+        ),
+        (
+            suspects_interactions,
+            "whether columns only matter in combination",
+            "interactions-favour-methods-that-find-them",
+            "You said none of your columns interact, so this does not favour methods that "
+            "find combinations unaided.",
+        ),
+    ):
+        fired = bool(SUSPICION_STRENGTH[answer])
+        checkpoints_.append(
+            Checkpoint(
+                question=question,
+                answer=answer,
+                fired=fired,
+                claim=by_name[favours_name].claim if fired else not_fired_claim,
+            )
+        )
+
+    imbalance_fired = features.class_balance == "one class dominates"
+    checkpoints_.append(
+        Checkpoint(
+            question="category sizes",
+            answer=features.class_balance,
+            fired=imbalance_fired,
+            claim=(
+                by_name["imbalance-penalises-naive-methods"].claim
+                if imbalance_fired
+                else "Your categories are not dominated by one of them, so this does not "
+                "penalise methods that optimise raw accuracy."
+            ),
+        )
+    )
+
+    multiclass_fired = features.task == "multiclass classification"
+    checkpoints_.append(
+        Checkpoint(
+            question="what you are predicting",
+            answer=features.task,
+            fired=multiclass_fired,
+            claim=(
+                by_name["multiclass-penalises-binary-first-methods"].claim
+                if multiclass_fired
+                else "You are not predicting among several categories, so this does not "
+                "penalise methods built for two classes at a time."
+            ),
+        )
+    )
+
+    return checkpoints_
 
 
 def recommend(

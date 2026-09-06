@@ -24,6 +24,8 @@ function suggestion(overrides: Partial<Suggestion> = {}): Suggestion {
     expected_shortfall: 0.02,
     uncertainty: 0.005,
     reasons: [],
+    factors: [],
+    characteristics: null,
     excluded_by_constraint: false,
     ...overrides,
   };
@@ -37,6 +39,7 @@ function result(overrides: Partial<Recommendation> = {}): Recommendation {
       suggestion({ method: 'knn', label: 'K-Nearest Neighbours', expected_shortfall: 0.15 }),
     ],
     excluded: [],
+    checkpoints: [],
     support: { field: 'rows', answer: '500-10k', datasets: 30, total: 106 },
     provisional: false,
     ...overrides,
@@ -238,5 +241,16 @@ describe('the method\'s fixed properties, inside "what led to this"', () => {
     expect(list).not.toBeNull();
     expect(list?.textContent).toContain('The chosen method is flexible');
     expect(list?.textContent).toContain('The chosen method is opaque');
+  });
+});
+
+describe('section order', () => {
+  it('places the characteristics table after the alternatives, since it compares them', () => {
+    show();
+    const order = document.body.textContent ?? '';
+    const alternatives = order.indexOf('Other methods worth considering');
+    const characteristics = order.indexOf('Method characteristics');
+    expect(alternatives).toBeGreaterThan(-1);
+    expect(characteristics).toBeGreaterThan(alternatives);
   });
 });

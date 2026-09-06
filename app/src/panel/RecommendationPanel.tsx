@@ -7,7 +7,9 @@ import Typography from '@mui/material/Typography';
 import { PANEL } from '../copy/catalogue';
 import { renderCopy } from '../copy/render';
 import { spacing } from '../theme/tokens';
+import { CharacteristicsTable } from './CharacteristicsTable';
 import { FitScore } from './FitScore';
+import { Flowchart } from './Flowchart';
 import { indistinguishable } from './types';
 import type { Position as PositionType, Recommendation, Suggestion, Support } from './types';
 
@@ -61,6 +63,14 @@ export function RecommendationPanel({ result }: { result: Recommendation }) {
         </Box>
       </Section>
 
+      {/* The flowchart — every question the engine checked, not just the ones the "what
+          led to this" list above shows. That list only carries rules that favoured the
+          recommended method, so typical answers leave it empty; checkpoints is the full
+          set, so there is always something here to check the recommendation against. */}
+      <Section heading="How the engine got here">
+        <Flowchart method={recommended.label} checkpoints={result.checkpoints} />
+      </Section>
+
       {/* The tie is marked on the method it applies to, not announced separately above.
           A banner listing the same names the list repeats underneath gives a reader two
           places to look and makes the more important half — that these are equivalent —
@@ -73,6 +83,15 @@ export function RecommendationPanel({ result }: { result: Recommendation }) {
             tiedWith={indistinguishable(recommended, s) ? recommended.label : null}
           />
         ))}
+      </Section>
+
+      {/* Advice-only mode's only evidence artifact (DESIGN.md): with no dataset there is
+          nothing to fit and nothing to plot, so this table is the one thing a user can use
+          to judge the recommendation against its alternatives with their own eyes. Placed
+          after the alternatives are named, since it compares exactly the methods that
+          section just listed. */}
+      <Section heading="Method characteristics">
+        <CharacteristicsTable recommended={recommended} alternatives={alternatives} />
       </Section>
 
       {/* Returned rather than hidden. Withholding the best method leaves the user unable

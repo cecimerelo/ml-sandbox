@@ -452,3 +452,91 @@ def test_all_categorical_is_not_merely_more_mixed():
         r.name for r in applicable_rules(problem(feature_types="mixed"))
     }
     assert set(DISTANCE_BASED) == {"knn", "svm_rbf"}
+
+
+# Checkpoints — every question the engine checked, whether or not it fired
+
+
+def test_every_question_is_reported_even_when_none_fired():
+    """The case that motivated this: entirely typical answers produce an empty `factors`
+    list with nothing to say why. A reader cannot tell "the engine skipped my answers"
+    from "nothing about them mattered" without seeing the full set of what was checked."""
+    from mlsandbox.layer1 import checkpoints
+
+    result = checkpoints(problem())
+    assert len(result) == 10
+    assert not any(c.fired for c in result)
+    assert all(c.claim for c in result)
+
+
+def test_a_fired_checkpoint_carries_the_same_claim_a_factor_would():
+    from mlsandbox.layer1 import checkpoints
+
+    result = checkpoints(problem(rows="<500"))
+    rows_checkpoint = next(c for c in result if c.question == "how many rows")
+    assert rows_checkpoint.fired
+    assert "flexible methods" in rows_checkpoint.claim
+
+
+def test_a_checkpoint_that_did_not_fire_still_explains_why():
+    from mlsandbox.layer1 import checkpoints
+
+    result = checkpoints(problem())
+    rows_checkpoint = next(c for c in result if c.question == "how many rows")
+    assert not rows_checkpoint.fired
+    assert rows_checkpoint.answer == "500-10k"
+    assert "does not" in rows_checkpoint.claim
+
+
+def test_the_regime_checkpoint_covers_all_three_bands():
+    from mlsandbox.layer1 import checkpoints
+
+    high_dim = checkpoints(problem(regime="high-dimensional"))
+    data_rich = checkpoints(problem(regime="data-rich"))
+    moderate = checkpoints(problem(regime="moderate"))
+
+    def regime_of(cs):
+        return next(c for c in cs if c.question == "how many rows and columns")
+
+    assert regime_of(high_dim).fired
+    assert regime_of(data_rich).fired
+    assert not regime_of(moderate).fired
+    # Distinct claims, so a reader cannot confuse which band they are in.
+    assert regime_of(high_dim).claim != regime_of(data_rich).claim != regime_of(moderate).claim
+
+
+def test_unsure_still_counts_as_fired_for_the_belief_questions():
+    """Consistent with D-039: `unsure` moves the ranking at half strength, so it is not the
+    same as `no` and must not be reported as un-fired."""
+    from mlsandbox.layer1 import checkpoints
+
+    result = checkpoints(problem(), suspects_non_linearity="unsure")
+    non_linearity = next(c for c in result if "straight line" in c.question)
+    assert non_linearity.fired
+
+
+def test_all_ten_questions_are_named_and_none_duplicated():
+    from mlsandbox.layer1 import checkpoints
+
+    questions = [c.question for c in checkpoints(problem())]
+    assert len(questions) == len(set(questions)) == 10
+
+
+def test_checkpoints_agree_with_fire_on_which_rules_apply():
+    """Not a duplicate implementation drifting from the scoring path — every rule `_fire`
+    would apply for a given input is represented by some fired checkpoint, and vice versa."""
+    from mlsandbox.layer1 import _fire, checkpoints
+
+    features = problem(
+        rows="<500", features=">50", regime="high-dimensional",
+        feature_types="categorical", missing="a lot", class_balance="one class dominates",
+        task="multiclass classification",
+    )
+    kwargs = dict(
+        explainability="critical", suspects_non_linearity="yes", suspects_interactions="yes"
+    )
+    rules, _ = _fire(features, **kwargs)
+    result = checkpoints(features, **kwargs)
+
+    assert len(rules) > 0
+    assert all(c.fired for c in result)
