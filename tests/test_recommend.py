@@ -137,3 +137,48 @@ def _synthetic():
                 }
             )
     return pd.DataFrame(rows), pd.DataFrame(meta)
+
+
+def test_the_recommendation_carries_the_characteristics_table_when_given(model):
+    from mlsandbox.characteristics import Axis, Characteristics
+
+    table = {
+        "random_forest": Characteristics(
+            method="random_forest",
+            label="Random Forest",
+            interpretability=Axis(word="low", step=1),
+            handles_non_linearity=Axis(word="high", step=3),
+            handles_missing_values=Axis(word="yes", step=3),
+            accuracy_potential=Axis(word="high", step=3),
+            training_speed=Axis(word="slow", step=1),
+        )
+    }
+    result = recommend.for_problem(problem(), model, characteristics=table)
+    named = {result.recommended.method, *(s.method for s in result.alternatives)}
+    if "random_forest" in named:
+        row = next(
+            s.characteristics
+            for s in [result.recommended, *result.alternatives]
+            if s.method == "random_forest"
+        )
+        assert row is not None
+        assert row.label == "Random Forest"
+
+
+def test_a_suggestion_with_no_table_row_reports_none_rather_than_erroring(model):
+    """A method absent from the table is a fact worth being able to see, not a crash."""
+    result = recommend.for_problem(problem(), model, characteristics={})
+    assert result.recommended.characteristics is None
+
+
+def test_the_recommendation_carries_the_full_checkpoint_list(model):
+    """Not per-suggestion: it is about the problem's answers, not any one method's ranking,
+    so it lives once on the Recommendation rather than repeated on each Suggestion."""
+    result = recommend.for_problem(problem(), model)
+    assert len(result.checkpoints) == 10
+
+
+def test_checkpoints_reflect_the_actual_answers_given(model):
+    result = recommend.for_problem(problem(rows="<500"), model)
+    rows_checkpoint = next(c for c in result.checkpoints if c.question == "how many rows")
+    assert rows_checkpoint.fired

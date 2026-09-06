@@ -8,7 +8,8 @@ import pandas as pd
 from fastapi.testclient import TestClient
 
 from mlsandbox import artifact
-from mlsandbox.api import app, get_model
+from mlsandbox.api import app, get_characteristics, get_model
+from mlsandbox.characteristics import from_benchmark
 from mlsandbox.methods import METHODS
 
 client = TestClient(app)
@@ -24,13 +25,9 @@ SYNTHETIC_FEATURES = dict(
 )
 
 
-def _synthetic_model() -> artifact.Artifact:
-    """A small artifact, so these tests do not need a benchmark run.
-
-    The endpoint used to load the real model at import, which meant the module could not be
-    imported without one — CI could not even collect these tests. Injecting the model is
-    what makes the dependency explicit instead of ambient.
-    """
+def _synthetic_results() -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Results and meta-features for a small collection, shared by the model and the
+    characteristics table so the two are never built from different data."""
     rng = np.random.default_rng(0)
     methods = ["random_forest", "logistic_regression", "knn", "ridge", "mlp", "decision_tree"]
     rows, meta = [], []
@@ -44,20 +41,37 @@ def _synthetic_model() -> artifact.Artifact:
                     {
                         "dataset": name,
                         "method": method,
+                        "task": "binary classification",
                         "score": (0.9 if good else 0.5) + rng.normal(0, 0.01),
                         "status": "ok",
+                        "fit_seconds": 1.0,
                         "missing_rate": 0.0,
                         "fold": fold,
                     }
                 )
-    return artifact.build(
-        pd.DataFrame(rows), pd.DataFrame(meta), seed=0, collection_size=12
-    )
+    return pd.DataFrame(rows), pd.DataFrame(meta)
+
+
+def _synthetic_model() -> artifact.Artifact:
+    """A small artifact, so these tests do not need a benchmark run.
+
+    The endpoint used to load the real model at import, which meant the module could not be
+    imported without one — CI could not even collect these tests. Injecting the model is
+    what makes the dependency explicit instead of ambient.
+    """
+    results, meta = _synthetic_results()
+    return artifact.build(results, meta, seed=0, collection_size=12)
+
+
+def _synthetic_characteristics():
+    results, _ = _synthetic_results()
+    return from_benchmark(results)
 
 
 # Injected rather than read from disk, so a test failure means the endpoint is wrong and
 # not that somebody has not run the benchmark.
 app.dependency_overrides[get_model] = _synthetic_model
+app.dependency_overrides[get_characteristics] = _synthetic_characteristics
 
 
 def test_health_reports_ok():
@@ -223,6 +237,23 @@ def test_a_valid_form_gets_a_recommendation():
     assert body["recommended"]["method"]
     assert body["recommended"]["label"]
     assert len(body["alternatives"]) == 3
+
+
+def test_every_suggestion_carries_its_characteristics_row():
+    """The comparison table's fields travel with each candidate rather than needing a
+    second call, so the panel can render the table without another round trip."""
+    body = ask().json()
+    row = body["recommended"]["characteristics"]
+    assert row["method"] == body["recommended"]["method"]
+    for axis in (
+        "interpretability",
+        "handles_non_linearity",
+        "handles_missing_values",
+        "accuracy_potential",
+        "training_speed",
+    ):
+        assert row[axis]["word"]
+        assert row[axis]["step"] in (1, 2, 3)
 
 
 def test_the_request_schema_is_the_study_s_own_types():

@@ -24,6 +24,8 @@ function suggestion(overrides: Partial<Suggestion> = {}): Suggestion {
     expected_shortfall: 0.02,
     uncertainty: 0.005,
     reasons: [],
+    factors: [],
+    characteristics: null,
     excluded_by_constraint: false,
     ...overrides,
   };
@@ -37,6 +39,7 @@ function result(overrides: Partial<Recommendation> = {}): Recommendation {
       suggestion({ method: 'knn', label: 'K-Nearest Neighbours', expected_shortfall: 0.15 }),
     ],
     excluded: [],
+    checkpoints: [],
     support: { field: 'rows', answer: '500-10k', datasets: 30, total: 106 },
     provisional: false,
     ...overrides,
@@ -253,5 +256,16 @@ describe('a stale recommendation', () => {
     // The stale recommendation is still shown in full — FR-1.7 means it is never silently
     // recomputed or withdrawn, only flagged.
     expect(screen.getByText('Random Forest')).toBeInTheDocument();
+  });
+});
+
+describe('section order', () => {
+  it('places the characteristics table after the alternatives, since it compares them', () => {
+    show();
+    const order = document.body.textContent ?? '';
+    const alternatives = order.indexOf('Other methods worth considering');
+    const characteristics = order.indexOf('Method characteristics');
+    expect(alternatives).toBeGreaterThan(-1);
+    expect(characteristics).toBeGreaterThan(alternatives);
   });
 });

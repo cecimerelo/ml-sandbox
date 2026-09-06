@@ -15,7 +15,7 @@ import warnings
 
 import pandas as pd
 
-from mlsandbox import artifact
+from mlsandbox import artifact, characteristics
 from mlsandbox.config import PROJECT_ROOT, load_config
 from mlsandbox.methods import METHODS
 from mlsandbox.missingness import RATES
@@ -47,8 +47,21 @@ def main() -> int:
     path = config.paths.datasets.parent / "model" / "layer2.joblib"
     artifact.save(built, path)
 
+    # Computed here rather than at server startup: it means reading the full results
+    # parquet once per benchmark run rather than once per server boot, and the table only
+    # ever needs to change when the benchmark does.
+    table = characteristics.from_benchmark(results)
+    table_path = config.paths.datasets.parent / "model" / "characteristics.json"
+    table_path.write_text(
+        json.dumps({name: row.model_dump() for name, row in table.items()}, indent=2)
+        + "\n",
+        encoding="utf-8",
+    )
+
     print(built.card.summary())
     print(f"\nwritten to {path.relative_to(PROJECT_ROOT)}")
+    print(f"characteristics for {len(table)} methods written to "
+          f"{table_path.relative_to(PROJECT_ROOT)}")
 
     # The thinnest evidence in the collection, so a reader knows which answers the model
     # is barely qualified to speak about before it speaks about them.
