@@ -51,7 +51,7 @@ export function DatasetPanel({
         return;
       }
 
-      onDetected(payload);
+      onDetected({ ...payload, target: column });
     } catch {
       setError("We couldn't reach the server, so nothing has been read from your file yet.");
     } finally {
