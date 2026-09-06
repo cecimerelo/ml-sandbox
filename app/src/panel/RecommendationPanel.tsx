@@ -5,7 +5,7 @@ import Divider from '@mui/material/Divider';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 
-import { PANEL } from '../copy/catalogue';
+import { PANEL, fill } from '../copy/catalogue';
 import { renderCopy } from '../copy/render';
 import { spacing } from '../theme/tokens';
 import { CharacteristicsTable } from './CharacteristicsTable';
@@ -40,12 +40,11 @@ export function RecommendationPanel({
     <Paper variant="outlined" sx={{ p: 3, mt: `${spacing.sectionGap}px` }}>
       {stale && (
         <Alert severity="warning" sx={{ mb: 3 }}>
-          Your answers have changed since this recommendation was worked out. Press "Get
-          Recommendation" again to update it.
+          {PANEL['panel.stale']}
         </Alert>
       )}
       <Typography variant="overline" color="text.secondary">
-        Suggested method
+        {PANEL['panel.suggested-method.label']}
       </Typography>
       <Typography variant="h5" component="h2" gutterBottom>
         {recommended.label}
@@ -70,15 +69,14 @@ export function RecommendationPanel({
           ))}
           {recommended.reasons.length === 0 && (
             <Typography component="li" color="text.secondary">
-              Nothing about your problem pushed strongly in any direction, so this is the
-              method that does best on data in general.
+              {PANEL['panel.no-reasons']}
             </Typography>
           )}
           <li>
-            <Position method="The chosen method" position={recommended.flexibility} />
+            <Position method={PANEL['panel.chosen-method.subject']} position={recommended.flexibility} />
           </li>
           <li>
-            <Position method="The chosen method" position={recommended.interpretability} />
+            <Position method={PANEL['panel.chosen-method.subject']} position={recommended.interpretability} />
           </li>
         </Box>
       </Section>
@@ -87,7 +85,7 @@ export function RecommendationPanel({
           led to this" list above shows. That list only carries rules that favoured the
           recommended method, so typical answers leave it empty; checkpoints is the full
           set, so there is always something here to check the recommendation against. */}
-      <Section heading="How the engine got here">
+      <Section heading={PANEL['panel.flowchart.heading']}>
         <Flowchart method={recommended.label} checkpoints={result.checkpoints} />
       </Section>
 
@@ -95,7 +93,7 @@ export function RecommendationPanel({
           A banner listing the same names the list repeats underneath gives a reader two
           places to look and makes the more important half — that these are equivalent —
           read as a footnote to the less important half. */}
-      <Section heading="Other methods worth considering">
+      <Section heading={PANEL['panel.alternatives.heading']}>
         {alternatives.map((s) => (
           <Alternative
             key={s.method}
@@ -110,17 +108,16 @@ export function RecommendationPanel({
           to judge the recommendation against its alternatives with their own eyes. Placed
           after the alternatives are named, since it compares exactly the methods that
           section just listed. */}
-      <Section heading="Method characteristics">
+      <Section heading={PANEL['panel.characteristics.heading']}>
         <CharacteristicsTable recommended={recommended} alternatives={alternatives} />
       </Section>
 
       {/* Returned rather than hidden. Withholding the best method leaves the user unable
           to see what their own constraint cost them. */}
       {excluded.length > 0 && (
-        <Section heading="Ruled out by what you told us">
+        <Section heading={PANEL['panel.excluded.heading']}>
           <Typography color="text.secondary" sx={{ mb: 1 }}>
-            You said you need to explain individual predictions, so these are not available
-            — even where they would score better.
+            {PANEL['panel.excluded.explanation']}
           </Typography>
           {excluded.slice(0, 3).map((s) => (
             <Alternative key={s.method} suggestion={s} />
@@ -135,15 +132,14 @@ export function RecommendationPanel({
           dataset, every number is from the benchmark alone, and a reader could otherwise
           take "based on 106 datasets" to mean their file was one of them. */}
       <Typography variant="body2" color="text.secondary">
-        This suggestion is based only on your answers to the form — nothing here has been
-        trained or tested on your own data.
+        {PANEL['panel.disclaimer']}
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
         {evidence(support)}
       </Typography>
       {provisional && (
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-          This is built on an unfinished benchmark, so treat it as provisional.
+          {PANEL['panel.provisional']}
         </Typography>
       )}
     </Paper>
@@ -197,10 +193,10 @@ function Alternative({
         // needed. `title` carries the reason for anyone who wants it, without spending a
         // line of body text on every tied method.
         <Chip
-          label="≈ tied"
+          label={PANEL['panel.tied.chip']}
           size="small"
           variant="outlined"
-          title={`Too close to call apart from ${tiedWith} — the model does not distinguish them.`}
+          title={fill(PANEL['panel.tied.title'], { method: tiedWith })}
         />
       )}
     </Box>
@@ -226,14 +222,11 @@ const FIELD_LABEL: Record<string, string> = {
 function evidence(support: Support): string {
   const field = FIELD_LABEL[support.field] ?? support.field;
   if (support.datasets === 0) {
-    return (
-      `No dataset in the study had an answer like yours for ${field}, so this ` +
-      'suggestion is worked out from neighbouring cases rather than measured on data like ' +
-      'yours.'
-    );
+    return fill(PANEL['panel.evidence.none'], { field });
   }
-  return (
-    `Based on ${support.total} datasets, of which ${support.datasets} resembled yours on ` +
-    `${field}.`
-  );
+  return fill(PANEL['panel.evidence.some'], {
+    total: support.total,
+    datasets: support.datasets,
+    field,
+  });
 }

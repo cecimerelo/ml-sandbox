@@ -148,7 +148,61 @@ export const PANEL = {
 
   'panel.factors.heading': 'What led to this',
   'panel.provenance.link': 'Where does this come from?',
+
+  'panel.suggested-method.label': 'Suggested method',
+  'panel.chosen-method.subject': 'The chosen method',
+  'panel.no-reasons':
+    'Nothing about your problem pushed strongly in any direction, so this is the method ' +
+    'that does best on data in general.',
+  'panel.stale':
+    'Your answers have changed since this recommendation was worked out. Press "Get ' +
+    'Recommendation" again to update it.',
+
+  'panel.flowchart.heading': 'How the engine got here',
+  'panel.flowchart.no-checkpoints':
+    'None of your answers pushed this choice in particular — {method} is simply the ' +
+    'strongest performer on data in general, based on the benchmark.',
+  'panel.flowchart.discarded-heading': 'What we discarded',
+  'panel.flowchart.recommended': 'recommended',
+
+  'panel.alternatives.heading': 'Other methods worth considering',
+  'panel.tied.chip': '≈ tied',
+  'panel.tied.title':
+    'Too close to call apart from {method} — the model does not distinguish them.',
+
+  'panel.characteristics.heading': 'Method characteristics',
+  'panel.characteristics.column.method': 'Method',
+  'panel.characteristics.column.interpretability': 'Interpretability',
+  'panel.characteristics.column.non-linearity': 'Handles non-linearity',
+  'panel.characteristics.column.missing-values': 'Handles missing values',
+  'panel.characteristics.column.accuracy': 'Accuracy potential',
+  'panel.characteristics.column.speed': 'Training speed',
+
+  'panel.excluded.heading': 'Ruled out by what you told us',
+  'panel.excluded.explanation':
+    'You said you need to explain individual predictions, so these are not available — ' +
+    'even where they would score better.',
+
+  'panel.disclaimer':
+    'This suggestion is based only on your answers to the form — nothing here has been ' +
+    'trained or tested on your own data.',
+  'panel.evidence.some':
+    'Based on {total} datasets, of which {datasets} resembled yours on {field}.',
+  'panel.evidence.none':
+    'No dataset in the study had an answer like yours for {field}, so this suggestion is ' +
+    'worked out from neighbouring cases rather than measured on data like yours.',
+  'panel.provisional': 'This is built on an unfinished benchmark, so treat it as provisional.',
 } as const;
+
+/**
+ * Fill a `{placeholder}` template from the catalogue with a value the interface computed.
+ *
+ * Single braces, never `{{double}}` — that syntax means a glossed term (`render.tsx`), and
+ * reusing it here would make `renderCopy` try to gloss a dataset count.
+ */
+export function fill(template: string, values: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (_, key: string) => String(values[key] ?? `{${key}}`));
+}
 
 /** Every string, flat, for the checks that apply to all of them. */
 export const ALL_STRINGS: Record<string, string> = {
