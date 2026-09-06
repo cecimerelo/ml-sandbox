@@ -52,64 +52,84 @@ export function Dashboard() {
   }
 
   return (
-    // Centred in a reading column rather than filling the page. Text stays left-aligned
-    // inside it: a centred paragraph gives every line a different starting point, and the
-    // eye has to hunt for each one.
-    <Box sx={{ maxWidth: spacing.readingMax, mx: 'auto' }}>
-      {/* The heading and its one-line intro are centred; the questions below are not.
-          A heading is a landmark and reads fine centred, but centring the explanations
-          would give every line a different starting point, and the eye has to hunt for
-          each one. */}
-      <Typography variant="h4" component="h1" align="center" gutterBottom>
-        Describe your problem
-      </Typography>
-      <Typography color="text.secondary" align="center" sx={{ mb: 5 }}>
-        Answer what you can about your data and we will suggest a method, with the reasoning
-        behind it. You do not need to upload anything.
-      </Typography>
+    <>
+      {/* Centred in a reading column rather than filling the page. Text stays left-aligned
+          inside it: a centred paragraph gives every line a different starting point, and the
+          eye has to hunt for each one. */}
+      <Box sx={{ maxWidth: spacing.readingMax, mx: 'auto' }}>
+        {/* The heading and its one-line intro are centred; the questions below are not.
+            A heading is a landmark and reads fine centred, but centring the explanations
+            would give every line a different starting point, and the eye has to hunt for
+            each one. */}
+        <Typography variant="h4" component="h1" align="center" gutterBottom>
+          Describe your problem
+        </Typography>
+        <Typography color="text.secondary" align="center" sx={{ mb: 5 }}>
+          Answer what you can about your data and we will suggest a method, with the reasoning
+          behind it. You do not need to upload anything.
+        </Typography>
 
-      {/* Above the form, because it is what decides the form's shape.
+        {/* Above the form, because it is what decides the form's shape.
 
-          Accepting a file does not change that shape yet — the questions still have to be
-          answered by hand until detection lands. It is shown anyway so the control can be
-          exercised, and that is a real cost worth naming: someone who uploads a file and
-          then answers the same questions by hand has been given the impression the file
-          was used. Detection is what closes it. */}
-      <Dropzone
-        onAccepted={(file, summary) => {
-          setDataset({ file, summary });
-          // A new file invalidates the old reading. Leaving it would fill the questions
-          // with properties of a dataset nobody uploaded.
-          setDetection(null);
-        }}
-        onCleared={() => {
-          setDataset(null);
-          setDetection(null);
-        }}
-      />
-
-      {/* Choosing the outcome comes before anything else the file can say, because every
-          other reading depends on it. The questions below still have to be answered by
-          hand — carrying the detections into them is the shape switch, which is its own
-          task. */}
-      {dataset && (
-        <DatasetPanel
-          file={dataset.file}
-          columns={dataset.summary.columns}
-          unusable={dataset.summary.skipped}
-          onDetected={setDetection}
+            Accepting a file does not change that shape yet — the questions still have to be
+            answered by hand until detection lands. It is shown anyway so the control can be
+            exercised, and that is a real cost worth naming: someone who uploads a file and
+            then answers the same questions by hand has been given the impression the file
+            was used. Detection is what closes it. */}
+        <Dropzone
+          onAccepted={(file, summary) => {
+            setDataset({ file, summary });
+            // A new file invalidates the old reading. Leaving it would fill the questions
+            // with properties of a dataset nobody uploaded.
+            setDetection(null);
+          }}
+          onCleared={() => {
+            setDataset(null);
+            setDetection(null);
+          }}
         />
-      )}
 
-      <ProblemForm onSubmit={ask} detection={detection} />
+        {/* Choosing the outcome comes before anything else the file can say, because every
+            other reading depends on it. The questions below still have to be answered by
+            hand — carrying the detections into them is the shape switch, which is its own
+            task. */}
+        {dataset && (
+          <DatasetPanel
+            file={dataset.file}
+            columns={dataset.summary.columns}
+            unusable={dataset.summary.skipped}
+            onDetected={setDetection}
+          />
+        )}
 
-      {failed && (
-        <Alert severity="error" sx={{ mt: 4 }}>
-          {failed}
-        </Alert>
-      )}
+        <ProblemForm onSubmit={ask} detection={detection} />
 
-      {result && !failed && <RecommendationPanel result={result} />}
+        {failed && (
+          <Alert severity="error" sx={{ mt: 4 }}>
+            {failed}
+          </Alert>
+        )}
+      </Box>
+      <DashboardResult result={result} failed={failed} />
+    </>
+  );
+}
+
+function DashboardResult({
+  result,
+  failed,
+}: {
+  result: Recommendation | null;
+  failed: string | null;
+}) {
+  if (!result || failed) return null;
+  // Wider than the reading column above it, and sized to its own content rather than a
+  // fixed measure: "Method characteristics" needs more than 640px to lay out five columns
+  // without a scrollbar, and the panel should be exactly as wide as that table needs to
+  // be, not narrower with a scrollbar or wider with empty margin.
+  return (
+    <Box sx={{ width: 'fit-content', maxWidth: spacing.contentMax, mx: 'auto' }}>
+      <RecommendationPanel result={result} />
     </Box>
   );
 }
