@@ -12,11 +12,21 @@ export interface HistogramBin {
   count: number;
 }
 
+export interface BoxplotSummary {
+  minimum: number;
+  q1: number;
+  median: number;
+  q3: number;
+  maximum: number;
+  outliers: number[];
+}
+
 export interface Histogram {
   column: string;
   kind: 'numeric';
   bins: HistogramBin[];
   missing: number;
+  boxplot: BoxplotSummary | null;
 }
 
 export interface CategoryCount {
@@ -48,4 +58,10 @@ export interface ColumnInventory {
 export interface DistributionsResult {
   target: Distribution;
   features: Distribution[];
+}
+
+export interface CorrelationMatrix {
+  features: string[];
+  values: number[][];
+  total_numeric: number;
 }

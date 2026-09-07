@@ -304,6 +304,30 @@ async def eda_distributions(
     )
 
 
+@app.post("/api/dataset/eda/correlation")
+async def eda_correlation(
+    file: Annotated[UploadFile, File()], target: Annotated[str, Form()]
+) -> eda.CorrelationMatrix:
+    """The correlation heatmap's data — top-K numeric features by variance, target
+    excluded, K capped at `eda.MAX_CORRELATION_FEATURES`.
+
+    Fewer than two numeric features (including an all-categorical file) is a 200 with
+    an empty matrix, not a 422 — there is genuinely nothing to correlate, and that is a
+    state for the panel to render rather than a request the server refuses.
+    """
+    parsed = upload.read(await file.read(), filename=file.filename or "")
+    if isinstance(parsed, upload.Rejected):
+        raise HTTPException(
+            status_code=422, detail={"reason": parsed.reason, "message": parsed.message}
+        )
+    if target not in parsed.frame.columns:
+        raise HTTPException(
+            status_code=422,
+            detail={"reason": "unknown-column", "message": f"Not a column in this file: {target}."},
+        )
+    return eda.correlation_matrix(parsed.frame, exclude=target)
+
+
 class RecommendationRequest(StrictModel):
     """The form's answers.
 

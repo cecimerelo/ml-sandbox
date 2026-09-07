@@ -5,6 +5,7 @@ Thin for now — the health endpoint and the property that makes it worth having
 
 import numpy as np
 import pandas as pd
+import pytest
 from fastapi.testclient import TestClient
 
 from mlsandbox import artifact
@@ -296,6 +297,39 @@ def test_an_unknown_column_is_422_naming_it():
 
 def test_an_unknown_target_is_422_naming_it():
     response = eda_distributions([], target="not_a_real_column")
+    assert response.status_code == 422
+    assert "not_a_real_column" in response.json()["detail"]["message"]
+
+
+def eda_correlation(target: str = "price"):
+    return client.post(
+        "/api/dataset/eda/correlation",
+        files={"file": ("houses.csv", _houses(), "text/csv")},
+        data={"target": target},
+    )
+
+
+def test_correlation_excludes_the_target():
+    body = eda_correlation().json()
+    assert "price" not in body["features"]
+
+
+def test_correlation_is_a_real_matrix():
+    body = eda_correlation().json()
+    n = len(body["features"])
+    assert len(body["values"]) == n
+    assert all(len(row) == n for row in body["values"])
+    for i in range(n):
+        assert body["values"][i][i] == pytest.approx(1.0)
+
+
+def test_correlation_never_carries_a_raw_row():
+    body = eda_correlation().json()
+    assert set(body) == {"features", "values", "total_numeric"}
+
+
+def test_correlation_target_that_is_not_a_column_says_so():
+    response = eda_correlation(target="not_a_real_column")
     assert response.status_code == 422
     assert "not_a_real_column" in response.json()["detail"]["message"]
 

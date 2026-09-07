@@ -138,14 +138,26 @@ export function Dashboard() {
           }}
         />
 
-        {/* Block 3. Right after the upload's own summary line ("400 rows, 5 usable
-            columns"), not after the whole form or the recommendation below it — a
-            reader who just uploaded a file is looking at this part of the screen, and
-            anywhere further down was going undiscovered. Present only with a dataset
-            and a chosen target (FR-3.1). Also outside the collapsible section below,
-            same reason as the dropzone: collapsing the answered questions to their
-            one-line summary is not a reason to also hide the data explorer that answers
-            a different question entirely. */}
+        {/* Choosing the outcome comes before anything else the file can say, because
+            every other reading depends on it. Outside the collapsible section below,
+            same reason as the dropzone — never hidden by the form collapsing to its
+            summary bar. */}
+        {dataset && (
+          <DatasetPanel
+            file={dataset.file}
+            columns={dataset.summary.columns}
+            unusable={dataset.summary.skipped}
+            onDetected={setDetection}
+          />
+        )}
+
+        {/* Block 3. Right after the target is chosen, not before — appearing above the
+            question that produces it read as the file explaining itself before being
+            asked to. Present only with a dataset and a chosen target (FR-3.1). Also
+            outside the collapsible section below, same reason as the two blocks above
+            it: collapsing the answered questions to their one-line summary is not a
+            reason to also hide the data explorer that answers a different question
+            entirely. */}
         {dataset && detection && (
           <EdaBlock file={dataset.file} target={detection.target} />
         )}
@@ -159,19 +171,6 @@ export function Dashboard() {
             the moment `Edit` tried to bring it back. */}
         {result && !editing && <FormSummaryBar onEdit={() => setEditing(true)} />}
         <Box ref={formRef} sx={{ display: result && !editing ? 'none' : 'block' }}>
-          {/* Choosing the outcome comes before anything else the file can say, because
-              every other reading depends on it. The questions below still have to be
-              answered by hand — carrying the detections into them is the shape switch,
-              which is its own task. */}
-          {dataset && (
-            <DatasetPanel
-              file={dataset.file}
-              columns={dataset.summary.columns}
-              unusable={dataset.summary.skipped}
-              onDetected={setDetection}
-            />
-          )}
-
           <ProblemForm
             onSubmit={ask}
             detection={detection}
