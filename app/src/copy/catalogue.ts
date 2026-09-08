@@ -207,17 +207,15 @@ export const PANEL = {
  */
 export const CHART = {
   'chart.histogram.subtitle':
-    'Each bar is a range of values from your data; its height is how many rows fall in ' +
-    'that range.',
+    'Each bar is a range of values; its height is how many rows fall in it.',
   'chart.categorical-bars.subtitle':
-    'Each bar is one category from your data; its length is how many rows have it.',
+    'Each bar is one category; its length is how many rows have it.',
   'chart.boxplot.subtitle':
-    'The box spans the middle half of your values, and the line inside it is the ' +
-    'median — the value in the middle if you lined every row up in order. Dots beyond ' +
-    'the whiskers are rows unusually far from the rest.',
+    'The box spans the middle half of your values; dots beyond the whiskers are ' +
+    'unusually far from the rest.',
   'chart.correlation.subtitle':
-    'Each cell compares two columns: blue means they tend to rise together, red means ' +
-    'one tends to rise as the other falls, and pale means barely any relationship at all.',
+    'Blue means two columns rise together, red means one rises as the other falls, ' +
+    'pale means barely any relationship.',
 } as const;
 
 /**

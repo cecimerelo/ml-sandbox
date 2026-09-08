@@ -11,11 +11,25 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { EdaBlock } from './EdaBlock';
 import { theme } from '../theme/theme';
 
-function histogram(column: string) {
+function histogram(column: string, withBoxplot = false) {
   return {
     column,
     kind: 'numeric',
     bins: [{ start: 0, end: 10, count: 5 }],
+    missing: 0,
+    boxplot: withBoxplot
+      ? { minimum: 0, q1: 2, median: 5, q3: 8, maximum: 10, outliers: [] }
+      : null,
+  };
+}
+
+function categorical(column: string) {
+  return {
+    column,
+    kind: 'categorical',
+    categories: [{ category: 'a', count: 5 }],
+    other_count: 0,
+    other_categories: 0,
     missing: 0,
   };
 }
@@ -48,7 +62,7 @@ function stubFetch({
         ok: true,
         json: async () => ({
           target: histogram('price'),
-          features: requested.map(histogram),
+          features: requested.map((column) => histogram(column)),
         }),
       };
     }),
@@ -185,6 +199,86 @@ describe('collapsing on a successful recommendation', () => {
       'aria-expanded',
       'false',
     );
+  });
+});
+
+describe('sections, grouped by chart type', () => {
+  function stubSections() {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url === '/api/dataset/eda/columns') {
+          return {
+            ok: true,
+            json: async () => ({
+              columns: [
+                { column: 'size_m2', kind: 'numeric' },
+                { column: 'city', kind: 'categorical' },
+              ],
+              total: 2,
+            }),
+          };
+        }
+        if (url === '/api/dataset/eda/correlation') {
+          return { ok: true, json: async () => ({ features: [], values: [], total_numeric: 0 }) };
+        }
+        const body = init?.body as FormData;
+        const requested = body.getAll('columns') as string[];
+        return {
+          ok: true,
+          json: async () => ({
+            target: histogram('price', true),
+            features: requested.map((c) =>
+              c === 'city' ? categorical(c) : histogram(c, true),
+            ),
+          }),
+        };
+      }),
+    );
+  }
+
+  it('groups numeric columns under Distributions', async () => {
+    stubSections();
+    const user = userEvent.setup();
+    setup();
+    await user.click(screen.getByRole('button', { name: /explore your data/i }));
+
+    expect(await screen.findByText('Distributions')).toBeInTheDocument();
+  });
+
+  it('puts every numeric column\'s boxplot under one Boxplots heading, one panel each', async () => {
+    stubSections();
+    const user = userEvent.setup();
+    setup();
+    await user.click(screen.getByRole('button', { name: /explore your data/i }));
+
+    expect(await screen.findByText('Boxplots')).toBeInTheDocument();
+    // The "how to read this" explanation appears once, not once per panel.
+    expect(screen.getAllByText(/middle half/i)).toHaveLength(1);
+    // Every numeric column (target + size_m2) still gets its own boxplot panel —
+    // "price (target)" now titles both its Distributions panel and its Boxplots panel.
+    expect(screen.getAllByText('price (target)')).toHaveLength(2);
+    expect(screen.getAllByText('size_m2')).toHaveLength(2);
+  });
+
+  it('groups categorical columns under Categories, separate from Distributions', async () => {
+    stubSections();
+    const user = userEvent.setup();
+    setup();
+    await user.click(screen.getByRole('button', { name: /explore your data/i }));
+
+    expect(await screen.findByText('Categories')).toBeInTheDocument();
+    expect(screen.getByText('city')).toBeInTheDocument();
+  });
+
+  it('says how to read a histogram once, in the Distributions heading, not per panel', async () => {
+    stubSections();
+    const user = userEvent.setup();
+    setup();
+    await user.click(screen.getByRole('button', { name: /explore your data/i }));
+    await screen.findByText('Distributions');
+
+    expect(screen.getAllByText(/range of values/i)).toHaveLength(1);
   });
 });
 

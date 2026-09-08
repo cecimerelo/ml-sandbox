@@ -1,7 +1,3 @@
-import Box from '@mui/material/Box';
-
-import { CHART } from '../copy/catalogue';
-import { BoxplotChart, boxplotRows } from './BoxplotChart';
 import { CategoricalBarChart, categoricalRows } from './CategoricalBarChart';
 import { DistributionTable } from './DistributionTable';
 import { HistogramChart, histogramRows } from './HistogramChart';
@@ -13,42 +9,24 @@ import type { Distribution } from './types';
  * and categorical-bars branches are the same fork `mlsandbox.eda` already made, read
  * back rather than re-decided here.
  *
- * A numeric column gets two panels, stacked: the boxplot first, then the histogram — the
- * five-number summary orients a reader to the column's shape before the finer-grained
- * bar-by-bar view, rather than the other way round.
+ * **No "how to read this" subtitle here.** That line is the same sentence for every
+ * histogram (or every bar chart) in the block, and repeating it under all twelve panels
+ * on a page read as noise rather than as twelve separate explanations — it now lives
+ * once, at the top of the section these panels sit inside (`EdaBlock`, #48).
  *
- * Every subtitle starts from the catalogue's permanent "how to read this" line (#48),
- * with a truncation disclosure — the categorical fold, the missing-value count —
- * appended when either applies. Never silent (DESIGN.md): a reader always has both what
- * the chart is and what was left out of it.
+ * What *is* specific to this column — the categorical fold, the missing-value count —
+ * still renders here, as the panel's `caption`, never silent (DESIGN.md).
  */
 export function DistributionPanel({ title, data }: { title: string; data: Distribution }) {
   if (data.kind === 'numeric') {
-    const subtitle = combine(CHART['chart.histogram.subtitle'], missingNote(data.missing));
+    const caption = missingNote(data.missing);
     return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        {data.boxplot && (
-          <PlotPanel
-            title={title}
-            subtitle={CHART['chart.boxplot.subtitle']}
-            aspect="8 / 3"
-            chart={<BoxplotChart data={data.boxplot} />}
-            table={
-              <DistributionTable
-                rows={boxplotRows(data.boxplot)}
-                columnLabel="Statistic"
-                valueLabel="Value"
-              />
-            }
-          />
-        )}
-        <PlotPanel
-          title={title}
-          subtitle={subtitle}
-          chart={<HistogramChart data={data} />}
-          table={<DistributionTable rows={histogramRows(data)} columnLabel="Range" />}
-        />
-      </Box>
+      <PlotPanel
+        title={title}
+        {...(caption ? { caption } : {})}
+        chart={<HistogramChart data={data} />}
+        table={<DistributionTable rows={histogramRows(data)} columnLabel="Range" />}
+      />
     );
   }
 
@@ -56,15 +34,11 @@ export function DistributionPanel({ title, data }: { title: string; data: Distri
     data.other_categories > 0
       ? `Showing the 15 most common categories, plus ${data.other_categories} more folded into "Other".`
       : undefined;
-  const subtitle = combine(
-    CHART['chart.categorical-bars.subtitle'],
-    truncation,
-    missingNote(data.missing),
-  );
+  const caption = [truncation, missingNote(data.missing)].filter(Boolean).join(' ') || undefined;
   return (
     <PlotPanel
       title={title}
-      subtitle={subtitle}
+      {...(caption ? { caption } : {})}
       chart={<CategoricalBarChart data={data} />}
       table={<DistributionTable rows={categoricalRows(data)} columnLabel="Category" />}
     />
@@ -73,8 +47,4 @@ export function DistributionPanel({ title, data }: { title: string; data: Distri
 
 function missingNote(missing: number): string | undefined {
   return missing > 0 ? `${missing} value${missing === 1 ? '' : 's'} missing, not shown.` : undefined;
-}
-
-function combine(base: string, ...extras: (string | undefined)[]): string {
-  return [base, ...extras].filter(Boolean).join(' ');
 }

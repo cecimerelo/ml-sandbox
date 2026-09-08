@@ -3,7 +3,6 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { DistributionPanel } from './DistributionPanel';
-import { CHART } from '../copy/catalogue';
 import { theme } from '../theme/theme';
 import type { CategoricalBars, Histogram } from './types';
 
@@ -39,36 +38,37 @@ function show(data: Histogram | CategoricalBars) {
 }
 
 describe('a numeric column', () => {
-  it('gives the histogram its permanent how-to-read subtitle, from the catalogue', () => {
-    show(histogram());
-    expect(screen.getByText(CHART['chart.histogram.subtitle'])).toBeInTheDocument();
+  it('renders the histogram only, not a boxplot — that lives in its own section now', () => {
+    const { container } = show(histogram());
+    // One "View as table" per panel; two would mean a second chart snuck in.
+    expect(screen.getAllByRole('button', { name: /view as table/i })).toHaveLength(1);
+    expect(container.querySelectorAll('svg')).toHaveLength(1);
   });
 
-  it('gives the boxplot its own permanent subtitle, not the histogram\'s', () => {
+  it('carries no subtitle — the how-to-read line lives in the section header', () => {
     show(histogram());
-    expect(screen.getByText(CHART['chart.boxplot.subtitle'])).toBeInTheDocument();
+    expect(screen.queryByText(/range of values/i)).toBeNull();
   });
 
-  it('appends the missing-value count to the histogram subtitle, never replacing it', () => {
+  it('states the missing-value count as a caption when there is one', () => {
     show(histogram({ missing: 3 }));
-    const subtitle = screen.getByText(
-      (_, node) => node?.textContent === `${CHART['chart.histogram.subtitle']} 3 values missing, not shown.`,
-    );
-    expect(subtitle).toBeInTheDocument();
+    expect(screen.getByText('3 values missing, not shown.')).toBeInTheDocument();
+  });
+
+  it('says nothing when there is nothing missing', () => {
+    show(histogram({ missing: 0 }));
+    expect(screen.queryByText(/missing/i)).toBeNull();
   });
 });
 
 describe('a categorical column', () => {
-  it('gives the bar chart its permanent how-to-read subtitle', () => {
+  it('carries no subtitle either', () => {
     show(bars());
-    expect(screen.getByText(CHART['chart.categorical-bars.subtitle'])).toBeInTheDocument();
+    expect(screen.queryByText(/how many rows have it/i)).toBeNull();
   });
 
-  it('appends the fold disclosure without dropping the how-to-read line', () => {
+  it('states the fold as a caption, never silently', () => {
     show(bars({ other_count: 6, other_categories: 3 }));
-    const subtitle = screen.getByText((_, node) =>
-      Boolean(node?.textContent?.startsWith(CHART['chart.categorical-bars.subtitle'])),
-    );
-    expect(subtitle.textContent).toMatch(/Other/);
+    expect(screen.getByText(/folded into "Other"/i)).toBeInTheDocument();
   });
 });

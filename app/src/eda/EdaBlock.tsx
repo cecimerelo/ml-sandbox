@@ -8,13 +8,61 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 import { useEffect, useState } from 'react';
+import type React from 'react';
 
+import { CHART } from '../copy/catalogue';
 import { spacing } from '../theme/tokens';
+import { BoxplotPanel } from './BoxplotPanel';
 import { CorrelationHeatmap } from './CorrelationHeatmap';
 import { DistributionPanel } from './DistributionPanel';
-import type { ColumnInventory, CorrelationMatrix, DistributionsResult } from './types';
+import type {
+  CategoricalBars,
+  ColumnInventory,
+  CorrelationMatrix,
+  Distribution,
+  DistributionsResult,
+  Histogram,
+} from './types';
 
 const PAGE_SIZE = 12;
+
+/**
+ * One named group of same-type charts, with the "how to read this" explanation stated
+ * once at the top rather than once per panel — the fix for a page of twelve histograms
+ * each repeating the identical sentence underneath it.
+ */
+function Section({
+  heading,
+  explanation,
+  children,
+}: {
+  heading: string;
+  explanation: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Box sx={{ mb: 4 }}>
+      <Typography sx={{ fontWeight: 700, mb: 0.5 }}>{heading}</Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        {explanation}
+      </Typography>
+      {children}
+    </Box>
+  );
+}
+
+interface Entry {
+  title: string;
+  data: Distribution;
+}
+
+function isNumeric(entry: Entry): entry is Entry & { data: Histogram } {
+  return entry.data.kind === 'numeric';
+}
+
+function isCategorical(entry: Entry): entry is Entry & { data: CategoricalBars } {
+  return entry.data.kind === 'categorical';
+}
 
 /**
  * Block 3 — distributions, the target, and categorical bars, per feature.
@@ -24,10 +72,17 @@ const PAGE_SIZE = 12;
  * by default (FR-3.2): a reader who came for a recommendation should not have to close a
  * block they didn't ask to open.
  *
+ * **Grouped by chart type, not by feature.** A first version rendered one column beside
+ * the next — histogram, then that same column's boxplot, then the next column's
+ * histogram — which repeated the same explanation under every panel. Sections fix that:
+ * one explanation stated once at the top of each chart-type group, with each feature
+ * still getting its own square panel below it — same grid shape as Distributions and
+ * Categories, not one wide strip of boxes fighting over a single shared axis.
+ *
  * **Paginated, never all at once** — a 500-feature file does not mean 500 panels in one
  * accordion. The picker fetches the cheap column inventory first, then only the current
  * page's actual distributions, so a file with hundreds of features costs what is on
- * screen, not what exists.
+ * screen, not what exists. All three sections below share that one page.
  */
 export function EdaBlock({
   file,
@@ -143,6 +198,18 @@ export function EdaBlock({
     };
   }, [inventory, page, file, target]);
 
+  const entries = distributions
+    ? [
+        { title: `${target} (target)`, data: distributions.target },
+        ...distributions.features.map((data) => ({ title: data.column, data })),
+      ]
+    : [];
+  const numericEntries = entries.filter(isNumeric);
+  const categoricalEntries = entries.filter(isCategorical);
+  const boxplotFeatures = numericEntries
+    .filter((e) => e.data.boxplot)
+    .map((e) => ({ column: e.title, boxplot: e.data.boxplot! }));
+
   return (
     <Accordion
       expanded={expanded}
@@ -166,24 +233,53 @@ export function EdaBlock({
           </Box>
         )}
 
+        {/* Not wrapped in `Section` like the three below — those share one explanation
+            across many panels of the same chart type; this is already exactly one
+            self-contained panel, and adding a heading and an explanation above it would
+            duplicate the title and the subtitle already inside it. */}
         {!failed && correlation && (
-          <Box sx={{ mb: 3 }}>
+          <Box sx={{ mb: 4 }}>
             <CorrelationHeatmap data={correlation} />
           </Box>
         )}
 
         {!failed && distributions && inventory && (
           <>
-            <Grid container spacing={spacing.plotGap / spacing.unit} sx={{ mb: 2 }}>
-              <Grid item xs={12} sm={6}>
-                <DistributionPanel title={`${target} (target)`} data={distributions.target} />
-              </Grid>
-              {distributions.features.map((feature) => (
-                <Grid item key={feature.column} xs={12} sm={6}>
-                  <DistributionPanel title={feature.column} data={feature} />
+            {numericEntries.length > 0 && (
+              <Section heading="Distributions" explanation={CHART['chart.histogram.subtitle']}>
+                <Grid container spacing={spacing.plotGap / spacing.unit}>
+                  {numericEntries.map(({ title, data }) => (
+                    <Grid item key={title} xs={12} sm={6}>
+                      <DistributionPanel title={title} data={data} />
+                    </Grid>
+                  ))}
                 </Grid>
-              ))}
-            </Grid>
+              </Section>
+            )}
+
+            {boxplotFeatures.length > 0 && (
+              <Section heading="Boxplots" explanation={CHART['chart.boxplot.subtitle']}>
+                <Grid container spacing={spacing.plotGap / spacing.unit}>
+                  {boxplotFeatures.map(({ column, boxplot }) => (
+                    <Grid item key={column} xs={12} sm={6}>
+                      <BoxplotPanel title={column} data={boxplot} />
+                    </Grid>
+                  ))}
+                </Grid>
+              </Section>
+            )}
+
+            {categoricalEntries.length > 0 && (
+              <Section heading="Categories" explanation={CHART['chart.categorical-bars.subtitle']}>
+                <Grid container spacing={spacing.plotGap / spacing.unit}>
+                  {categoricalEntries.map(({ title, data }) => (
+                    <Grid item key={title} xs={12} sm={6}>
+                      <DistributionPanel title={title} data={data} />
+                    </Grid>
+                  ))}
+                </Grid>
+              </Section>
+            )}
 
             {inventory.total > 0 && (
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
