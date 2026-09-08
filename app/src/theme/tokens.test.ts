@@ -8,7 +8,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { SERIES_NEEDING_RELIEF, chart, chrome, series } from './tokens';
+import { SERIES_NEEDING_RELIEF, chart, chrome, diverging, series, seq } from './tokens';
 import type { Token } from './tokens';
 
 const WHITE = '#ffffff';
@@ -31,6 +31,8 @@ const everyToken: [string, Token][] = [
   ...Object.entries(chrome),
   ...Object.entries(series).map(([k, v]) => [`series-${k}`, v] as [string, Token]),
   ...Object.entries(chart).map(([k, v]) => [`chart-${k}`, v] as [string, Token]),
+  ...Object.entries(seq).map(([k, v]) => [`seq-${k}`, v] as [string, Token]),
+  ...Object.entries(diverging).map(([k, v]) => [`diverging-${k}`, v] as [string, Token]),
 ];
 
 describe('the published contrast ratios', () => {

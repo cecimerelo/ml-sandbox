@@ -38,6 +38,9 @@ function stubFetch({
       if (url === '/api/dataset/eda/columns') {
         return { ok: true, json: async () => inventoryOf(columns) };
       }
+      if (url === '/api/dataset/eda/correlation') {
+        return { ok: true, json: async () => ({ features: [], values: [], total_numeric: 0 }) };
+      }
       const body = init?.body as FormData;
       const requested = body.getAll('columns') as string[];
       requestedColumns.push(...requested);

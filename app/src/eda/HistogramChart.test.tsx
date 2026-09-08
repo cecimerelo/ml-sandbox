@@ -15,6 +15,7 @@ function histogram(overrides: Partial<Histogram> = {}): Histogram {
       { start: 10, end: 20, count: 7 },
     ],
     missing: 0,
+    boxplot: null,
     ...overrides,
   };
 }

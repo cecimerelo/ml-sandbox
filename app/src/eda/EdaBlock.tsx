@@ -10,8 +10,9 @@ import Typography from '@mui/material/Typography';
 import { useEffect, useState } from 'react';
 
 import { spacing } from '../theme/tokens';
+import { CorrelationHeatmap } from './CorrelationHeatmap';
 import { DistributionPanel } from './DistributionPanel';
-import type { ColumnInventory, DistributionsResult } from './types';
+import type { ColumnInventory, CorrelationMatrix, DistributionsResult } from './types';
 
 const PAGE_SIZE = 12;
 
@@ -32,6 +33,7 @@ export function EdaBlock({ file, target }: { file: File; target: string }) {
   const [inventory, setInventory] = useState<ColumnInventory | null>(null);
   const [page, setPage] = useState(0);
   const [distributions, setDistributions] = useState<DistributionsResult | null>(null);
+  const [correlation, setCorrelation] = useState<CorrelationMatrix | null>(null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -50,6 +52,33 @@ export function EdaBlock({ file, target }: { file: File; target: string }) {
           return;
         }
         setInventory(await response.json());
+      } catch {
+        if (!cancelled) setFailed(true);
+      }
+    }
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [file, target]);
+
+  // Independent of pagination — the heatmap is computed once over every numeric
+  // feature, not per page, so it does not re-fetch when the feature picker moves.
+  useEffect(() => {
+    let cancelled = false;
+    setCorrelation(null);
+    async function load() {
+      const body = new FormData();
+      body.append('file', file);
+      body.append('target', target);
+      try {
+        const response = await fetch('/api/dataset/eda/correlation', { method: 'POST', body });
+        if (cancelled) return;
+        if (!response.ok) {
+          setFailed(true);
+          return;
+        }
+        setCorrelation(await response.json());
       } catch {
         if (!cancelled) setFailed(true);
       }
@@ -110,6 +139,12 @@ export function EdaBlock({ file, target }: { file: File; target: string }) {
         {!failed && !distributions && (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
             <CircularProgress size={24} aria-label="Reading your data" />
+          </Box>
+        )}
+
+        {!failed && correlation && (
+          <Box sx={{ mb: 3 }}>
+            <CorrelationHeatmap data={correlation} />
           </Box>
         )}
 

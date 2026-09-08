@@ -11,9 +11,13 @@ import pytest
 from mlsandbox.eda import (
     BIN_COUNT,
     MAX_CATEGORIES_SHOWN,
+    MAX_CORRELATION_FEATURES,
+    BoxplotSummary,
     CategoricalBars,
+    CorrelationMatrix,
     Histogram,
     column_kinds,
+    correlation_matrix,
     summarise_column,
 )
 
@@ -79,6 +83,17 @@ def test_missing_values_are_counted_not_binned():
     assert sum(b.count for b in result.bins) == 3
 
 
+def test_a_boolean_column_is_summarised_not_a_crash():
+    # `is_numeric_dtype` counts bool as numeric, correctly — a `has_garden` column is a
+    # 0/1 measurement, not a category — but numpy's own quantile machinery cannot
+    # subtract two bools to interpolate between them, which crashed the whole endpoint
+    # the one time this shipped without a cast.
+    result = summarise_column(pd.Series([True, False, True, True], name="has_garden"))
+    assert isinstance(result, Histogram)
+    assert result.boxplot is not None
+    assert result.boxplot.median == 1.0
+
+
 def test_an_all_missing_column_is_reported_not_divided_by_zero():
     result = summarise_column(numeric([np.nan, np.nan]))
     assert isinstance(result, Histogram)
@@ -89,7 +104,7 @@ def test_an_all_missing_column_is_reported_not_divided_by_zero():
 def test_a_histogram_never_carries_a_raw_value():
     # The privacy claim, checked structurally: nothing on the model can hold a value
     # that was in the column, only edges and counts.
-    assert set(Histogram.model_fields) == {"column", "kind", "bins", "missing"}
+    assert set(Histogram.model_fields) == {"column", "kind", "bins", "missing", "boxplot"}
 
 
 # Categorical bars
@@ -169,3 +184,130 @@ def test_column_kinds_preserves_the_frames_own_order():
     frame = pd.DataFrame({"z": [1], "a": [1], "m": [1], "t": [1]})
     kinds = column_kinds(frame, target="t")
     assert [k.column for k in kinds] == ["z", "a", "m"]
+
+
+# Boxplots
+
+
+def test_the_five_number_summary_is_correct():
+    result = summarise_column(numeric([1, 2, 3, 4, 5, 6, 7, 8, 9]))
+    assert isinstance(result, Histogram)
+    box = result.boxplot
+    assert box is not None
+    assert box.minimum == 1
+    assert box.median == 5
+    assert box.maximum == 9
+
+
+def test_a_point_beyond_the_fence_is_an_outlier_not_the_new_maximum():
+    # 1.5x IQR beyond Q3 is the conventional fence (Tukey). 100 is far past it.
+    result = summarise_column(numeric([1, 2, 3, 4, 5, 6, 7, 8, 9, 100]))
+    assert isinstance(result, Histogram)
+    box = result.boxplot
+    assert box is not None
+    assert 100 in box.outliers
+    assert box.maximum < 100
+
+
+def test_a_constant_column_has_no_outliers():
+    result = summarise_column(numeric([5.0] * 10))
+    assert isinstance(result, Histogram)
+    box = result.boxplot
+    assert box is not None
+    assert box.outliers == []
+    assert box.minimum == box.maximum == 5.0
+
+
+def test_an_all_missing_column_has_no_boxplot_either():
+    result = summarise_column(numeric([np.nan, np.nan]))
+    assert isinstance(result, Histogram)
+    assert result.boxplot is None
+
+
+def test_a_boxplot_never_carries_a_raw_row():
+    # Individual values, yes (same class of disclosure as a histogram's bin edges) —
+    # but never anything that ties one column's value to another's in the same row.
+    assert set(BoxplotSummary.model_fields) == {
+        "minimum",
+        "q1",
+        "median",
+        "q3",
+        "maximum",
+        "outliers",
+    }
+
+
+# The correlation heatmap
+
+
+def test_perfectly_correlated_columns_read_as_one():
+    frame = pd.DataFrame({"a": [1, 2, 3, 4], "b": [2, 4, 6, 8]})
+    result = correlation_matrix(frame, exclude="__none__")
+    i, j = result.features.index("a"), result.features.index("b")
+    assert result.values[i][j] == pytest.approx(1.0)
+
+
+def test_the_diagonal_is_always_one():
+    frame = pd.DataFrame({"a": [1, 2, 3], "b": [3, 1, 2], "c": [5, 5, 1]})
+    result = correlation_matrix(frame, exclude="__none__")
+    for i in range(len(result.features)):
+        assert result.values[i][i] == pytest.approx(1.0)
+
+
+def test_the_target_is_excluded():
+    frame = pd.DataFrame({"a": [1, 2, 3], "b": [3, 2, 1], "target": [1, 0, 1]})
+    result = correlation_matrix(frame, exclude="target")
+    assert "target" not in result.features
+
+
+def test_categorical_columns_are_excluded():
+    frame = pd.DataFrame({"a": [1, 2, 3], "b": [3, 2, 1], "c": ["x", "y", "z"]})
+    result = correlation_matrix(frame, exclude="__none__")
+    assert "c" not in result.features
+
+
+def test_fewer_than_two_numeric_features_is_empty_not_an_error():
+    frame = pd.DataFrame({"a": [1, 2, 3], "b": ["x", "y", "z"]})
+    result = correlation_matrix(frame, exclude="__none__")
+    assert result.features == []
+    assert result.values == []
+    assert result.total_numeric == 1
+
+
+def test_all_categorical_data_is_the_same_empty_state():
+    frame = pd.DataFrame({"a": ["x", "y"], "b": ["p", "q"]})
+    result = correlation_matrix(frame, exclude="__none__")
+    assert result.features == []
+    assert result.total_numeric == 0
+
+
+def test_a_constant_column_correlates_as_zero_not_nan():
+    # pandas' own answer is NaN — undefined, not zero — but NaN is not valid JSON and
+    # not a value a heatmap cell can render. Read as "no signal", which is what a
+    # constant column actually has.
+    frame = pd.DataFrame({"a": [1, 2, 3], "constant": [5, 5, 5]})
+    result = correlation_matrix(frame, exclude="__none__")
+    i, j = result.features.index("a"), result.features.index("constant")
+    assert result.values[i][j] == 0.0
+
+
+def test_the_cap_keeps_the_highest_variance_features():
+    columns = {f"low-{i}": [1, 1, 1, 2] for i in range(35)}
+    columns["high-variance"] = [1, 1000, -1000, 500]
+    frame = pd.DataFrame(columns)
+    result = correlation_matrix(frame, exclude="__none__")
+    assert len(result.features) == MAX_CORRELATION_FEATURES
+    assert "high-variance" in result.features
+    assert result.total_numeric == 36
+
+
+def test_states_the_total_against_the_cap():
+    columns = {f"f-{i}": [1, 2, 3] for i in range(40)}
+    frame = pd.DataFrame(columns)
+    result = correlation_matrix(frame, exclude="__none__")
+    assert len(result.features) == MAX_CORRELATION_FEATURES
+    assert result.total_numeric == 40
+
+
+def test_a_correlation_matrix_never_carries_a_raw_row():
+    assert set(CorrelationMatrix.model_fields) == {"features", "values", "total_numeric"}

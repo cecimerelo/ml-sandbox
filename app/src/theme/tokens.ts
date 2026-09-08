@@ -113,6 +113,46 @@ export const chart = {
   gridline: t('#e0e0e0', 1.28),
 } as const;
 
+/**
+ * Sequential (magnitude, one hue, light → dark). Never a rainbow.
+ *
+ * The full range is legal for *continuous* magnitude — heatmap cells, where the lightest
+ * step legitimately means "near zero" and may recede toward the surface. For *discrete*
+ * ordered chips (tiers, rating dots), start no lighter than `seq250` so the light end
+ * still clears the surface.
+ */
+export const seq = {
+  100: t('#cde2fb', 1.32),
+  200: t('#9ec5f4', 1.79),
+  250: t('#86b6ef', 2.11),
+  300: t('#6da7ec', 2.5),
+  400: t('#3987e5', 3.64),
+  500: t('#256abf', 5.39),
+  /** Survives as a small solid mark — the rating-dot fill, the recommended row's rule. */
+  600: t('#184f95', 8.1),
+  700: t('#0d366b', 11.95),
+} as const;
+
+/**
+ * Diverging (polarity, blue ↔ red, neutral gray midpoint). Used only where a quantity
+ * genuinely has a sign and zero must read as "nothing" — the correlation heatmap, signed
+ * residuals, signed coefficients. Equal steps per arm, lightness-matched so neither side
+ * visually outweighs the other. Never a hue at the midpoint.
+ */
+export const diverging = {
+  neg700: t('#0d366b', 11.95),
+  neg500: t('#256abf', 5.39),
+  neg300: t('#6da7ec', 2.5),
+  neg100: t('#cde2fb', 1.32),
+  /** 1.11:1 on white — legible only as a bordered heatmap cell, never as standalone text
+   * or a badge colour. */
+  mid: t('#f0efec', 1.11),
+  pos100: t('#fad6d2', 1.34),
+  pos300: t('#e4857e', 2.64),
+  pos500: t('#b13f3c', 5.76),
+  pos700: t('#621b1a', 12.42),
+} as const;
+
 export const spacing = {
   /** MUI's `spacing()` unit. */
   unit: 8,
