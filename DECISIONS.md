@@ -1977,3 +1977,53 @@ Where Layer 2 predicts a method suits *this* problem and the table shows it as g
 prediction conditioned on this problem's meta-features are different claims — but neither
 number is invented, and neither can be caught contradicting a measurement the study
 actually made.
+
+---
+
+## D-053 — Each method trains in its own subprocess, polled from the browser
+
+**Date:** 2026-09-08 · **Status:** accepted · **Affects:** [#4](https://github.com/cecimerelo/ml-sandbox/issues/4)
+
+**Context.** Epic 4 trains the recommended method (and up to 4 more) on the user's own
+uploaded data, sequentially, with a per-method timeout tiered by row count and a
+**Stop training** control (FR-8.4). Nothing in the app currently trains anything at
+request time — `/api/recommend` only scores pre-computed meta-features through the
+already-fitted Layer 2 artifact. The fittable machinery exists (`methods.build()`,
+reused daily by the offline benchmark), but the timeout mechanism that already
+guards it, `benchmark.py`'s `signal.SIGALRM`, is documented in its own module as
+*"a signal, not a watchdog thread"* — valid only in a process's main thread. FastAPI's
+synchronous endpoints run in a threadpool worker, not the main thread, so that
+mechanism does not carry over, and it offers no way to honour Stop: a thread cannot be
+force-killed from outside it.
+
+The app also has no async job machinery of any kind yet — no polling endpoint, no SSE,
+no WebSocket, no background task. Every existing request is one `fetch` round trip.
+
+**Decision.** `POST /api/train` starts a job held in server memory (never written to
+disk — the existing in-memory-only rule for user data, FR-7.2, is unaffected since the
+job's lifetime is the training run, not persistence) and returns a job id immediately.
+The browser polls `GET /api/train/{id}` for progress and each method's result as it
+lands. Each method fits inside its own subprocess, not a thread: a subprocess can be
+killed outright, which a Python thread cannot. The per-method timeout and the Stop
+control are therefore the same primitive — terminate the subprocess — rather than two
+different mechanisms that could disagree.
+
+**Why not streaming (SSE).** A single long-lived connection is simpler to build — no
+job store, no id — but Stop then means detecting that the client closed the
+connection, which is a weaker and less explicit signal than a request the user's click
+actually sends, and a dropped wifi connection would look identical to a deliberate
+stop.
+
+**Why not block until done.** The worst case is 5 methods at the large-dataset tier —
+25 minutes with nothing to show and no way to cancel. FR-8.4's early-halt and Stop
+requirements both presume the caller can observe and interrupt an in-progress run;
+a single blocking call can do neither.
+
+**Consequences.** The dataset itself still has to reach the training job somehow —
+resent as `FormData` on the `POST /api/train` call, matching every other endpoint's
+no-server-side-file-retention pattern, rather than introducing an upload-id session
+the rest of the app does not have. Subprocess start-up cost (re-importing sklearn,
+re-sending the dataframe across the process boundary) is paid once per method, on top
+of the fit itself; not yet measured against the 60-second small-dataset tier — worth
+checking early once #4's sub-issues are scoped, since a tier that budget is meant to
+protect is also the tier this overhead eats into hardest.
