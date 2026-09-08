@@ -29,7 +29,23 @@ const PAGE_SIZE = 12;
  * page's actual distributions, so a file with hundreds of features costs what is on
  * screen, not what exists.
  */
-export function EdaBlock({ file, target }: { file: File; target: string }) {
+export function EdaBlock({
+  file,
+  target,
+  collapseSignal,
+}: {
+  file: File;
+  target: string;
+  /**
+   * Bumped by the caller to force the accordion shut — a successful `Get
+   * Recommendation`, specifically. A reader who just asked for a recommendation is
+   * looking at the panel that answers it, not at the block they were exploring a
+   * moment ago; leaving it open pushes the answer further down the page than the
+   * question that produced it.
+   */
+  collapseSignal?: number;
+}) {
+  const [expanded, setExpanded] = useState(false);
   const [inventory, setInventory] = useState<ColumnInventory | null>(null);
   const [page, setPage] = useState(0);
   const [distributions, setDistributions] = useState<DistributionsResult | null>(null);
@@ -89,6 +105,10 @@ export function EdaBlock({ file, target }: { file: File; target: string }) {
     };
   }, [file, target]);
 
+  useEffect(() => {
+    if (collapseSignal !== undefined) setExpanded(false);
+  }, [collapseSignal]);
+
   const totalPages = inventory ? Math.max(1, Math.ceil(inventory.total / PAGE_SIZE)) : 1;
   const pageColumns = inventory
     ? inventory.columns.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map((c) => c.column)
@@ -124,7 +144,11 @@ export function EdaBlock({ file, target }: { file: File; target: string }) {
   }, [inventory, page, file, target]);
 
   return (
-    <Accordion sx={{ my: `${spacing.sectionGap}px` }}>
+    <Accordion
+      expanded={expanded}
+      onChange={(_, isExpanded) => setExpanded(isExpanded)}
+      sx={{ my: `${spacing.sectionGap}px` }}
+    >
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <Typography sx={{ fontWeight: 700 }}>Explore your data</Typography>
       </AccordionSummary>
