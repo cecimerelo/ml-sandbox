@@ -70,8 +70,23 @@ cannot disagree about when a method applies (D-024). Their claim is the method's
 support, which is verified against the installed scikit-learn by the test suite rather than
 asserted (D-022).
 
+## Chart subtitles
+
+`CHART` in `catalogue.ts` (#48). Same footing as the panel-structure strings above — these
+describe **how to read the chart**, not a claim from the reference text, so there is no
+"Source" cell: a histogram bar being a range of values is a fact about the chart form, not
+a statistical assertion. Four of the ~29 chart forms exist so far, one per EDA distribution
+type built in #46/#47; the rest arrive with the epics that build those charts.
+
+| String | What it describes |
+|---|---|
+| `chart.histogram.subtitle` | A bar's height is a count of rows in that value range |
+| `chart.categorical-bars.subtitle` | A bar's length is a count of rows in that category |
+| `chart.boxplot.subtitle` | The box is the middle half of the values; dots beyond the whiskers are outliers |
+| `chart.correlation.subtitle` | Cell colour is the direction and strength of the relationship between two columns |
+
 ## What is not yet covered
 
-Chart subtitles — roughly twenty-nine, one per distinct chart form — belong to the epics
-that build the charts. Shape A's form questions differ from Shape B's, because the question
-there is *"is this right?"* rather than *"what is it?"*, and arrive with the upload path.
+Shape A's form questions differ from Shape B's, because the question there is *"is this
+right?"* rather than *"what is it?"*, and arrive with the upload path. The ~25 remaining
+chart subtitles arrive with the method-result and comparison epics that build those charts.

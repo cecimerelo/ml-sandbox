@@ -7,6 +7,7 @@ import TableRow from '@mui/material/TableRow';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 
+import { CHART } from '../copy/catalogue';
 import { chart, diverging } from '../theme/tokens';
 import { PlotPanel } from './PlotPanel';
 import type { CorrelationMatrix } from './types';
@@ -69,13 +70,14 @@ export function CorrelationHeatmap({ data }: { data: CorrelationMatrix }) {
   const height = LABEL_HEIGHT + n * CELL;
 
   const subtitle = truncated
-    ? `Showing the ${MAX_CORRELATION_FEATURES} features with the most variation, of ${data.total_numeric}.`
-    : undefined;
+    ? `${CHART['chart.correlation.subtitle']} Showing the ${MAX_CORRELATION_FEATURES} ` +
+      `features with the most variation, of ${data.total_numeric}.`
+    : CHART['chart.correlation.subtitle'];
 
   return (
     <PlotPanel
       title="Correlation"
-      {...(subtitle ? { subtitle } : {})}
+      subtitle={subtitle}
       aspect="auto"
       chart={
         <svg

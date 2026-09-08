@@ -6,7 +6,7 @@ import type { BoxplotSummary } from './types';
 
 const WIDTH = 320;
 const HEIGHT = 120;
-const MARGIN = { top: 8, right: 24, bottom: 8, left: 24 };
+const MARGIN = { top: 8, right: 24, bottom: 28, left: 24 };
 const BOX_HALF_HEIGHT = 20;
 const OUTLIER_RADIUS = 4;
 
@@ -20,7 +20,8 @@ const OUTLIER_RADIUS = 4;
  */
 export function BoxplotChart({ data }: { data: BoxplotSummary }) {
   const plotWidth = WIDTH - MARGIN.left - MARGIN.right;
-  const midY = MARGIN.top + (HEIGHT - MARGIN.top - MARGIN.bottom) / 2;
+  const axisY = HEIGHT - MARGIN.bottom;
+  const midY = MARGIN.top + (axisY - MARGIN.top) / 2;
 
   const domainLow = Math.min(data.minimum, ...data.outliers);
   const domainHigh = Math.max(data.maximum, ...data.outliers);
@@ -109,6 +110,29 @@ export function BoxplotChart({ data }: { data: BoxplotSummary }) {
           />
         </Tooltip>
       ))}
+
+      {/* Axis rule and the range's two endpoints — the same convention as the
+          histogram's x-axis: enough to read the scale without a full tick ladder. */}
+      <line
+        x1={MARGIN.left}
+        x2={MARGIN.left + plotWidth}
+        y1={axisY}
+        y2={axisY}
+        stroke={chart.axis.hex}
+        strokeWidth={1}
+      />
+      <text x={MARGIN.left} y={axisY + 16} fontSize={11} fill={chart.inkMuted.hex}>
+        {domainLow.toFixed(1)}
+      </text>
+      <text
+        x={MARGIN.left + plotWidth}
+        y={axisY + 16}
+        fontSize={11}
+        fill={chart.inkMuted.hex}
+        textAnchor="end"
+      >
+        {domainHigh.toFixed(1)}
+      </text>
     </svg>
   );
 }

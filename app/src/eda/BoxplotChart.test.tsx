@@ -41,6 +41,20 @@ describe('an ordinary boxplot', () => {
   });
 });
 
+describe('the x-axis', () => {
+  it('labels the two endpoints of the range', () => {
+    show(summary({ minimum: 1, maximum: 5 }));
+    expect(screen.getByText('1.0')).toBeInTheDocument();
+    expect(screen.getByText('5.0')).toBeInTheDocument();
+  });
+
+  it('extends the endpoints to include outliers beyond the whiskers', () => {
+    show(summary({ minimum: 1, maximum: 5, outliers: [20, -5] }));
+    expect(screen.getByText('-5.0')).toBeInTheDocument();
+    expect(screen.getByText('20.0')).toBeInTheDocument();
+  });
+});
+
 describe('outliers', () => {
   it('renders one point per outlier', () => {
     const { container } = show(summary({ outliers: [20, -5] }));

@@ -56,4 +56,18 @@ describe('View as table', () => {
     expect(screen.getByTestId('chart')).toBeInTheDocument();
     expect(screen.queryByTestId('table')).toBeNull();
   });
+
+  it('is reachable and operable from the keyboard alone (#48)', async () => {
+    // A native `Button`, not a click handler on a div — Tab reaches it and Enter
+    // activates it without a mouse, which is the whole of what "every chart has a
+    // table view reachable by keyboard" asks for.
+    const user = userEvent.setup();
+    show();
+
+    await user.tab();
+    expect(screen.getByRole('button', { name: /view as table/i })).toHaveFocus();
+
+    await user.keyboard('{Enter}');
+    expect(screen.getByTestId('table')).toBeInTheDocument();
+  });
 });

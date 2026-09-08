@@ -195,6 +195,30 @@ export const PANEL = {
 } as const;
 
 /**
+ * `{typography.chart-subtitle}` — the beginner-facing "what am I looking at" line every
+ * plot panel carries (DESIGN.md § Chart Behavior Contract, #48). Describes **how to read
+ * the chart**, never what the result means: that is the difference between "each bar is
+ * a range of values" and "your data looks roughly normal", and only the first belongs
+ * here — the second is a claim about the reader's own data that nothing here can make.
+ *
+ * `PANEL`'s truncation disclosures (the categorical fold, the correlation cap) are
+ * appended to these at render time rather than folded in here — a subtitle is either
+ * true of every instance of the chart or it is not one of these strings.
+ */
+export const CHART = {
+  'chart.histogram.subtitle':
+    'Each bar is a range of values; its height is how many rows fall in it.',
+  'chart.categorical-bars.subtitle':
+    'Each bar is one category; its length is how many rows have it.',
+  'chart.boxplot.subtitle':
+    'The box spans the middle half of your values; dots beyond the whiskers are ' +
+    'unusually far from the rest.',
+  'chart.correlation.subtitle':
+    'Blue means two columns rise together, red means one rises as the other falls, ' +
+    'pale means barely any relationship.',
+} as const;
+
+/**
  * Fill a `{placeholder}` template from the catalogue with a value the interface computed.
  *
  * Single braces, never `{{double}}` — that syntax means a glossed term (`render.tsx`), and
@@ -213,4 +237,5 @@ export const ALL_STRINGS: Record<string, string> = {
     ]),
   ),
   ...PANEL,
+  ...CHART,
 };
