@@ -34,6 +34,9 @@ export function Dashboard() {
   // Irrelevant until a recommendation exists — there is nothing yet to collapse to, so the
   // form always renders expanded before the first successful run regardless of this.
   const [editing, setEditing] = useState(true);
+  // Bumped on every successful run, and nothing else reads its value — `EdaBlock` only
+  // needs to know that a recommendation just landed, not what it was.
+  const [collapseEda, setCollapseEda] = useState(0);
   const formRef = useRef<HTMLDivElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
 
@@ -58,6 +61,10 @@ export function Dashboard() {
       // Recommendation" means: a re-run from the expanded form puts the summary bar back
       // without a second click.
       setEditing(false);
+      // Same reasoning, for the data explorer: a reader who just asked for a
+      // recommendation is looking at the answer, not still exploring the data that fed
+      // it — collapsing it moves the answer back up where they're already looking.
+      setCollapseEda((n) => n + 1);
     } catch {
       setFailed(
         "We couldn't reach the server, so nothing has been worked out yet. If you're " +
@@ -159,7 +166,11 @@ export function Dashboard() {
             reason to also hide the data explorer that answers a different question
             entirely. */}
         {dataset && detection && (
-          <EdaBlock file={dataset.file} target={detection.target} />
+          <EdaBlock
+            file={dataset.file}
+            target={detection.target}
+            collapseSignal={collapseEda}
+          />
         )}
 
         {/* Once a recommendation exists, the form itself is the exception rather than the

@@ -59,12 +59,20 @@ function file() {
   return new File(['a'], 'houses.csv', { type: 'text/csv' });
 }
 
-function setup() {
-  return render(
+function setup(collapseSignal?: number) {
+  const { rerender } = render(
     <ThemeProvider theme={theme}>
-      <EdaBlock file={file()} target="price" />
+      <EdaBlock file={file()} target="price" {...(collapseSignal !== undefined ? { collapseSignal } : {})} />
     </ThemeProvider>,
   );
+  return {
+    setSignal: (n: number) =>
+      rerender(
+        <ThemeProvider theme={theme}>
+          <EdaBlock file={file()} target="price" collapseSignal={n} />
+        </ThemeProvider>,
+      ),
+  };
 }
 
 afterEach(() => {
@@ -148,6 +156,35 @@ describe('pagination', () => {
     await screen.findByText(/showing 12 of 12/i);
 
     expect(screen.getByRole('button', { name: /^next$/i })).toBeDisabled();
+  });
+});
+
+describe('collapsing on a successful recommendation', () => {
+  it('closes when the signal changes', async () => {
+    stubFetch();
+    const user = userEvent.setup();
+    const { setSignal } = setup(0);
+    await user.click(screen.getByRole('button', { name: /explore your data/i }));
+    expect(screen.getByRole('button', { name: /explore your data/i })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+
+    setSignal(1);
+
+    expect(screen.getByRole('button', { name: /explore your data/i })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+  });
+
+  it('does not open on its own just because a signal is present', () => {
+    stubFetch();
+    setup(0);
+    expect(screen.getByRole('button', { name: /explore your data/i })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
   });
 });
 
