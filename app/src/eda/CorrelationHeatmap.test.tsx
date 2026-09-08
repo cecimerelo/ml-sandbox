@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 
 import { CorrelationHeatmap } from './CorrelationHeatmap';
+import { CHART } from '../copy/catalogue';
 import { theme } from '../theme/theme';
 import type { CorrelationMatrix } from './types';
 
@@ -48,15 +49,27 @@ describe('an ordinary matrix', () => {
   });
 });
 
+describe('the how-to-read subtitle', () => {
+  it('is always present, from the catalogue, whether or not anything was truncated', () => {
+    show(matrix({ total_numeric: 2 }));
+    expect(
+      screen.getByText((_, node) => Boolean(node?.textContent?.startsWith(CHART['chart.correlation.subtitle']))),
+    ).toBeInTheDocument();
+  });
+});
+
 describe('the truncation caption', () => {
-  it('states the cap against the total, never silently', () => {
+  it('states the cap against the total, never silently, alongside the how-to-read line', () => {
     show(matrix({ total_numeric: 500 }));
-    expect(screen.getByText(/showing the 30 features.*of 500/i)).toBeInTheDocument();
+    const subtitle = screen.getByText((_, node) =>
+      Boolean(node?.textContent?.startsWith(CHART['chart.correlation.subtitle'])),
+    );
+    expect(subtitle.textContent).toMatch(/showing the 30 features.*of 500/i);
   });
 
-  it('says nothing when nothing was truncated', () => {
+  it('says nothing about truncation when nothing was truncated', () => {
     show(matrix({ total_numeric: 2 }));
-    expect(screen.queryByText(/showing the/i)).toBeNull();
+    expect(screen.queryByText(/showing the 30 features/i)).toBeNull();
   });
 });
 
