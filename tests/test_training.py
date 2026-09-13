@@ -16,17 +16,28 @@ from sklearn.base import BaseEstimator
 from sklearn.pipeline import Pipeline
 
 import mlsandbox.training as training
+import mlsandbox.training_jobs as training_jobs
 from mlsandbox.training import (
     MIN_CLASS_COUNT_FOR_CV,
     NotCrossValidatable,
-    TrainingJob,
     _n_folds_for,
     _orchestrate,
     request_stop,
     start,
 )
+from mlsandbox.training_jobs import TrainingJob, get
 
 FORK = mp.get_context("fork")
+
+
+@pytest.fixture(autouse=True)
+def clean_registry():
+    """Every test starts and ends with an empty registry — otherwise a job `register`ed
+    (by `start()`) in one test is still there in the next, since it lives in
+    `training_jobs`'s module-level, shared state."""
+    training_jobs._REGISTRY.clear()
+    yield
+    training_jobs._REGISTRY.clear()
 
 
 @pytest.fixture
@@ -205,3 +216,12 @@ def test_start_returns_immediately_and_the_job_progresses_in_the_background(
     snapshot = job.snapshot()
     assert snapshot["done"]
     assert snapshot["results"]["logistic_regression"].status == "ok"
+
+
+def test_start_registers_the_job_so_a_later_request_can_find_it_by_id(classification_data):
+    # The registry itself (TTL, eviction) is training_jobs.py's own concern and is
+    # covered in test_training_jobs.py — this only checks that start() wires into it.
+    features, target = classification_data
+    job = start(["logistic_regression"], "classification", features, target, context=FORK)
+
+    assert get(job.id) is job
