@@ -533,6 +533,13 @@ def test_training_two_real_methods_on_a_real_dataset_end_to_end():
         assert status["results"][method]["mean_score"] is not None
 
 
+def test_the_status_carries_the_timeout_tier_the_frontend_estimates_from():
+    # houses.csv is well under 500 rows — the smallest tier (FR-8.4).
+    job_id = train(["linear_regression"]).json()["job_id"]
+    status = client.get(f"/api/train/{job_id}").json()
+    assert status["budget_seconds"] == 60
+
+
 def test_an_unknown_target_column_is_422_before_any_job_starts():
     response = train(["linear_regression"], target="not_a_column")
     assert response.status_code == 422

@@ -18,27 +18,37 @@ def clean_registry():
     training_jobs._REGISTRY.clear()
 
 
+def job(**overrides) -> TrainingJob:
+    defaults = {
+        "id": "job-1",
+        "methods": ["logistic_regression"],
+        "task": "classification",
+        "budget_seconds": 60,
+    }
+    return TrainingJob(**{**defaults, **overrides})
+
+
 def test_an_unknown_job_id_is_simply_absent():
     assert get("no-such-job") is None
 
 
 def test_a_finished_job_survives_until_its_ttl_elapses(monkeypatch):
-    job = TrainingJob(id="job-1", methods=["logistic_regression"], task="classification")
-    job.mark_done()
-    register(job)
+    running = job()
+    running.mark_done()
+    register(running)
 
-    assert get("job-1") is job
+    assert get("job-1") is running
 
     # Still within the TTL: unaffected by the sweep that runs on every register/get.
     monkeypatch.setattr(training_jobs, "JOB_TTL_SECONDS", 3600)
-    assert get("job-1") is job
+    assert get("job-1") is running
 
 
 def test_a_finished_job_is_evicted_once_its_ttl_elapses(monkeypatch):
-    job = TrainingJob(id="job-1", methods=["logistic_regression"], task="classification")
-    job.mark_done()
-    job.completed_at = time.monotonic() - 1  # finished "1 second ago"
-    register(job)
+    finished = job()
+    finished.mark_done()
+    finished.completed_at = time.monotonic() - 1  # finished "1 second ago"
+    register(finished)
 
     monkeypatch.setattr(training_jobs, "JOB_TTL_SECONDS", 0)  # anything finished is expired
 
@@ -48,27 +58,31 @@ def test_a_finished_job_is_evicted_once_its_ttl_elapses(monkeypatch):
 def test_an_unfinished_job_is_never_evicted_no_matter_how_old(monkeypatch):
     # completed_at is None until done — a running job has no completion time to measure
     # a TTL from, so nothing here can mistake "still training" for "abandoned".
-    job = TrainingJob(id="job-1", methods=["logistic_regression"], task="classification")
-    register(job)
+    running = job()
+    register(running)
 
     monkeypatch.setattr(training_jobs, "JOB_TTL_SECONDS", 0)
 
-    assert get("job-1") is job
+    assert get("job-1") is running
 
 
 def test_mark_done_records_a_completion_timestamp():
-    job = TrainingJob(id="job-1", methods=["logistic_regression"], task="classification")
-    assert job.completed_at is None
+    running = job()
+    assert running.completed_at is None
 
-    job.mark_done()
+    running.mark_done()
 
-    assert job.done
-    assert job.completed_at is not None
+    assert running.done
+    assert running.completed_at is not None
 
 
 def test_snapshot_is_a_copy_not_the_live_results_dict():
-    job = TrainingJob(id="job-1", methods=["logistic_regression"], task="classification")
-    snapshot = job.snapshot()
-    job.results["logistic_regression"] = "sneaked in after the snapshot"
+    running = job()
+    snapshot = running.snapshot()
+    running.results["logistic_regression"] = "sneaked in after the snapshot"
 
     assert snapshot["results"] == {}
+
+
+def test_snapshot_carries_the_budget_seconds_the_frontend_estimates_from():
+    assert job(budget_seconds=120).snapshot()["budget_seconds"] == 120

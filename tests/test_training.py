@@ -62,7 +62,12 @@ class Slow(BaseEstimator):
 
 def run_job(methods, task, data, *, seed=0, context=FORK) -> TrainingJob:
     features, target = data
-    job = TrainingJob(id="test", methods=list(methods), task=task)
+    job = TrainingJob(
+        id="test",
+        methods=list(methods),
+        task=task,
+        budget_seconds=training.timeout_for(len(features)),
+    )
     _orchestrate(job, features, target, seed, context)
     return job
 
@@ -134,7 +139,10 @@ def test_stopping_mid_run_ends_the_current_method_and_trains_nothing_further(
     features, target = classification_data
     monkeypatch.setattr(training, "build", lambda *_a, **_k: Pipeline([("model", Slow())]))
     job = TrainingJob(
-        id="test", methods=["logistic_regression", "naive_bayes"], task="classification"
+        id="test",
+        methods=["logistic_regression", "naive_bayes"],
+        task="classification",
+        budget_seconds=60,
     )
 
     def stop_soon():
@@ -172,7 +180,9 @@ def test_a_rare_class_below_the_floor_is_reported_before_any_subprocess_starts(
     target[:] = 0
     target[0] = 1  # exactly one example of the rare class — below MIN_CLASS_COUNT_FOR_CV
 
-    job = TrainingJob(id="test", methods=["logistic_regression"], task="classification")
+    job = TrainingJob(
+        id="test", methods=["logistic_regression"], task="classification", budget_seconds=60
+    )
     _orchestrate(job, features, target, 0, FORK)
 
     assert job.aborted

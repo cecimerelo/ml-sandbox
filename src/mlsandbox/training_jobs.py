@@ -54,6 +54,11 @@ class TrainingJob:
     """In fit-score order, as decided by the caller (#4.2) — `training.py` trains them
     in the order given, it does not re-rank."""
     task: Task
+    budget_seconds: int
+    """The per-method timeout tier (FR-8.4), fixed once at job creation from the
+    dataset's row count. Exposed to the frontend so its loading estimate — remaining
+    methods times this — is computed from the one number the backend already decided,
+    not a second copy of `TIMEOUTS_BY_ROWS` reimplemented in TypeScript."""
     results: dict[str, MethodResult] = field(default_factory=dict)
     current: str | None = None
     halted_early: bool = False
@@ -75,6 +80,7 @@ class TrainingJob:
             return {
                 "id": self.id,
                 "methods": list(self.methods),
+                "budget_seconds": self.budget_seconds,
                 "current": self.current,
                 "halted_early": self.halted_early,
                 "aborted": self.aborted,

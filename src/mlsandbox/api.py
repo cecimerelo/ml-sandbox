@@ -511,6 +511,10 @@ class MethodStatusOut(StrictModel):
 class TrainingStatus(StrictModel):
     id: str
     methods: list[str]
+    budget_seconds: int
+    """The per-method timeout tier this job is running under (FR-8.4) — what the
+    frontend's loading estimate multiplies the remaining method count by, rather than
+    reimplementing `TIMEOUTS_BY_ROWS` a second time in TypeScript."""
     current: str | None
     halted_early: bool
     aborted: bool
@@ -524,6 +528,7 @@ class TrainingStatus(StrictModel):
         return cls(
             id=snapshot["id"],
             methods=snapshot["methods"],
+            budget_seconds=snapshot["budget_seconds"],
             current=snapshot["current"],
             halted_early=snapshot["halted_early"],
             aborted=snapshot["aborted"],
