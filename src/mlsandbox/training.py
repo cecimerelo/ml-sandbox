@@ -17,6 +17,9 @@ exactly the mechanism this module exists to avoid.
 Cross-validation itself is generated fresh per request via `folds.generate` — the same
 function PMLB datasets already use in the offline study, since a user's own CSV has no
 published partition to reuse (D-003's contract, extended rather than duplicated).
+
+What a job *is*, and where it lives between requests, is `training_jobs.py` — the same
+split as `benchmark.py`/`results.py`.
 """
 
 from __future__ import annotations
@@ -26,16 +29,14 @@ import threading
 import time
 import uuid
 from collections.abc import Sequence
-from dataclasses import dataclass, field
-from typing import Literal
 
 import numpy as np
 import pandas as pd
-from sklearn.pipeline import Pipeline
 
 from mlsandbox import folds as foldslib
 from mlsandbox.benchmark import score_of, timeout_for
 from mlsandbox.methods import Task, build
+from mlsandbox.training_jobs import MethodResult, TrainingJob, register
 
 POLL_INTERVAL_SECONDS = 0.5
 """How often the orchestrator checks a running subprocess for a Stop request or a
@@ -50,61 +51,11 @@ MIN_CLASS_COUNT_FOR_CV = 2
 """Below this, no split can hold out even one example of the class and still leave one
 to train on — there is no cross-validation to run, not merely a degraded one."""
 
-MethodStatus = Literal["pending", "running", "ok", "timeout", "error", "stopped"]
-
 
 class NotCrossValidatable(Exception):
     """Raised before any subprocess starts — the dataset's target has a class too small
     to hold out in any fold. A per-method failure would misattribute a property of the
     dataset to whichever method happened to run first."""
-
-
-@dataclass
-class MethodResult:
-    method: str
-    status: MethodStatus
-    mean_score: float | None = None
-    std_score: float | None = None
-    fold_scores: list[float] = field(default_factory=list)
-    fitted: Pipeline | None = None
-    """The pipeline fit on the full dataset, present only when `status == "ok"` — what
-    #4.4/#4.5's charts are drawn from. Not the cross-validated fold models: those exist
-    only to score the method, never to explain it."""
-    fit_seconds: float | None = None
-    detail: str | None = None
-
-
-@dataclass
-class TrainingJob:
-    id: str
-    methods: list[str]
-    """In fit-score order, as decided by the caller (#4.2) — this module trains them in
-    the order given, it does not re-rank."""
-    task: Task
-    results: dict[str, MethodResult] = field(default_factory=dict)
-    current: str | None = None
-    halted_early: bool = False
-    stop_requested: bool = False
-    aborted: bool = False
-    abort_detail: str | None = None
-    done: bool = False
-    _lock: threading.Lock = field(default_factory=threading.Lock, repr=False, compare=False)
-
-    def snapshot(self) -> dict:
-        """A read-only view for the polling endpoint (#4.2) — copied out from under the
-        lock rather than handed the live dict, so a concurrent update mid-read cannot be
-        observed half-written."""
-        with self._lock:
-            return {
-                "id": self.id,
-                "methods": list(self.methods),
-                "current": self.current,
-                "halted_early": self.halted_early,
-                "aborted": self.aborted,
-                "abort_detail": self.abort_detail,
-                "done": self.done,
-                "results": dict(self.results),
-            }
 
 
 def _n_folds_for(target: np.ndarray, task: Task) -> tuple[int, bool]:
@@ -281,7 +232,7 @@ def _orchestrate(
         with job._lock:
             job.aborted = True
             job.abort_detail = str(error)
-            job.done = True
+            job.mark_done()
         return
 
     budget_seconds = timeout_for(len(features))
@@ -301,19 +252,19 @@ def _orchestrate(
             if result.status == "error":
                 job.aborted = True
                 job.abort_detail = f"{method}: {result.detail}"
-                job.done = True
+                job.mark_done()
                 return
             if _should_halt_early(job.results, job.methods):
                 job.halted_early = True
-                job.done = True
+                job.mark_done()
                 return
             if result.status == "stopped":
-                job.done = True
+                job.mark_done()
                 return
 
     with job._lock:
         job.current = None
-        job.done = True
+        job.mark_done()
 
 
 def start(
@@ -327,9 +278,10 @@ def start(
 ) -> TrainingJob:
     """Begins training `methods` (up to 5, in fit-score order) on the user's own data.
 
-    Returns immediately with a `TrainingJob` whose fields update as the background
-    thread progresses — the caller (#4.2's `POST /api/train`) hands its id back to the
-    browser and lets `GET /api/train/{id}` read `job.snapshot()` from then on.
+    Returns immediately with a `TrainingJob`, already `register`ed (`training_jobs.py`),
+    whose fields update as the background thread progresses — the caller (#4.2's
+    `POST /api/train`) hands its id back to the browser and lets `GET /api/train/{id}`
+    recover it via `training_jobs.get(id)` and read `job.snapshot()` from then on.
 
     Every requested method is assumed already restricted to `implementation == "sklearn"`
     (the same filter `benchmark.run_dataset` applies) — this module trusts its caller
@@ -340,6 +292,7 @@ def start(
     `_run_one_method`); production code leaves it at the platform default.
     """
     job = TrainingJob(id=str(uuid.uuid4()), methods=list(methods), task=task)
+    register(job)
     thread = threading.Thread(
         target=_orchestrate, args=(job, features, target, seed, context), daemon=True
     )
