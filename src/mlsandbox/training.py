@@ -235,8 +235,6 @@ def _orchestrate(
             job.mark_done()
         return
 
-    budget_seconds = timeout_for(len(features))
-
     for method in job.methods:
         with job._lock:
             if job.stop_requested:
@@ -244,7 +242,7 @@ def _orchestrate(
             job.current = method
 
         result = _run_one_method(
-            job, method, features, target, n_folds, stratified, seed, budget_seconds, context
+            job, method, features, target, n_folds, stratified, seed, job.budget_seconds, context
         )
 
         with job._lock:
@@ -291,7 +289,12 @@ def start(
     `context` is a `multiprocessing` start-method override for tests (see
     `_run_one_method`); production code leaves it at the platform default.
     """
-    job = TrainingJob(id=str(uuid.uuid4()), methods=list(methods), task=task)
+    job = TrainingJob(
+        id=str(uuid.uuid4()),
+        methods=list(methods),
+        task=task,
+        budget_seconds=timeout_for(len(features)),
+    )
     register(job)
     thread = threading.Thread(
         target=_orchestrate, args=(job, features, target, seed, context), daemon=True
