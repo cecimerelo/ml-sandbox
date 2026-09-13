@@ -29,6 +29,7 @@ import threading
 import time
 import uuid
 from collections.abc import Sequence
+from queue import Empty
 
 import numpy as np
 import pandas as pd
@@ -133,9 +134,21 @@ def _run_one_method(
     budget_seconds: int,
     context: mp.context.BaseContext | None = None,
 ) -> MethodResult:
-    """Starts the subprocess, then polls rather than making one blocking `join` call —
+    """Starts the subprocess, then polls by **reading the queue**, not by joining it —
     `Stop training` and the timeout are otherwise indistinguishable from the outside, and
     both need to end the same process the same way.
+
+    Polling via `process.join(timeout=...)` and reading the queue only afterwards looks
+    equivalent and is not: a worker's fitted pipeline (a `RandomForestRegressor`'s
+    hundred trees, say) can be too large for the queue's pipe buffer, and `Queue.put`
+    then blocks until the buffer drains — which nothing does while the parent is stuck
+    inside `join()` rather than `get()`. That is a deadlock, not a slow fit: no timeout
+    length fixes it, because the worker was never going to finish on its own. Draining
+    the queue on every poll is what Python's own multiprocessing docs warn `join`-before-
+    `get` can dead-lock into, and it reproduces on this exact pipeline family — verified
+    directly against `random_forest`/`bagging` on a 388-row file, which hung for the full
+    budget every time under the old polling order and completes in under two seconds
+    once the queue is drained as it goes.
 
     `context` defaults to the platform's own start method (D-053 leaves that choice
     alone — its cost is unmeasured, not a known problem). Tests pass `fork` explicitly:
@@ -145,25 +158,29 @@ def _run_one_method(
     """
     ctx = context or mp
     started = time.perf_counter()
-    queue = ctx.Queue()
+    result_queue = ctx.Queue()
     process = ctx.Process(
         target=_fit_worker,
-        args=(queue, method, job.task, features, target, n_folds, stratified, seed),
+        args=(result_queue, method, job.task, features, target, n_folds, stratified, seed),
     )
     process.start()
 
-    while process.is_alive():
-        process.join(timeout=POLL_INTERVAL_SECONDS)
+    outcome = None
+    while outcome is None:
+        try:
+            outcome = result_queue.get(timeout=POLL_INTERVAL_SECONDS)
+        except Empty:
+            pass
         elapsed = time.perf_counter() - started
         with job._lock:
             stop_requested = job.stop_requested
-        if stop_requested:
+        if outcome is None and stop_requested:
             process.terminate()
             process.join()
             return MethodResult(
                 method=method, status="stopped", fit_seconds=elapsed, detail="stopped by request"
             )
-        if elapsed > budget_seconds:
+        if outcome is None and elapsed > budget_seconds:
             process.terminate()
             process.join()
             return MethodResult(
@@ -172,16 +189,17 @@ def _run_one_method(
                 fit_seconds=elapsed,
                 detail=f"exceeded {budget_seconds}s",
             )
+        if outcome is None and not process.is_alive():
+            process.join()
+            return MethodResult(
+                method=method,
+                status="error",
+                fit_seconds=elapsed,
+                detail="the training process exited without reporting a result",
+            )
 
+    process.join()
     fit_seconds = time.perf_counter() - started
-    if queue.empty():
-        return MethodResult(
-            method=method,
-            status="error",
-            fit_seconds=fit_seconds,
-            detail="the training process exited without reporting a result",
-        )
-    outcome = queue.get()
     if outcome["status"] == "error":
         return MethodResult(
             method=method, status="error", fit_seconds=fit_seconds, detail=outcome["detail"]
