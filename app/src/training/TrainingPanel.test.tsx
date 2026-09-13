@@ -166,9 +166,9 @@ describe('a successful run', () => {
     show();
     await user.click(screen.getByRole('button', { name: /train these methods/i }));
 
-    expect(screen.queryByText(/simply guessing the average/i)).toBeNull();
+    expect(screen.queryByText(/average outcome/i)).toBeNull();
     await waitFor(
-      () => expect(screen.getByText(/simply guessing the average/i)).toBeInTheDocument(),
+      () => expect(screen.getByText(/average outcome/i)).toBeInTheDocument(),
       { timeout: 3000 },
     );
   });
