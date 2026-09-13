@@ -279,7 +279,6 @@ def _orchestrate(
                 return
 
     with job._lock:
-        job.current = None
         job.mark_done()
 
 
