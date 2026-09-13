@@ -3,6 +3,8 @@
 Thin for now — the health endpoint and the property that makes it worth having.
 """
 
+import time
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -12,6 +14,7 @@ from mlsandbox import artifact
 from mlsandbox.api import app, get_characteristics, get_model
 from mlsandbox.characteristics import from_benchmark
 from mlsandbox.methods import METHODS
+from mlsandbox.training_jobs import _REGISTRY
 
 client = TestClient(app)
 
@@ -489,3 +492,92 @@ def test_the_response_says_when_the_model_is_provisional():
     """A model trained on part of the collection is useful to build against and must never
     be mistaken for the finished one."""
     assert ask().json()["provisional"] is False
+
+
+# Training the recommended methods on the user's own data (#81)
+
+
+@pytest.fixture(autouse=True)
+def clean_training_registry():
+    _REGISTRY.clear()
+    yield
+    _REGISTRY.clear()
+
+
+def train(methods: list[str], target: str = "price", task: str = "regression"):
+    return client.post(
+        "/api/train",
+        files={"file": ("houses.csv", _houses(), "text/csv")},
+        data={"target": target, "task": task, "methods": methods},
+    )
+
+
+def wait_until_done(job_id: str, timeout: float = 60.0) -> dict:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        body = client.get(f"/api/train/{job_id}").json()
+        if body["done"]:
+            return body
+        time.sleep(0.2)
+    raise AssertionError(f"job {job_id} did not finish within {timeout}s")
+
+
+def test_training_two_real_methods_on_a_real_dataset_end_to_end():
+    job_id = train(["linear_regression", "decision_tree"]).json()["job_id"]
+
+    status = wait_until_done(job_id)
+
+    assert not status["aborted"]
+    for method in ["linear_regression", "decision_tree"]:
+        assert status["results"][method]["status"] == "ok"
+        assert status["results"][method]["mean_score"] is not None
+
+
+def test_an_unknown_target_column_is_422_before_any_job_starts():
+    response = train(["linear_regression"], target="not_a_column")
+    assert response.status_code == 422
+    assert "not_a_column" in response.json()["detail"]["message"]
+
+
+def test_no_methods_is_422():
+    response = train([])
+    assert response.status_code == 422
+    assert response.json()["detail"]["reason"] == "no-methods"
+
+
+def test_more_than_five_methods_is_422():
+    response = train(["linear_regression"] * 6)
+    assert response.status_code == 422
+    assert response.json()["detail"]["reason"] == "too-many-methods"
+
+
+def test_an_unrecognised_method_name_is_422():
+    response = train(["not_a_real_method"])
+    assert response.status_code == 422
+    assert response.json()["detail"]["reason"] == "unknown-method"
+    assert "not_a_real_method" in response.json()["detail"]["message"]
+
+
+def test_a_method_that_does_not_support_the_task_is_422():
+    # logistic_regression only supports classification; price is a regression target.
+    response = train(["logistic_regression"])
+    assert response.status_code == 422
+    assert response.json()["detail"]["reason"] == "untrainable-method"
+
+
+def test_polling_an_unknown_job_id_is_404():
+    assert client.get("/api/train/no-such-job").status_code == 404
+
+
+def test_stopping_an_unknown_job_id_is_404():
+    assert client.post("/api/train/no-such-job/stop").status_code == 404
+
+
+def test_stopping_an_already_finished_job_is_a_harmless_no_op():
+    job_id = train(["linear_regression"]).json()["job_id"]
+    wait_until_done(job_id)
+
+    response = client.post(f"/api/train/{job_id}/stop")
+
+    assert response.status_code == 200
+    assert response.json()["done"] is True

@@ -17,7 +17,16 @@ from typing import Annotated
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 
-from mlsandbox import artifact, characteristics, detection, eda, layer1, recommend, upload
+from mlsandbox import (
+    artifact,
+    characteristics,
+    detection,
+    eda,
+    layer1,
+    recommend,
+    training,
+    upload,
+)
 from mlsandbox.base import StrictModel
 from mlsandbox.config import load_config
 from mlsandbox.metafeatures import (
@@ -30,6 +39,11 @@ from mlsandbox.metafeatures import (
     from_form,
 )
 from mlsandbox.methods import METHODS
+from mlsandbox.training_jobs import MethodResult, TrainingJob
+from mlsandbox.training_jobs import get as get_job
+
+MAX_TRAINING_METHODS = 5
+"""FR-8.4: at most 5 methods train per job."""
 
 MODEL_PATH_PARTS = ("model", "layer2.joblib")
 """Where `scripts/package_model.py` writes the artifact, relative to the data directory."""
@@ -386,3 +400,165 @@ def recommend_method(
         suspects_interactions=request.suspects_interactions,
         characteristics=table,
     )
+
+
+class TrainingStarted(StrictModel):
+    job_id: str
+
+
+@app.post("/api/train")
+async def start_training(
+    file: Annotated[UploadFile, File()],
+    target: Annotated[str, Form()],
+    task: Annotated[Task, Form()],
+    methods: Annotated[list[str] | None, Form()] = None,
+) -> TrainingStarted:
+    """Begin training `methods`, in the fit-score order the recommendation already
+    showed, on the file the browser just sent again (FR-7.2 — the server keeps it for
+    the length of this call and no longer; `training.start` copies only what it needs
+    into the background thread it hands off to).
+
+    Everything is validated **before** a subprocess ever starts (D-053's job aborts on
+    a fit error, but that is for failures a 422 here cannot see coming — an unknown
+    column or a nonexistent method is not one of those, and a user should not wait on a
+    process that was always going to fail).
+    """
+    parsed = upload.read(await file.read(), filename=file.filename or "")
+    if isinstance(parsed, upload.Rejected):
+        raise HTTPException(
+            status_code=422, detail={"reason": parsed.reason, "message": parsed.message}
+        )
+    if target not in parsed.frame.columns:
+        raise HTTPException(
+            status_code=422,
+            detail={"reason": "unknown-column", "message": f"Not a column in this file: {target}."},
+        )
+    if not methods:
+        raise HTTPException(
+            status_code=422,
+            detail={"reason": "no-methods", "message": "At least one method is required."},
+        )
+    if len(methods) > MAX_TRAINING_METHODS:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "reason": "too-many-methods",
+                "message": f"At most {MAX_TRAINING_METHODS} methods train per run (FR-8.4).",
+            },
+        )
+    unknown = [name for name in methods if name not in METHODS]
+    if unknown:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "reason": "unknown-method",
+                "message": f"Not a recognised method: {', '.join(unknown)}.",
+            },
+        )
+
+    # The study's three-way Task drives the recommendation; `methods.build` only knows
+    # the two-way split, the same reduction `recommend.for_problem` already makes.
+    ml_task = "regression" if task == "regression" else "classification"
+    untrainable = [
+        name
+        for name in methods
+        if not METHODS[name].supports(ml_task) or METHODS[name].implementation != "sklearn"
+    ]
+    if untrainable:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "reason": "untrainable-method",
+                "message": f"Can't be trained here: {', '.join(untrainable)}.",
+            },
+        )
+
+    # A blank outcome cannot be trained on, the same reason `/api/dataset/detect`
+    # (`detection.detect`) drops these rows rather than counting them.
+    usable = parsed.frame.dropna(subset=[target])
+    features = usable.drop(columns=[target])
+    target_values = usable[target].to_numpy()
+    job = training.start(methods, ml_task, features, target_values)
+    return TrainingStarted(job_id=job.id)
+
+
+class MethodStatusOut(StrictModel):
+    """`MethodResult`, minus the fitted pipeline — an sklearn `Pipeline` has no JSON
+    form, and #4.4/#4.5's own endpoints read it straight from the job registry rather
+    than through this one."""
+
+    method: str
+    status: str
+    mean_score: float | None = None
+    std_score: float | None = None
+    fold_scores: list[float] = []
+    fit_seconds: float | None = None
+    detail: str | None = None
+
+    @classmethod
+    def of(cls, result: MethodResult) -> MethodStatusOut:
+        return cls(
+            method=result.method,
+            status=result.status,
+            mean_score=result.mean_score,
+            std_score=result.std_score,
+            fold_scores=result.fold_scores,
+            fit_seconds=result.fit_seconds,
+            detail=result.detail,
+        )
+
+
+class TrainingStatus(StrictModel):
+    id: str
+    methods: list[str]
+    current: str | None
+    halted_early: bool
+    aborted: bool
+    abort_detail: str | None
+    done: bool
+    results: dict[str, MethodStatusOut]
+
+    @classmethod
+    def of(cls, job: TrainingJob) -> TrainingStatus:
+        snapshot = job.snapshot()
+        return cls(
+            id=snapshot["id"],
+            methods=snapshot["methods"],
+            current=snapshot["current"],
+            halted_early=snapshot["halted_early"],
+            aborted=snapshot["aborted"],
+            abort_detail=snapshot["abort_detail"],
+            done=snapshot["done"],
+            results={
+                name: MethodStatusOut.of(result) for name, result in snapshot["results"].items()
+            },
+        )
+
+
+def _find_job(job_id: str) -> TrainingJob:
+    job = get_job(job_id)
+    if job is None:
+        raise HTTPException(
+            status_code=404,
+            detail={"reason": "unknown-job", "message": "No training job with that id."},
+        )
+    return job
+
+
+@app.get("/api/train/{job_id}")
+def training_status(job_id: str) -> TrainingStatus:
+    """Poll a job's progress — which methods are done, running, timed out, or never
+    reached because the run halted early or was stopped (FR-8.4)."""
+    return TrainingStatus.of(_find_job(job_id))
+
+
+@app.post("/api/train/{job_id}/stop")
+def stop_training(job_id: str) -> TrainingStatus:
+    """Ends the currently-running method's subprocess and trains nothing further.
+
+    Whatever methods already completed keep their results — the same principle FR-8.4
+    states for a per-method timeout: a partial run is still a run, not a discarded one.
+    """
+    job = _find_job(job_id)
+    training.request_stop(job)
+    return TrainingStatus.of(job)
