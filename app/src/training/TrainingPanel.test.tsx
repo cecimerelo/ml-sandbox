@@ -144,6 +144,35 @@ describe('a successful run', () => {
     });
   });
 
+  it('explains what Score means once a real score has landed, not before', async () => {
+    stubTraining([
+      status({ current: 'random_forest' }),
+      status({
+        done: true,
+        results: {
+          random_forest: {
+            method: 'random_forest',
+            status: 'ok',
+            mean_score: 0.5,
+            std_score: 0.01,
+            fold_scores: [],
+            fit_seconds: 1,
+            detail: null,
+          },
+        },
+      }),
+    ]);
+    const user = userEvent.setup();
+    show();
+    await user.click(screen.getByRole('button', { name: /train these methods/i }));
+
+    expect(screen.queryByText(/simply guessing the average/i)).toBeNull();
+    await waitFor(
+      () => expect(screen.getByText(/simply guessing the average/i)).toBeInTheDocument(),
+      { timeout: 3000 },
+    );
+  });
+
   it('shows the honest ceiling estimate while a job is active, not a smooth bar', async () => {
     stubTraining([status({ current: 'random_forest' })]);
     const user = userEvent.setup();

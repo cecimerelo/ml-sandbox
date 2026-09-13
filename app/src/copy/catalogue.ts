@@ -228,6 +228,10 @@ export const TRAINING = {
   'training.button.none-usable':
     'Every method here was ruled out by what you told us, so there is nothing left to train.',
   'training.progress.heading': 'Training on your data',
+  'training.score.explanation':
+    'Score compares each method against simply guessing the average outcome every time. ' +
+    '1 means a perfect prediction, 0 means no better than that guess, and a method that ' +
+    'did worse than guessing is also shown as 0 rather than a negative number.',
   'training.progress.current': 'Training {method}…',
   'training.progress.estimate': 'Up to {seconds}s left, based on how many methods remain.',
   'training.stop.button': 'Stop training',

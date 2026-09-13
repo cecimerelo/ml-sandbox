@@ -158,6 +158,12 @@ export function TrainingPanel({
             ))}
           </List>
 
+          {Object.values(job.results).some((result) => result.status === 'ok') && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              {TRAINING['training.score.explanation']}
+            </Typography>
+          )}
+
           {active && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>
               <Typography variant="body2" color="text.secondary">
