@@ -229,10 +229,10 @@ export const TRAINING = {
     'Every method here was ruled out by what you told us, so there is nothing left to train.',
   'training.progress.heading': 'Training on your data',
   'training.score.explanation':
-    'Every score below is compared to the same baseline: guessing one fixed number — the ' +
-    'average outcome across your rows — every single time, never the other methods here. ' +
-    '1 means a perfect prediction, 0 means no better than that guess, and a method that ' +
-    'did worse than guessing is also shown as 0 rather than a negative number.',
+    "Score compares this method's predictions to always predicting the same single " +
+    'number: the average outcome across all your rows. 1 means a perfect prediction. ' +
+    '0 means it did no better than that flat average. If it actually did worse, it ' +
+    'still shows as 0, not a negative number.',
   'training.progress.current': 'Training {method}…',
   'training.progress.estimate': 'Up to {seconds}s left, based on how many methods remain.',
   'training.stop.button': 'Stop training',
