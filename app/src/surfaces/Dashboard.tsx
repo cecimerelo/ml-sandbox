@@ -12,6 +12,7 @@ import { RecommendationPanel } from '../panel/RecommendationPanel';
 import type { Recommendation } from '../panel/types';
 import { DatasetPanel } from '../detect/DatasetPanel';
 import type { Detection } from '../detect/types';
+import { TrainingPanel } from '../training/TrainingPanel';
 import { Dropzone } from '../upload/Dropzone';
 import type { DatasetSummary } from '../upload/Dropzone';
 import { spacing } from '../theme/tokens';
@@ -208,7 +209,14 @@ export function Dashboard() {
         </Box>
       </Box>
       <div ref={resultRef}>
-        <DashboardResult result={result} failed={failed} stale={stale} />
+        <DashboardResult
+          result={result}
+          failed={failed}
+          stale={stale}
+          dataset={dataset}
+          detection={detection}
+          trainSignal={collapseEda}
+        />
       </div>
     </>
   );
@@ -218,12 +226,29 @@ function DashboardResult({
   result,
   failed,
   stale,
+  dataset,
+  detection,
+  trainSignal,
 }: {
   result: Recommendation | null;
   failed: string | null;
   stale: boolean;
+  dataset: { file: File; summary: DatasetSummary } | null;
+  detection: Detection | null;
+  /** Bumped on every new successful recommendation — the same signal `EdaBlock` collapses
+   * on, reused here so a training run in progress for the *previous* recommendation stops
+   * rather than keep fitting methods nobody is looking at the answer for anymore. */
+  trainSignal: number;
 }) {
   if (!result || failed) return null;
+  // Every candidate the recommendation actually offered, in the order it ranked them —
+  // never re-ranked or padded out here. A method excluded by the user's own constraint
+  // is not trained: training something they said they cannot use would not be evidence
+  // for anything they could act on.
+  const methods = [result.recommended, ...result.alternatives]
+    .filter((suggestion) => !suggestion.excluded_by_constraint)
+    .map((suggestion) => suggestion.method);
+
   // Wider than the reading column above it, and sized to its own content rather than a
   // fixed measure: "Method characteristics" needs more than 640px to lay out five columns
   // without a scrollbar, and the panel should be exactly as wide as that table needs to
@@ -231,6 +256,13 @@ function DashboardResult({
   return (
     <Box sx={{ width: 'fit-content', maxWidth: spacing.contentMax, mx: 'auto' }}>
       <RecommendationPanel result={result} stale={stale} />
+      <TrainingPanel
+        file={dataset?.file ?? null}
+        target={detection?.target ?? null}
+        task={detection?.task ?? null}
+        methods={methods}
+        resetSignal={trainSignal}
+      />
     </Box>
   );
 }
