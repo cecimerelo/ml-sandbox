@@ -106,6 +106,33 @@ def test_an_unknown_route_is_a_404_not_a_crash():
     assert client.get("/api/nope").status_code == 404
 
 
+# Serving the built frontend (deployment) — skipped unless `npm run build` has produced
+# app/dist, the same pattern tests/test_upload.py uses for scripts/make_examples.py's
+# generated files: these exercise a built artifact, not something pytest builds itself.
+
+
+def test_a_client_side_route_still_serves_the_app():
+    from mlsandbox.api import FRONTEND_DIST
+
+    if not FRONTEND_DIST.is_dir():
+        pytest.skip("app/dist not built — run npm run build in app/")
+    # react-router-dom, not the server, decides what "/benchmark" means — the server's
+    # only job is to hand back the same index.html it would for "/".
+    response = client.get("/benchmark")
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/html")
+
+
+def test_an_unknown_api_route_is_still_404_even_with_the_frontend_built():
+    from mlsandbox.api import FRONTEND_DIST
+
+    if not FRONTEND_DIST.is_dir():
+        pytest.skip("app/dist not built — run npm run build in app/")
+    # The SPA catch-all is a plain path wildcard, not scoped to "whatever /api/ didn't
+    # claim" — without excluding /api/ by name, a mistyped API call would 200 with HTML.
+    assert client.get("/api/nope").status_code == 404
+
+
 # Uploading a dataset
 
 

@@ -50,6 +50,30 @@ thing to differ between development and deployment.
 
 `make api` and `make web` run either half alone.
 
+## Deployment
+
+`Dockerfile` builds one image: the frontend (`npm run build`) baked in as a static
+bundle, served by the same FastAPI process as the API (`api.py`'s `FRONTEND_DIST`
+mount) — one service, one origin, the same "nothing needs CORS" guarantee above, now
+also true in production rather than only in `vite dev`.
+
+```bash
+docker build -t ml-sandbox .
+docker run -p 8000:8000 ml-sandbox
+```
+
+The packaged model (`data/model/`) is committed rather than gitignored like the rest of
+`data/`, specifically so a deploy has something to load without a separate upload step —
+`scripts/package_model.py` regenerates it, see [`examples/README.md`](examples/README.md)
+for why every other file under `data/` stays out of git.
+
+`render.yaml` is a [Render](https://render.com) Blueprint — connect the repo, "New >
+Blueprint", and it builds this same `Dockerfile` as a single web service. Any host that
+runs an arbitrary Docker image as one long-lived process works the same way; this app
+specifically needs that (not a serverless/functions platform): training (`training.py`)
+holds an in-memory job registry and spawns real OS subprocesses, both of which assume
+one persistent process, not many stateless instances behind a load balancer.
+
 ## Reproducibility
 
 Every run is defined by [`config/benchmark.toml`](config/benchmark.toml) plus the seed

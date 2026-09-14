@@ -1,0 +1,15 @@
+# Render's "Blueprint" format — lets a Render account create this service from the repo
+# in one step (New > Blueprint) instead of clicking through the manual form.
+#
+# One service, one process: FastAPI serves the API and the built frontend together
+# (api.py's FRONTEND_DIST mount), so there is nothing else to deploy alongside it.
+services:
+  - type: web
+    name: ml-sandbox
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: PORT
+        value: 8000

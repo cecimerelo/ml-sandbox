@@ -1,0 +1,482 @@
+{
+  "bagging": {
+    "method": "bagging",
+    "label": "Bagging",
+    "interpretability": {
+      "word": "low",
+      "step": 1
+    },
+    "handles_non_linearity": {
+      "word": "high",
+      "step": 3
+    },
+    "handles_missing_values": {
+      "word": "yes",
+      "step": 3
+    },
+    "accuracy_potential": {
+      "word": "high",
+      "step": 3
+    },
+    "training_speed": {
+      "word": "moderate",
+      "step": 2
+    }
+  },
+  "boosting": {
+    "method": "boosting",
+    "label": "Gradient Boosting",
+    "interpretability": {
+      "word": "low",
+      "step": 1
+    },
+    "handles_non_linearity": {
+      "word": "high",
+      "step": 3
+    },
+    "handles_missing_values": {
+      "word": "yes",
+      "step": 3
+    },
+    "accuracy_potential": {
+      "word": "high",
+      "step": 3
+    },
+    "training_speed": {
+      "word": "slow",
+      "step": 1
+    }
+  },
+  "decision_tree": {
+    "method": "decision_tree",
+    "label": "Decision Tree",
+    "interpretability": {
+      "word": "high",
+      "step": 3
+    },
+    "handles_non_linearity": {
+      "word": "high",
+      "step": 3
+    },
+    "handles_missing_values": {
+      "word": "yes",
+      "step": 3
+    },
+    "accuracy_potential": {
+      "word": "moderate",
+      "step": 2
+    },
+    "training_speed": {
+      "word": "fast",
+      "step": 3
+    }
+  },
+  "knn": {
+    "method": "knn",
+    "label": "K-Nearest Neighbours",
+    "interpretability": {
+      "word": "moderate",
+      "step": 2
+    },
+    "handles_non_linearity": {
+      "word": "low",
+      "step": 1
+    },
+    "handles_missing_values": {
+      "word": "no",
+      "step": 1
+    },
+    "accuracy_potential": {
+      "word": "moderate",
+      "step": 2
+    },
+    "training_speed": {
+      "word": "moderate",
+      "step": 2
+    }
+  },
+  "lasso": {
+    "method": "lasso",
+    "label": "Lasso",
+    "interpretability": {
+      "word": "high",
+      "step": 3
+    },
+    "handles_non_linearity": {
+      "word": "low",
+      "step": 1
+    },
+    "handles_missing_values": {
+      "word": "no",
+      "step": 1
+    },
+    "accuracy_potential": {
+      "word": "lower",
+      "step": 1
+    },
+    "training_speed": {
+      "word": "slow",
+      "step": 1
+    }
+  },
+  "lda": {
+    "method": "lda",
+    "label": "Linear Discriminant Analysis",
+    "interpretability": {
+      "word": "high",
+      "step": 3
+    },
+    "handles_non_linearity": {
+      "word": "low",
+      "step": 1
+    },
+    "handles_missing_values": {
+      "word": "no",
+      "step": 1
+    },
+    "accuracy_potential": {
+      "word": "lower",
+      "step": 1
+    },
+    "training_speed": {
+      "word": "fast",
+      "step": 3
+    }
+  },
+  "logistic_regression": {
+    "method": "logistic_regression",
+    "label": "Logistic Regression",
+    "interpretability": {
+      "word": "high",
+      "step": 3
+    },
+    "handles_non_linearity": {
+      "word": "low",
+      "step": 1
+    },
+    "handles_missing_values": {
+      "word": "no",
+      "step": 1
+    },
+    "accuracy_potential": {
+      "word": "moderate",
+      "step": 2
+    },
+    "training_speed": {
+      "word": "fast",
+      "step": 3
+    }
+  },
+  "mlp": {
+    "method": "mlp",
+    "label": "Neural Network (MLP)",
+    "interpretability": {
+      "word": "low",
+      "step": 1
+    },
+    "handles_non_linearity": {
+      "word": "high",
+      "step": 3
+    },
+    "handles_missing_values": {
+      "word": "no",
+      "step": 1
+    },
+    "accuracy_potential": {
+      "word": "high",
+      "step": 3
+    },
+    "training_speed": {
+      "word": "slow",
+      "step": 1
+    }
+  },
+  "naive_bayes": {
+    "method": "naive_bayes",
+    "label": "Naive Bayes",
+    "interpretability": {
+      "word": "high",
+      "step": 3
+    },
+    "handles_non_linearity": {
+      "word": "low",
+      "step": 1
+    },
+    "handles_missing_values": {
+      "word": "no",
+      "step": 1
+    },
+    "accuracy_potential": {
+      "word": "lower",
+      "step": 1
+    },
+    "training_speed": {
+      "word": "fast",
+      "step": 3
+    }
+  },
+  "qda": {
+    "method": "qda",
+    "label": "Quadratic Discriminant Analysis",
+    "interpretability": {
+      "word": "moderate",
+      "step": 2
+    },
+    "handles_non_linearity": {
+      "word": "low",
+      "step": 1
+    },
+    "handles_missing_values": {
+      "word": "no",
+      "step": 1
+    },
+    "accuracy_potential": {
+      "word": "moderate",
+      "step": 2
+    },
+    "training_speed": {
+      "word": "fast",
+      "step": 3
+    }
+  },
+  "random_forest": {
+    "method": "random_forest",
+    "label": "Random Forest",
+    "interpretability": {
+      "word": "low",
+      "step": 1
+    },
+    "handles_non_linearity": {
+      "word": "high",
+      "step": 3
+    },
+    "handles_missing_values": {
+      "word": "yes",
+      "step": 3
+    },
+    "accuracy_potential": {
+      "word": "high",
+      "step": 3
+    },
+    "training_speed": {
+      "word": "moderate",
+      "step": 2
+    }
+  },
+  "ridge": {
+    "method": "ridge",
+    "label": "Ridge",
+    "interpretability": {
+      "word": "high",
+      "step": 3
+    },
+    "handles_non_linearity": {
+      "word": "low",
+      "step": 1
+    },
+    "handles_missing_values": {
+      "word": "no",
+      "step": 1
+    },
+    "accuracy_potential": {
+      "word": "moderate",
+      "step": 2
+    },
+    "training_speed": {
+      "word": "slow",
+      "step": 1
+    }
+  },
+  "svm_linear": {
+    "method": "svm_linear",
+    "label": "Support Vector Classifier",
+    "interpretability": {
+      "word": "high",
+      "step": 3
+    },
+    "handles_non_linearity": {
+      "word": "low",
+      "step": 1
+    },
+    "handles_missing_values": {
+      "word": "no",
+      "step": 1
+    },
+    "accuracy_potential": {
+      "word": "lower",
+      "step": 1
+    },
+    "training_speed": {
+      "word": "moderate",
+      "step": 2
+    }
+  },
+  "svm_rbf": {
+    "method": "svm_rbf",
+    "label": "Support Vector Machine (RBF)",
+    "interpretability": {
+      "word": "low",
+      "step": 1
+    },
+    "handles_non_linearity": {
+      "word": "low",
+      "step": 1
+    },
+    "handles_missing_values": {
+      "word": "no",
+      "step": 1
+    },
+    "accuracy_potential": {
+      "word": "high",
+      "step": 3
+    },
+    "training_speed": {
+      "word": "moderate",
+      "step": 2
+    }
+  },
+  "linear_regression": {
+    "method": "linear_regression",
+    "label": "Linear Regression",
+    "interpretability": {
+      "word": "high",
+      "step": 3
+    },
+    "handles_non_linearity": {
+      "word": "low",
+      "step": 1
+    },
+    "handles_missing_values": {
+      "word": "no",
+      "step": 1
+    },
+    "accuracy_potential": {
+      "word": "lower",
+      "step": 1
+    },
+    "training_speed": {
+      "word": "fast",
+      "step": 3
+    }
+  },
+  "pcr": {
+    "method": "pcr",
+    "label": "Principal Components Regression",
+    "interpretability": {
+      "word": "moderate",
+      "step": 2
+    },
+    "handles_non_linearity": {
+      "word": "low",
+      "step": 1
+    },
+    "handles_missing_values": {
+      "word": "no",
+      "step": 1
+    },
+    "accuracy_potential": {
+      "word": "lower",
+      "step": 1
+    },
+    "training_speed": {
+      "word": "fast",
+      "step": 3
+    }
+  },
+  "pls": {
+    "method": "pls",
+    "label": "Partial Least Squares",
+    "interpretability": {
+      "word": "moderate",
+      "step": 2
+    },
+    "handles_non_linearity": {
+      "word": "low",
+      "step": 1
+    },
+    "handles_missing_values": {
+      "word": "no",
+      "step": 1
+    },
+    "accuracy_potential": {
+      "word": "moderate",
+      "step": 2
+    },
+    "training_speed": {
+      "word": "fast",
+      "step": 3
+    }
+  },
+  "polynomial": {
+    "method": "polynomial",
+    "label": "Polynomial Regression",
+    "interpretability": {
+      "word": "moderate",
+      "step": 2
+    },
+    "handles_non_linearity": {
+      "word": "high",
+      "step": 3
+    },
+    "handles_missing_values": {
+      "word": "no",
+      "step": 1
+    },
+    "accuracy_potential": {
+      "word": "high",
+      "step": 3
+    },
+    "training_speed": {
+      "word": "moderate",
+      "step": 2
+    }
+  },
+  "polynomial_interactions": {
+    "method": "polynomial_interactions",
+    "label": "Polynomial with Interactions",
+    "interpretability": {
+      "word": "moderate",
+      "step": 2
+    },
+    "handles_non_linearity": {
+      "word": "high",
+      "step": 3
+    },
+    "handles_missing_values": {
+      "word": "no",
+      "step": 1
+    },
+    "accuracy_potential": {
+      "word": "moderate",
+      "step": 2
+    },
+    "training_speed": {
+      "word": "moderate",
+      "step": 2
+    }
+  },
+  "splines": {
+    "method": "splines",
+    "label": "Regression Splines",
+    "interpretability": {
+      "word": "moderate",
+      "step": 2
+    },
+    "handles_non_linearity": {
+      "word": "high",
+      "step": 3
+    },
+    "handles_missing_values": {
+      "word": "no",
+      "step": 1
+    },
+    "accuracy_potential": {
+      "word": "high",
+      "step": 3
+    },
+    "training_speed": {
+      "word": "slow",
+      "step": 1
+    }
+  }
+}
