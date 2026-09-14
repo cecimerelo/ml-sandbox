@@ -219,6 +219,35 @@ export const CHART = {
 } as const;
 
 /**
+ * `{components.training-panel}` — Block 4 (#82): the button that trains the recommended
+ * methods on the user's own data, and what the panel says while that runs.
+ */
+export const TRAINING = {
+  'training.button.label': 'Train these methods on your data',
+  'training.button.no-dataset': 'Upload a file above to train this method on your own data.',
+  'training.button.none-usable':
+    'Every method here was ruled out by what you told us, so there is nothing left to train.',
+  'training.progress.heading': 'Training on your data',
+  'training.score.explanation':
+    "Score compares this method's predictions to always predicting the same single " +
+    'number: the average outcome across all your rows. 1 means a perfect prediction. ' +
+    '0 means it did no better than that flat average. If it actually did worse, it ' +
+    'still shows as 0, not a negative number.',
+  'training.best-result': 'Best result here',
+  'training.progress.current': 'Training {method}…',
+  'training.progress.estimate': 'Up to {seconds}s left, based on how many methods remain.',
+  'training.stop.button': 'Stop training',
+  'training.stop.confirmation': 'Training stopped. Results for finished methods still show below.',
+  'training.timeout':
+    '{method} took longer than {seconds}s and was stopped. The other methods are unaffected.',
+  'training.halted-early':
+    'Stopped after {done} of {total} methods — the leading ones were already too close to ' +
+    'call apart, so training the rest would not have changed the answer.',
+  'training.error':
+    "Something went wrong training on your data, so this run didn't finish. Try again.",
+} as const;
+
+/**
  * Fill a `{placeholder}` template from the catalogue with a value the interface computed.
  *
  * Single braces, never `{{double}}` — that syntax means a glossed term (`render.tsx`), and
@@ -238,4 +267,5 @@ export const ALL_STRINGS: Record<string, string> = {
   ),
   ...PANEL,
   ...CHART,
+  ...TRAINING,
 };
