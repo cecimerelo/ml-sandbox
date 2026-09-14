@@ -233,6 +233,7 @@ export const TRAINING = {
     'number: the average outcome across all your rows. 1 means a perfect prediction. ' +
     '0 means it did no better than that flat average. If it actually did worse, it ' +
     'still shows as 0, not a negative number.',
+  'training.best-result': 'Best result here',
   'training.progress.current': 'Training {method}…',
   'training.progress.estimate': 'Up to {seconds}s left, based on how many methods remain.',
   'training.stop.button': 'Stop training',

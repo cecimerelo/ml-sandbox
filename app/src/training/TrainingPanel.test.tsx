@@ -173,6 +173,46 @@ describe('a successful run', () => {
     );
   });
 
+  it('marks whichever method actually scored highest, even if it is not the first one', async () => {
+    // random_forest is listed first (the recommendation's own order) but
+    // logistic_regression scores higher here — the badge follows the real numbers, not
+    // the order the recommendation predicted.
+    stubTraining([
+      status({
+        done: true,
+        results: {
+          random_forest: {
+            method: 'random_forest',
+            status: 'ok',
+            mean_score: 0.7,
+            std_score: 0.02,
+            fold_scores: [],
+            fit_seconds: 1,
+            detail: null,
+          },
+          logistic_regression: {
+            method: 'logistic_regression',
+            status: 'ok',
+            mean_score: 0.9,
+            std_score: 0.01,
+            fold_scores: [],
+            fit_seconds: 1,
+            detail: null,
+          },
+        },
+      }),
+    ]);
+    const user = userEvent.setup();
+    show();
+    await user.click(screen.getByRole('button', { name: /train these methods/i }));
+
+    const badge = await screen.findByText(/best result here/i);
+    const row = badge.closest('li');
+    expect(row).not.toBeNull();
+    expect(row).toHaveTextContent('logistic_regression');
+    expect(screen.getAllByText(/best result here/i)).toHaveLength(1);
+  });
+
   it('shows the honest ceiling estimate while a job is active, not a smooth bar', async () => {
     stubTraining([status({ current: 'random_forest' })]);
     const user = userEvent.setup();

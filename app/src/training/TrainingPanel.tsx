@@ -6,6 +6,7 @@ import ScheduleIcon from '@mui/icons-material/Schedule';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
@@ -26,6 +27,25 @@ async function fetchJob(jobId: string): Promise<TrainingStatus | null> {
   const response = await fetch(`/api/train/${jobId}`);
   if (!response.ok) return null;
   return response.json();
+}
+
+/**
+ * Which method actually scored highest so far — evidence measured on this dataset,
+ * not the recommendation's own prediction. The two can disagree: `for_problem` ranks by
+ * what tends to work on datasets *shaped* like this one, and a live fit only ever
+ * answers for the one dataset in front of it. Updates as results land rather than only
+ * once the job is done — a genuine best-so-far, not a fake one.
+ */
+function bestMethod(results: TrainingStatus['results']): string | null {
+  let best: string | null = null;
+  let bestScore = -Infinity;
+  for (const [method, result] of Object.entries(results)) {
+    if (result.status === 'ok' && result.mean_score !== null && result.mean_score > bestScore) {
+      best = method;
+      bestScore = result.mean_score;
+    }
+  }
+  return best;
 }
 
 /**
@@ -119,6 +139,7 @@ export function TrainingPanel({
 
   const active = job !== null && !job.done;
   const remaining = job ? methods.length - Object.keys(job.results).length : 0;
+  const leader = job ? bestMethod(job.results) : null;
 
   return (
     <Paper variant="outlined" sx={{ p: 3, mt: `${spacing.sectionGap}px` }}>
@@ -154,6 +175,7 @@ export function TrainingPanel({
                 method={method}
                 result={job.results[method]}
                 current={job.current === method}
+                isBest={method === leader}
               />
             ))}
           </List>
@@ -207,6 +229,7 @@ function MethodRow({
   method,
   result,
   current,
+  isBest,
 }: {
   method: string;
   result: MethodResult | undefined;
@@ -214,6 +237,9 @@ function MethodRow({
    * fitting: a `MethodResult` only exists once a method has *finished*, one way or
    * another, so "running" can never come from `result.status` itself. */
   current: boolean;
+  /** Whether this method's measured score is the highest among finished methods —
+   * evidence from this dataset, independent of which method the recommendation named. */
+  isBest: boolean;
 }) {
   const status = current ? 'running' : (result?.status ?? 'pending');
   return (
@@ -221,7 +247,17 @@ function MethodRow({
       <ListItemIcon sx={{ minWidth: 32 }}>
         <StatusIcon status={status} />
       </ListItemIcon>
-      <ListItemText primary={method} secondary={secondaryText(method, status, result)} />
+      <ListItemText
+        primary={
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {method}
+            {isBest && (
+              <Chip size="small" color="success" label={TRAINING['training.best-result']} />
+            )}
+          </Box>
+        }
+        secondary={secondaryText(method, status, result)}
+      />
     </ListItem>
   );
 }
