@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "created": "2026-09-05T17:33:34+00:00",
+  "datasets": 106,
+  "collection_size": 106,
+  "unknown_datasets": 0,
+  "observations": 1557,
+  "methods": 20,
+  "missing_rate": 0.0,
+  "seed": 20260815,
+  "python": "3.12.9",
+  "sklearn": "1.9.0",
+  "answer_support": {
+    "task": {
+      "regression": 55,
+      "binary classification": 28,
+      "multiclass classification": 23
+    },
+    "rows": {
+      "<500": 40,
+      "500-10k": 40,
+      ">10k": 26
+    },
+    "features": {
+      "10-50": 51,
+      "<10": 49,
+      ">50": 6
+    },
+    "regime": {
+      "moderate": 54,
+      "data-rich": 39,
+      "high-dimensional": 13
+    },
+    "feature_types": {
+      "numeric": 78,
+      "mixed": 24,
+      "categorical": 4
+    },
+    "missing": {
+      "none": 97,
+      "some": 7,
+      "a lot": 2
+    },
+    "class_balance": {
+      "not applicable": 55,
+      "roughly equal": 32,
+      "one class dominates": 19
+    }
+  }
+}

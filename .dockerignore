@@ -1,0 +1,16 @@
+.git/
+.venv/
+__pycache__/
+*.pyc
+node_modules/
+app/dist/
+app/node_modules/
+data/datasets/
+data/results/
+data/sessions.db
+examples/too-large.csv
+.claude/
+_bmad/
+.bmad-loop/
+logs/
+.env

@@ -16,6 +16,8 @@ from pathlib import Path
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from mlsandbox import (
     artifact,
@@ -28,7 +30,7 @@ from mlsandbox import (
     upload,
 )
 from mlsandbox.base import StrictModel
-from mlsandbox.config import load_config
+from mlsandbox.config import PROJECT_ROOT, load_config
 from mlsandbox.metafeatures import (
     ClassBalance,
     FeatureBand,
@@ -567,3 +569,39 @@ def stop_training(job_id: str) -> TrainingStatus:
     job = _find_job(job_id)
     training.request_stop(job)
     return TrainingStatus.of(job)
+
+
+FRONTEND_DIST = PROJECT_ROOT / "app" / "dist"
+"""Where `npm run build` (`app/`) writes the frontend's static bundle.
+
+Serving it from this same process is what makes frontend and backend one origin in a
+deployment — no CORS to configure, no separate base URL per environment, the same
+guarantee the dev-only Vite proxy already gives locally (D-053's cousin: one fewer thing
+to differ between the two).
+
+Only registered when the bundle actually exists, so `make dev` (backend alone, frontend
+served by its own dev server on :5173) is untouched — this exists for a built deployment,
+not for local development.
+"""
+
+if FRONTEND_DIST.is_dir():
+    app.mount("/assets", StaticFiles(directory=FRONTEND_DIST / "assets"), name="assets")
+
+    @app.get("/{full_path:path}")
+    async def spa(full_path: str) -> FileResponse:
+        """Every non-API route serves the same `index.html` — react-router-dom (`/`,
+        `/benchmark`) decides what that means client-side. Registered last, deliberately:
+        Starlette matches routes in declaration order, and every `/api/...` route above
+        this one in the file must win before this catch-all ever sees the request.
+
+        A *nonexistent* `/api/...` route still reaches here, though — this matcher is a
+        plain path wildcard, not scoped to "whatever `/api` didn't claim". Excluded by
+        name rather than left to fall through to `index.html`, which would turn a
+        mistyped API call into a 200 of HTML instead of the 404 it should be.
+        """
+        if full_path.startswith("api/"):
+            raise HTTPException(status_code=404)
+        candidate = FRONTEND_DIST / full_path
+        if full_path and candidate.is_file():
+            return FileResponse(candidate)
+        return FileResponse(FRONTEND_DIST / "index.html")

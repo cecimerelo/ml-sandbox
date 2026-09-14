@@ -16,7 +16,12 @@ __pycache__/
 
 # Study data and artifacts. Not committed (too large), but not disposable either:
 # data/datasets is the snapshot results are computed on. D-010 publishes it separately.
-data/
+#
+# data/model/ is the exception: the packaged Layer 2 artifact + characteristics table
+# the deployed server actually loads at runtime (api.py's model_path()/characteristics_
+# path()) — committed so a deploy has something to serve without a separate upload step.
+data/*
+!data/model/
 artifacts/
 
 # Secrets
@@ -29,5 +34,3 @@ app/dist/
 app/tsconfig.tsbuildinfo
 app/.vite/
 examples/too-large.csv
-
-data/model/
