@@ -87,6 +87,20 @@ def test_a_successful_run_scores_every_method_and_keeps_the_fitted_pipeline(
         assert result.fitted is not None
 
 
+def test_a_method_whose_fitted_pipeline_is_large_still_completes(classification_data):
+    # Regression test: an ensemble's pickled pipeline (a RandomForestClassifier's
+    # hundred trees) can exceed the multiprocessing Queue's pipe buffer. Polling via
+    # `process.join(timeout=...)` and reading the queue only afterwards deadlocked here
+    # — the child blocks in `Queue.put` and can never exit, so `is_alive()` never goes
+    # false and the run "times out" without the timeout being the actual problem.
+    # Confirmed against examples/houses.csv (random_forest/bagging, both real fits under
+    # 0.1s standalone) before this test was written.
+    job = run_job(["random_forest"], "classification", classification_data)
+
+    assert job.results["random_forest"].status == "ok"
+    assert job.results["random_forest"].fit_seconds < 10
+
+
 def test_an_unknown_method_aborts_the_job_rather_than_skipping_it(classification_data):
     # A fit error is different from a timeout: FR-8.4 asks a timeout to skip and continue,
     # but an error (a column type a method cannot handle, say) can implicate the dataset

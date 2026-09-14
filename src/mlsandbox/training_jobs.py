@@ -91,10 +91,16 @@ class TrainingJob:
 
     def mark_done(self) -> None:
         """Every path that ends the run sets `done` through here, never by assigning the
-        field directly — the completion timestamp `_sweep_expired` depends on would
-        otherwise be easy to forget on a new exit path."""
+        field directly — two invariants live here that a new exit path would otherwise
+        have to remember separately: the completion timestamp `_sweep_expired` depends
+        on, and `current` being cleared. Without the second, a job that ends early — an
+        early halt, an aborted method, a stop — left `current` naming whichever method
+        was running when it exited, and the frontend (which reads `current == method` as
+        "still fitting", with priority over an already-`ok` result) showed that method
+        spinning forever even though its result had already landed."""
         self.done = True
         self.completed_at = time.monotonic()
+        self.current = None
 
 
 _REGISTRY: dict[str, TrainingJob] = {}

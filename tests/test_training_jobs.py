@@ -76,6 +76,18 @@ def test_mark_done_records_a_completion_timestamp():
     assert running.completed_at is not None
 
 
+def test_mark_done_clears_current_even_on_an_early_exit():
+    # Regression: an early halt/abort/stop set `done` without clearing `current`, so the
+    # frontend (which reads `current == method` as "still fitting", ahead of an already
+    # `ok` result) showed that method spinning forever after the job had finished.
+    running = job()
+    running.current = "random_forest"
+
+    running.mark_done()
+
+    assert running.current is None
+
+
 def test_snapshot_is_a_copy_not_the_live_results_dict():
     running = job()
     snapshot = running.snapshot()
