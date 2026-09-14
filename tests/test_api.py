@@ -512,6 +512,17 @@ def train(methods: list[str], target: str = "price", task: str = "regression"):
     )
 
 
+def train_file(name: str, methods: list[str], target: str = "price", task: str = "regression"):
+    from mlsandbox.config import PROJECT_ROOT
+
+    content = (PROJECT_ROOT / "examples" / name).read_bytes()
+    return client.post(
+        "/api/train",
+        files={"file": (name, content, "text/csv")},
+        data={"target": target, "task": task, "methods": methods},
+    )
+
+
 def wait_until_done(job_id: str, timeout: float = 60.0) -> dict:
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
@@ -531,6 +542,18 @@ def test_training_two_real_methods_on_a_real_dataset_end_to_end():
     for method in ["linear_regression", "decision_tree"]:
         assert status["results"][method]["status"] == "ok"
         assert status["results"][method]["mean_score"] is not None
+
+
+def test_strong_signal_houses_actually_has_signal_to_find():
+    # houses.csv's price is pure noise by construction (scripts/make_examples.py),
+    # deliberately independent of every other column — the right fixture for exercising
+    # the upload path, the wrong one for showing a trained method finds anything.
+    # strong-signal-houses.csv prices each row from its own columns, so a method that
+    # can't beat guessing the average here would be a real regression, not the dataset.
+    job_id = train_file("strong-signal-houses.csv", ["linear_regression"]).json()["job_id"]
+    status = wait_until_done(job_id)
+
+    assert status["results"]["linear_regression"]["mean_score"] > 0.9
 
 
 def test_the_status_carries_the_timeout_tier_the_frontend_estimates_from():
