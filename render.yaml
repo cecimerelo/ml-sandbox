@@ -3,6 +3,12 @@
 #
 # One service, one process: FastAPI serves the API and the built frontend together
 # (api.py's FRONTEND_DIST mount), so there is nothing else to deploy alongside it.
+#
+# No PORT env var here on purpose: Render injects its own (10000 by default) and scans
+# *that* value for an open port. The Dockerfile's CMD reads $PORT, so it always binds to
+# whatever Render actually assigned. Pinning PORT to 8000 here once caused a real deploy
+# to hang for the full 15-minute port-scan window with the app never actually reachable —
+# it bound to the value we forced while Render kept scanning the value it assigned.
 services:
   - type: web
     name: ml-sandbox
@@ -10,6 +16,3 @@ services:
     dockerfilePath: ./Dockerfile
     plan: free
     healthCheckPath: /api/health
-    envVars:
-      - key: PORT
-        value: 8000
