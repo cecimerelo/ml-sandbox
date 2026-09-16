@@ -37,8 +37,14 @@ RUN uv sync --frozen --no-dev
 COPY --from=frontend /app/dist/ ./app/dist/
 
 ENV PATH="/srv/.venv/bin:$PATH"
+# Unbuffered so uvicorn's own startup line (and any traceback) reaches the platform's log
+# stream immediately — a container's stdout isn't a TTY, so Python fully buffers it by
+# default, which once made a real startup failure look like total silence for 15 minutes.
+ENV PYTHONUNBUFFERED=1
 EXPOSE 8000
 
 # Render (and most single-service hosts) set $PORT; 8000 is the documented local default
-# (README, Makefile) when nothing overrides it.
-CMD ["sh", "-c", "uvicorn mlsandbox.api:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# (README, Makefile) when nothing overrides it. `exec` replaces this shell with uvicorn
+# instead of running it as a child, so it receives signals directly and a crash isn't
+# masked behind the wrapping shell.
+CMD ["sh", "-c", "exec uvicorn mlsandbox.api:app --host 0.0.0.0 --port ${PORT:-8000}"]
