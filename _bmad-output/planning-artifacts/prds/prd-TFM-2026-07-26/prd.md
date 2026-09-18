@@ -119,16 +119,16 @@ The engine reads the user's form answers as its inputs — prediction type, data
 
 | Method | Visualizations |
 |---|---|
-| Linear Regression | Residual plot, predicted vs. actual scatter, coefficient plot |
+| Linear Regression | Residual plot, predicted vs. actual scatter, coefficient plot, leverage / Cook's distance plot |
 | Logistic Regression | ROC curve, confusion matrix, coefficient plot |
 | LDA / QDA | Decision boundary, confusion matrix |
 | Naive Bayes | Confusion matrix, ROC curve |
 | KNN | Decision boundary, accuracy vs. K curve |
 | Ridge / Lasso | Coefficient shrinkage path, CV error vs. lambda |
-| PCR / PLS | Variance explained vs. components |
+| PCR / PLS | Variance explained vs. components, CV error vs. components |
 | Polynomial Regression / Splines | Fitted curve plot, residual plot |
 | GAMs | Partial dependence plot per feature |
-| Decision Tree | Tree diagram, feature importance |
+| Decision Tree | Tree diagram, feature importance, CV error vs. tree size (cost-complexity pruning) |
 | Random Forest / Bagging | Feature importance, OOB error curve |
 | Boosting | Feature importance, training vs. test error by iteration |
 | BART | Posterior credible intervals, variable inclusion proportions |
