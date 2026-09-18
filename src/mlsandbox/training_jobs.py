@@ -89,6 +89,14 @@ class TrainingJob:
                 "results": dict(self.results),
             }
 
+    def result_for(self, method: str) -> MethodResult | None:
+        """One method's result, including its fitted pipeline — under the same lock
+        `training.py` writes it through. `snapshot()` deliberately excludes `fitted` (an
+        sklearn `Pipeline` has no JSON form); this is how #4.4/#4.5's chart endpoints
+        reach it instead."""
+        with self._lock:
+            return self.results.get(method)
+
     def mark_done(self) -> None:
         """Every path that ends the run sets `done` through here, never by assigning the
         field directly — two invariants live here that a new exit path would otherwise

@@ -638,3 +638,58 @@ def test_stopping_an_already_finished_job_is_a_harmless_no_op():
 
     assert response.status_code == 200
     assert response.json()["done"] is True
+
+
+def method_charts(job_id: str, method: str, target: str = "price"):
+    return client.post(
+        f"/api/train/{job_id}/{method}/charts",
+        files={"file": ("strong-signal-houses.csv", _strong_signal_houses(), "text/csv")},
+        data={"target": target},
+    )
+
+
+def _strong_signal_houses() -> bytes:
+    from mlsandbox.config import PROJECT_ROOT
+
+    return (PROJECT_ROOT / "examples" / "strong-signal-houses.csv").read_bytes()
+
+
+def test_linear_regression_charts_reuse_the_already_fitted_pipeline():
+    job_id = train_file("strong-signal-houses.csv", ["linear_regression"]).json()["job_id"]
+    wait_until_done(job_id)
+
+    response = method_charts(job_id, "linear_regression")
+
+    assert response.status_code == 200
+    body = response.json()
+    n_rows = len(_strong_signal_houses().decode().splitlines()) - 1
+    assert len(body["residual"]["points"]) == n_rows
+    assert len(body["predicted_vs_actual"]["points"]) == n_rows
+    assert body["predicted_vs_actual"]["r2"] > 0.9
+    assert len(body["leverage"]["points"]) == n_rows
+    assert len(body["coefficients"]["bars"]) == body["coefficients"]["total_features"]
+
+
+def test_charts_for_a_method_with_no_panel_yet_is_422():
+    job_id = train(["decision_tree"]).json()["job_id"]
+    wait_until_done(job_id)
+
+    response = method_charts(job_id, "decision_tree")
+
+    assert response.status_code == 422
+    assert response.json()["detail"]["reason"] == "no-charts-for-method"
+
+
+def test_charts_for_a_method_that_never_finished_is_404():
+    job_id = train(["linear_regression"]).json()["job_id"]
+    # No wait_until_done: the method has not finished fitting yet.
+
+    response = method_charts(job_id, "linear_regression")
+
+    assert response.status_code == 404
+    assert response.json()["detail"]["reason"] == "no-fitted-method"
+
+
+def test_charts_for_an_unknown_job_id_is_404():
+    response = method_charts("no-such-job", "linear_regression")
+    assert response.status_code == 404
