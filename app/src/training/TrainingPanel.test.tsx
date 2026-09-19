@@ -337,6 +337,51 @@ describe('what the run says about itself', () => {
   });
 });
 
+describe('when starting a run is rejected', () => {
+  it('shows the backend\'s own reason instead of a generic message', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url === '/api/train' && init?.method === 'POST') {
+          return {
+            ok: false,
+            json: async () => ({
+              detail: {
+                reason: 'untrainable-method',
+                message: "Can't be trained here: linear_regression.",
+              },
+            }),
+          };
+        }
+        throw new Error(`unexpected fetch: ${url}`);
+      }),
+    );
+    const user = userEvent.setup();
+    show();
+    await user.click(screen.getByRole('button', { name: /train these methods/i }));
+
+    expect(await screen.findByText(/linear_regression/)).toBeInTheDocument();
+    expect(screen.queryByText(/something went wrong training/i)).toBeNull();
+  });
+
+  it('falls back to a generic message when the response has no usable detail', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url === '/api/train' && init?.method === 'POST') {
+          return { ok: false, json: async () => { throw new Error('not json'); } };
+        }
+        throw new Error(`unexpected fetch: ${url}`);
+      }),
+    );
+    const user = userEvent.setup();
+    show();
+    await user.click(screen.getByRole('button', { name: /train these methods/i }));
+
+    expect(await screen.findByText(/something went wrong training/i)).toBeInTheDocument();
+  });
+});
+
 describe('viewing a method\'s charts', () => {
   function okResult(method: string, score: number) {
     return {
