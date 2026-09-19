@@ -144,6 +144,40 @@ describe('a successful run', () => {
     });
   });
 
+  it('shows three decimals, so two methods that round the same at two decimals still read as different', async () => {
+    stubTraining([
+      status({
+        done: true,
+        results: {
+          random_forest: {
+            method: 'random_forest',
+            status: 'ok',
+            mean_score: 0.9812,
+            std_score: 0.01,
+            fold_scores: [],
+            fit_seconds: 1,
+            detail: null,
+          },
+          logistic_regression: {
+            method: 'logistic_regression',
+            status: 'ok',
+            mean_score: 0.9789,
+            std_score: 0.01,
+            fold_scores: [],
+            fit_seconds: 1,
+            detail: null,
+          },
+        },
+      }),
+    ]);
+    const user = userEvent.setup();
+    show();
+    await user.click(screen.getByRole('button', { name: /train these methods/i }));
+
+    expect(await screen.findByText('Score: 0.981')).toBeInTheDocument();
+    expect(screen.getByText('Score: 0.979')).toBeInTheDocument();
+  });
+
   it('does not offer to train again once a run has a solution', async () => {
     stubTraining([
       status({

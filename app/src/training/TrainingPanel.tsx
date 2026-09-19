@@ -329,7 +329,7 @@ function secondaryText(
   result: MethodResult | undefined,
 ): string | undefined {
   if (status === 'running') return fill(TRAINING['training.progress.current'], { method });
-  if (status === 'ok') return `Score: ${result?.mean_score?.toFixed(2)}`;
+  if (status === 'ok') return `Score: ${result?.mean_score?.toFixed(3)}`;
   if (status === 'timeout') {
     return fill(TRAINING['training.timeout'], {
       method,
