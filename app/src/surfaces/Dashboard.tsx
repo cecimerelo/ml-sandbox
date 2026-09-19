@@ -133,6 +133,11 @@ export function Dashboard() {
             // A new file invalidates the old reading. Leaving it would fill the
             // questions with properties of a dataset nobody uploaded.
             setDetection(null);
+            // And the recommendation it fed — same reasoning as `onDetected` below and
+            // `onCleared`'s own comment: a new file is a new premise, not just an old
+            // answer going stale.
+            setResult(null);
+            setStale(false);
           }}
           onCleared={() => {
             setDataset(null);
@@ -155,7 +160,18 @@ export function Dashboard() {
             file={dataset.file}
             columns={dataset.summary.columns}
             unusable={dataset.summary.skipped}
-            onDetected={setDetection}
+            onDetected={(next) => {
+              setDetection(next);
+              // The recommendation (and the Training panel's method list, derived from
+              // it) was worked out for the *previous* target/task. Leaving `result` in
+              // place here is what let a stale regression-only method (linear_regression)
+              // reach `/api/train` alongside a freshly re-detected classification task —
+              // the panel re-renders with this new `detection` immediately, but `result`
+              // only updates on the next "Get Recommendation" click. Same reasoning as
+              // `onCleared` below: the premise changed, not just the answer's age.
+              setResult(null);
+              setStale(false);
+            }}
           />
         )}
 
