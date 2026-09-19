@@ -32,8 +32,11 @@ export function PlotPanel({
 }: {
   title: string;
   /** The beginner-facing "what am I looking at" line. Also where a truncation — top 15
-   * categories, 20 of 500 features shown — is stated, never left silent. */
-  subtitle?: string;
+   * categories, 20 of 500 features shown — is stated, never left silent. A plain string
+   * renders `\n` as a real line break (`white-space: pre-line`); pass a node instead
+   * (e.g. wrapping a "what good looks like" line in `<strong>`) when part of it needs
+   * its own emphasis. */
+  subtitle?: React.ReactNode;
   /** The graphic element. The only child here allowed to carry `role="img"`. */
   chart: React.ReactNode;
   /** The same data as `chart`, in the table form DESIGN.md specifies for this family. */
@@ -57,7 +60,11 @@ export function PlotPanel({
         <Box>
           <Typography sx={{ fontWeight: 700 }}>{title}</Typography>
           {subtitle && (
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ mt: 0.25, whiteSpace: 'pre-line' }}
+            >
               {subtitle}
             </Typography>
           )}

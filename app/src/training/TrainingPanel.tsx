@@ -8,6 +8,7 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
+import Collapse from '@mui/material/Collapse';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
@@ -19,6 +20,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Task } from '../api/types';
 import { TRAINING, fill } from '../copy/catalogue';
 import { spacing } from '../theme/tokens';
+import { CHART_PANELS } from './charts/registry';
 import type { MethodResult, TrainingStatus } from './types';
 
 const POLL_INTERVAL_MS = 1000;
@@ -79,6 +81,7 @@ export function TrainingPanel({
 }) {
   const [job, setJob] = useState<TrainingStatus | null>(null);
   const [failed, setFailed] = useState(false);
+  const [openCharts, setOpenCharts] = useState<string | null>(null);
   const jobRef = useRef<TrainingStatus | null>(null);
   jobRef.current = job;
 
@@ -90,6 +93,7 @@ export function TrainingPanel({
     }
     setJob(null);
     setFailed(false);
+    setOpenCharts(null);
     // Deliberately keyed on `resetSignal` alone — `jobRef` is read for its current value,
     // not to be reactive to it, the same reason `EdaBlock`'s equivalent effect only
     // depends on its own signal prop.
@@ -169,15 +173,35 @@ export function TrainingPanel({
       {job && (
         <Box sx={{ mt: 1 }}>
           <List disablePadding>
-            {methods.map((method) => (
-              <MethodRow
-                key={method}
-                method={method}
-                result={job.results[method]}
-                current={job.current === method}
-                isBest={method === leader}
-              />
-            ))}
+            {methods.map((method) => {
+              const ChartPanel = CHART_PANELS[method];
+              const chartsOpen = openCharts === method;
+              return (
+                <Box key={method}>
+                  <MethodRow
+                    method={method}
+                    result={job.results[method]}
+                    current={job.current === method}
+                    isBest={method === leader}
+                    chartsOpen={chartsOpen}
+                    onToggleCharts={
+                      ChartPanel
+                        ? () => setOpenCharts((current) => (current === method ? null : method))
+                        : undefined
+                    }
+                  />
+                  {ChartPanel && (
+                    <Collapse in={chartsOpen} unmountOnExit>
+                      {file && target && job.results[method]?.status === 'ok' && (
+                        <Box sx={{ pb: 2, pl: 5 }}>
+                          <ChartPanel jobId={job.id} file={file} target={target} />
+                        </Box>
+                      )}
+                    </Collapse>
+                  )}
+                </Box>
+              );
+            })}
           </List>
 
           {Object.values(job.results).some((result) => result.status === 'ok') && (
@@ -230,6 +254,8 @@ function MethodRow({
   result,
   current,
   isBest,
+  chartsOpen,
+  onToggleCharts,
 }: {
   method: string;
   result: MethodResult | undefined;
@@ -240,6 +266,10 @@ function MethodRow({
   /** Whether this method's measured score is the highest among finished methods —
    * evidence from this dataset, independent of which method the recommendation named. */
   isBest: boolean;
+  chartsOpen: boolean;
+  /** Present only when `method` has a chart panel implemented (#83) — a method missing
+   * one gets no button at all, not a disabled one, since there is nothing to explain. */
+  onToggleCharts: (() => void) | undefined;
 }) {
   const status = current ? 'running' : (result?.status ?? 'pending');
   return (
@@ -258,6 +288,11 @@ function MethodRow({
         }
         secondary={secondaryText(method, status, result)}
       />
+      {status === 'ok' && onToggleCharts && (
+        <Button size="small" onClick={onToggleCharts}>
+          {chartsOpen ? 'Hide charts' : 'View charts'}
+        </Button>
+      )}
     </ListItem>
   );
 }

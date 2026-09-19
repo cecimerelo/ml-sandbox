@@ -22,10 +22,6 @@ from sklearn.pipeline import Pipeline
 
 from mlsandbox.base import StrictModel
 
-COEFFICIENT_TOP_N = 20
-"""DESIGN.md's "Coefficients / importance" family: top 20 bars shown, the rest folded
-into a stated count rather than silently dropped."""
-
 
 class ScatterPoint(StrictModel):
     x: float
@@ -55,12 +51,13 @@ class CoefficientBar(StrictModel):
 
 
 class CoefficientPlot(StrictModel):
-    """Sorted by |value| descending, at most `COEFFICIENT_TOP_N` — DESIGN.md's
-    "Coefficients / importance" family. The table form gets the full list separately
-    (`total_features` is what the fold line's "and N more" counts against)."""
+    """Every coefficient, sorted by |value| descending — DESIGN.md's "Coefficients /
+    importance" family caps the *chart* at the top `COEFFICIENT_TOP_N`, but its table
+    form is explicitly the full list ("not the top-20 fold — this is where the other
+    480 live"). Sending everything here and letting the chart slice its own top N is
+    what makes both true from one field, rather than needing two."""
 
     bars: list[CoefficientBar]
-    total_features: int
 
 
 class LeveragePoint(StrictModel):
@@ -117,8 +114,7 @@ def linear_regression_charts(
 
     order = np.argsort(-np.abs(coefficients))
     bars = [
-        CoefficientBar(feature=feature_names[i], value=float(coefficients[i]))
-        for i in order[:COEFFICIENT_TOP_N]
+        CoefficientBar(feature=feature_names[i], value=float(coefficients[i])) for i in order
     ]
 
     design = _design_matrix(pipeline, features)
@@ -149,7 +145,7 @@ def linear_regression_charts(
             ],
             r2=float(r2_score(target, predictions)),
         ),
-        coefficients=CoefficientPlot(bars=bars, total_features=len(feature_names)),
+        coefficients=CoefficientPlot(bars=bars),
         leverage=LeveragePlot(
             points=[
                 LeveragePoint(leverage=float(h), studentized_residual=float(s))

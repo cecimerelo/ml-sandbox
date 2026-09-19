@@ -50,11 +50,12 @@ def test_coefficients_are_sorted_by_magnitude_descending():
 
     magnitudes = [abs(bar.value) for bar in result.coefficients.bars]
     assert magnitudes == sorted(magnitudes, reverse=True)
-    # One-hot("city") + size_m2 + bedrooms: fewer than the top-20 fold, so nothing drops.
-    assert len(result.coefficients.bars) == result.coefficients.total_features
 
 
-def test_coefficient_plot_folds_past_the_top_20():
+def test_coefficient_plot_carries_every_feature_not_just_a_chart_sized_fold():
+    # DESIGN.md's table form for this family is explicitly the full list ("not the
+    # top-20 fold"), so the endpoint must not truncate it — only the chart does that,
+    # client-side.
     rng = np.random.default_rng(0)
     n = 100
     features = pd.DataFrame({f"x{i}": rng.normal(size=n) for i in range(30)})
@@ -64,8 +65,7 @@ def test_coefficient_plot_folds_past_the_top_20():
 
     result = charts.linear_regression_charts(pipeline, features, target.to_numpy())
 
-    assert len(result.coefficients.bars) == charts.COEFFICIENT_TOP_N
-    assert result.coefficients.total_features == 30
+    assert len(result.coefficients.bars) == 30
 
 
 def test_leverage_is_between_zero_and_one():
