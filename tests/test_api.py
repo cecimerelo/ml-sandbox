@@ -683,11 +683,18 @@ def method_charts(
     *,
     file_bytes: bytes | None = None,
     filename: str = "strong-signal-houses.csv",
+    feature_x: str | None = None,
+    feature_y: str | None = None,
 ):
+    data = {"target": target}
+    if feature_x is not None:
+        data["feature_x"] = feature_x
+    if feature_y is not None:
+        data["feature_y"] = feature_y
     return client.post(
         f"/api/train/{job_id}/{method}/charts",
         files={"file": (filename, file_bytes or _strong_signal_houses(), "text/csv")},
-        data={"target": target},
+        data=data,
     )
 
 
@@ -764,6 +771,48 @@ def test_logistic_regression_charts_reuse_the_already_fitted_pipeline():
     assert 0.0 <= body["roc"]["auc"] <= 1.0
     assert set(body["confusion_matrix"]["labels"]) == {"no", "yes"}
     assert len(body["coefficients"]["bars"]) == 2
+
+
+def test_lda_charts_reuse_the_already_fitted_pipeline():
+    file_bytes = _binary_sales()
+    job_id = train_file(
+        "binary-sales.csv", ["lda"], target="sold", task="binary classification"
+    ).json()["job_id"]
+    wait_until_done(job_id)
+
+    response = method_charts(
+        job_id, "lda", target="sold", file_bytes=file_bytes, filename="binary-sales.csv"
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert set(body["boundary"]["classes"]) == {"no", "yes"}
+    assert body["boundary"]["too_many_classes"] is False
+    assert len(body["boundary"]["grid"]) > 0
+    assert set(body["confusion_matrix"]["labels"]) == {"no", "yes"}
+
+
+def test_qda_boundary_honours_a_requested_feature_pair():
+    file_bytes = _binary_sales()
+    job_id = train_file(
+        "binary-sales.csv", ["qda"], target="sold", task="binary classification"
+    ).json()["job_id"]
+    wait_until_done(job_id)
+
+    response = method_charts(
+        job_id,
+        "qda",
+        target="sold",
+        file_bytes=file_bytes,
+        filename="binary-sales.csv",
+        feature_x="bedrooms",
+        feature_y="size_m2",
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["boundary"]["feature_x"] == "bedrooms"
+    assert body["boundary"]["feature_y"] == "size_m2"
 
 
 def test_charts_for_a_method_with_no_panel_yet_is_422():
