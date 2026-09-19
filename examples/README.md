@@ -48,3 +48,24 @@ built to have nothing to find is a demo working against its own fixture.
 score reads as real evidence of something — verified directly with `cross_val_score`
 before committing it: linear regression, random forest and KNN all land between 0.95 and
 0.99 R², not the ~0 every method gets on `houses.csv`.
+
+## `binary-sales.csv` — the same idea, for classification
+
+Regression's training demo needed real signal; classification's needs the same thing, plus
+an actual two-class target to exercise #96's ROC curve and confusion matrix. `sold` is
+`"yes"`/`"no"`, thresholded at the median of `0.08 × size_m2 + 1.2 × bedrooms + noise` — a
+real, if noisy, separation between the two classes, not a coin flip. Verified with
+`cross_val_score` before committing it: logistic regression lands at 0.81 balanced accuracy
+across 5 folds, not the ~0.5 chance level a label with no relationship to the columns would
+give.
+
+## `linear-regression-demo.csv` — for #95's chart panel specifically
+
+`strong-signal-houses.csv` works for this too, but only has two numeric predictors — the
+coefficient plot is sparse, and every point sits close enough to the pack that the leverage
+plot has nothing to point at. This file has five (`size_m2`, `bedrooms`, `age_years`,
+`distance_km`, `garden_m2`, each with a distinct sign and magnitude in `price`'s true
+coefficients) plus two deliberately planted high-leverage rows — a much larger property and
+a much smaller, farther one — so the leverage chart has real "worth a second look" points to
+show, not just noise. Verified with `cross_val_score` before committing it: linear
+regression lands at R² ≈ 0.97 across 5 folds.

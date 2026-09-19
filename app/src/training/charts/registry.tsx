@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 
 import { LinearRegressionPanel } from './LinearRegressionPanel';
+import { LogisticRegressionPanel } from './LogisticRegressionPanel';
 
 export interface ChartPanelProps {
   jobId: string;
@@ -15,4 +16,5 @@ export interface ChartPanelProps {
  */
 export const CHART_PANELS: Record<string, ComponentType<ChartPanelProps>> = {
   linear_regression: LinearRegressionPanel,
+  logistic_regression: LogisticRegressionPanel,
 };

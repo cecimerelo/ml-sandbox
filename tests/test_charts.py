@@ -75,3 +75,52 @@ def test_leverage_is_between_zero_and_one():
 
     for point in result.leverage.points:
         assert 0.0 <= point.leverage <= 1.0 + 1e-9
+
+
+def _fit_logistic_regression(n_classes: int = 2) -> tuple[object, pd.DataFrame, np.ndarray]:
+    rng = np.random.default_rng(0)
+    n = 200
+    features = pd.DataFrame(
+        {
+            "size_m2": rng.normal(100, 20, n),
+            "bedrooms": rng.integers(1, 5, n),
+        }
+    )
+    score = features["size_m2"] + 10 * features["bedrooms"]
+    edges = np.quantile(score, np.linspace(0, 1, n_classes + 1)[1:-1]) if n_classes > 1 else []
+    target = np.digitize(score, edges).astype(str)
+    pipeline = methods.build("logistic_regression", "classification", seed=0)
+    pipeline.fit(features, target)
+    return pipeline, features, target
+
+
+def test_binary_logistic_regression_gets_a_roc_curve_and_coefficients():
+    pipeline, features, target = _fit_logistic_regression(n_classes=2)
+
+    result = charts.logistic_regression_charts(pipeline, features, target)
+
+    assert result.roc is not None
+    assert 0.0 <= result.roc.auc <= 1.0
+    assert result.roc.positive_class == "1"
+    assert len(result.coefficients.bars) == 2
+
+
+def test_binary_confusion_matrix_matches_the_two_classes():
+    pipeline, features, target = _fit_logistic_regression(n_classes=2)
+
+    result = charts.logistic_regression_charts(pipeline, features, target)
+
+    assert result.confusion_matrix.labels == ["0", "1"]
+    assert len(result.confusion_matrix.matrix) == 2
+    assert sum(sum(row) for row in result.confusion_matrix.matrix) == len(features)
+
+
+def test_multiclass_logistic_regression_has_no_roc_or_coefficients_but_has_a_confusion_matrix():
+    pipeline, features, target = _fit_logistic_regression(n_classes=3)
+
+    result = charts.logistic_regression_charts(pipeline, features, target)
+
+    assert result.roc is None
+    assert result.coefficients.bars == []
+    assert result.confusion_matrix.labels == ["0", "1", "2"]
+    assert len(result.confusion_matrix.matrix) == 3

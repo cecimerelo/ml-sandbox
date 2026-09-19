@@ -280,6 +280,142 @@ describe('removing a dataset', () => {
   });
 });
 
+describe('changing the target after a recommendation exists', () => {
+  it('clears the stale recommendation rather than pairing its method list with a new task', async () => {
+    // A recommendation's method list (what the Training panel offers) is worked out for
+    // one specific task/target. Re-detecting a different target updates the task/target
+    // shown immediately, but the old method list is only replaced on the next "Get
+    // Recommendation" — leaving the old `result` in place let a regression-only method
+    // reach `/api/train` alongside a freshly re-detected classification task.
+    const user = userEvent.setup();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => {
+        if (url === '/api/dataset') {
+          return { ok: true, json: async () => ({ columns: ['a', 'b'], rows: 5, skipped: [] }) };
+        }
+        if (url === '/api/dataset/detect') {
+          return {
+            ok: true,
+            json: async () => ({
+              task: 'regression',
+              rows: '500-10k',
+              features: '10-50',
+              feature_types: 'numeric',
+              missing: 'none',
+              class_balance: 'not applicable',
+              n_rows: 5,
+              n_features: 1,
+              n_classes: null,
+              missing_rate: 0,
+              dropped_rows: 0,
+              uncertain: [],
+            }),
+          };
+        }
+        if (url === '/api/recommend') {
+          return { ok: true, json: async () => recommendation() };
+        }
+        // The EDA block's own endpoints (columns, correlation, distributions) — not
+        // under test here, so a harmless "couldn't read your data" rather than a
+        // crash from being handed a shape they don't expect.
+        return { ok: false, json: async () => ({}) };
+      }),
+    );
+    renderAt('/');
+
+    await user.upload(screen.getByLabelText(/upload a csv/i), file('good.csv'));
+    await screen.findByText('good.csv');
+
+    await answer(user, /what are you trying to predict/i, 'A number');
+    await answer(user, /how many rows/i, '500 to 10,000');
+    await answer(user, /how many columns/i, '10 to 50');
+    await answer(user, /what kind of columns/i, 'Numbers');
+    await answer(user, /how much of your data is missing/i, 'None');
+    await answer(user, /explain individual predictions/i, 'Not important');
+    await answer(user, /straight line/i, "I don't know");
+    await answer(user, /only matter in combination/i, 'No');
+    await user.click(screen.getByRole('button', { name: /get recommendation/i }));
+    await screen.findByText('Suggested method');
+
+    await user.click(screen.getByRole('button', { name: /^edit$/i }));
+    await user.click(screen.getByRole('combobox', { name: /predict/i }));
+    await user.click(screen.getByRole('option', { name: 'b' }));
+
+    expect(screen.queryByText('Suggested method')).toBeNull();
+    vi.unstubAllGlobals();
+  });
+
+  it('blocks "Get Recommendation" rather than letting a contradicted task reach training', async () => {
+    // "What are you trying to predict?" is auto-filled from `detection.task` but stays
+    // user-editable — the auto-detected type can be wrong, so an override is allowed.
+    // But here detection says binary classification with certainty, and the override is
+    // to "A number" anyway: `ProblemForm`'s own mismatch check (`taskMismatch`) is what
+    // stops this before /api/recommend is ever called, rather than relying on a
+    // regression-only method reaching /api/train alongside a "binary classification"
+    // task and failing there instead.
+    const user = userEvent.setup();
+    const trainCalls: string[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url === '/api/dataset') {
+          return { ok: true, json: async () => ({ columns: ['a', 'b'], rows: 5, skipped: [] }) };
+        }
+        if (url === '/api/dataset/detect') {
+          return {
+            ok: true,
+            json: async () => ({
+              task: 'binary classification',
+              rows: '500-10k',
+              features: '10-50',
+              feature_types: 'numeric',
+              missing: 'none',
+              class_balance: 'roughly equal',
+              n_rows: 5,
+              n_features: 1,
+              n_classes: 2,
+              missing_rate: 0,
+              dropped_rows: 0,
+              uncertain: [],
+            }),
+          };
+        }
+        if (url === '/api/recommend' || (url === '/api/train' && init?.method === 'POST')) {
+          trainCalls.push(url);
+          return { ok: true, json: async () => recommendation() };
+        }
+        return { ok: false, json: async () => ({}) };
+      }),
+    );
+    renderAt('/');
+
+    await user.upload(screen.getByLabelText(/upload a csv/i), file('good.csv'));
+    await screen.findByText('good.csv');
+
+    // Training needs a target column, not just an answered form — picking one is what
+    // fires `onDetected` and fills `detection` (task: binary classification here).
+    await user.click(screen.getByRole('combobox', { name: /predict/i }));
+    await user.click(screen.getByRole('option', { name: 'a' }));
+
+    // Overrides the auto-filled "One of two categories" away to "A number".
+    await answer(user, /what are you trying to predict/i, 'A number');
+    await answer(user, /how many rows/i, '500 to 10,000');
+    await answer(user, /how many columns/i, '10 to 50');
+    await answer(user, /what kind of columns/i, 'Numbers');
+    await answer(user, /how much of your data is missing/i, 'None');
+    await answer(user, /explain individual predictions/i, 'Not important');
+    await answer(user, /straight line/i, "I don't know");
+    await answer(user, /only matter in combination/i, 'No');
+    await user.click(screen.getByRole('button', { name: /get recommendation/i }));
+
+    expect(screen.queryByText('Suggested method')).toBeNull();
+    expect(trainCalls).toEqual([]);
+
+    vi.unstubAllGlobals();
+  });
+});
+
 describe('the form summary bar', () => {
   function stubFetch() {
     vi.stubGlobal(

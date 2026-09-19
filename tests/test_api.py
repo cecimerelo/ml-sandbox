@@ -583,6 +583,27 @@ def test_strong_signal_houses_actually_has_signal_to_find():
     assert status["results"]["linear_regression"]["mean_score"] > 0.9
 
 
+def test_linear_regression_demo_actually_has_signal_to_find():
+    job_id = train_file(
+        "linear-regression-demo.csv", ["linear_regression"], target="price"
+    ).json()["job_id"]
+    status = wait_until_done(job_id)
+
+    assert status["results"]["linear_regression"]["mean_score"] > 0.9
+
+
+def test_binary_sales_actually_has_signal_to_find():
+    job_id = train_file(
+        "binary-sales.csv",
+        ["logistic_regression"],
+        target="sold",
+        task="binary classification",
+    ).json()["job_id"]
+    status = wait_until_done(job_id)
+
+    assert status["results"]["logistic_regression"]["mean_score"] > 0.7
+
+
 def test_the_status_carries_the_timeout_tier_the_frontend_estimates_from():
     # houses.csv is well under 500 rows — the smallest tier (FR-8.4).
     job_id = train(["linear_regression"]).json()["job_id"]
@@ -622,6 +643,21 @@ def test_a_method_that_does_not_support_the_task_is_422():
     assert response.json()["detail"]["reason"] == "untrainable-method"
 
 
+def test_regression_against_a_text_target_is_422_not_a_raw_sklearn_crash():
+    # "sold" is "yes"/"no" — training a regressor on it would fail on the first fold
+    # with sklearn's own "could not convert string to float", not a message anyone
+    # asked for. This is the mismatch a manually-overridden "what are you predicting"
+    # answer can produce (#96's live testing: task=regression submitted against a
+    # column that is not numeric).
+    response = client.post(
+        "/api/train",
+        files={"file": ("binary-sales.csv", _binary_sales(), "text/csv")},
+        data={"target": "sold", "task": "regression", "methods": ["decision_tree"]},
+    )
+    assert response.status_code == 422
+    assert response.json()["detail"]["reason"] == "not-numeric-for-regression"
+
+
 def test_polling_an_unknown_job_id_is_404():
     assert client.get("/api/train/no-such-job").status_code == 404
 
@@ -640,10 +676,17 @@ def test_stopping_an_already_finished_job_is_a_harmless_no_op():
     assert response.json()["done"] is True
 
 
-def method_charts(job_id: str, method: str, target: str = "price"):
+def method_charts(
+    job_id: str,
+    method: str,
+    target: str = "price",
+    *,
+    file_bytes: bytes | None = None,
+    filename: str = "strong-signal-houses.csv",
+):
     return client.post(
         f"/api/train/{job_id}/{method}/charts",
-        files={"file": ("strong-signal-houses.csv", _strong_signal_houses(), "text/csv")},
+        files={"file": (filename, file_bytes or _strong_signal_houses(), "text/csv")},
         data={"target": target},
     )
 
@@ -652,6 +695,12 @@ def _strong_signal_houses() -> bytes:
     from mlsandbox.config import PROJECT_ROOT
 
     return (PROJECT_ROOT / "examples" / "strong-signal-houses.csv").read_bytes()
+
+
+def _binary_sales() -> bytes:
+    from mlsandbox.config import PROJECT_ROOT
+
+    return (PROJECT_ROOT / "examples" / "binary-sales.csv").read_bytes()
 
 
 def test_linear_regression_charts_reuse_the_already_fitted_pipeline():
@@ -668,6 +717,53 @@ def test_linear_regression_charts_reuse_the_already_fitted_pipeline():
     assert body["predicted_vs_actual"]["r2"] > 0.9
     assert len(body["leverage"]["points"]) == n_rows
     assert len(body["coefficients"]["bars"]) > 0
+
+
+def test_linear_regression_demo_charts_have_a_real_high_leverage_point():
+    # linear-regression-demo.csv plants two deliberately extreme rows specifically so
+    # the leverage chart has something worth flagging, not a tight, uneventful cluster
+    # (strong-signal-houses.csv's leverage all sits within 0.009-0.022).
+    from mlsandbox.config import PROJECT_ROOT
+
+    job_id = train_file(
+        "linear-regression-demo.csv", ["linear_regression"], target="price"
+    ).json()["job_id"]
+    wait_until_done(job_id)
+
+    response = method_charts(
+        job_id,
+        "linear_regression",
+        target="price",
+        file_bytes=(PROJECT_ROOT / "examples" / "linear-regression-demo.csv").read_bytes(),
+        filename="linear-regression-demo.csv",
+    )
+
+    assert response.status_code == 200
+    leverage = [p["leverage"] for p in response.json()["leverage"]["points"]]
+    assert max(leverage) > 0.3
+
+
+def test_logistic_regression_charts_reuse_the_already_fitted_pipeline():
+    file_bytes = _binary_sales()
+    job_id = train_file(
+        "binary-sales.csv", ["logistic_regression"], target="sold", task="binary classification"
+    ).json()["job_id"]
+    wait_until_done(job_id)
+
+    response = method_charts(
+        job_id,
+        "logistic_regression",
+        target="sold",
+        file_bytes=file_bytes,
+        filename="binary-sales.csv",
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["roc"] is not None
+    assert 0.0 <= body["roc"]["auc"] <= 1.0
+    assert set(body["confusion_matrix"]["labels"]) == {"no", "yes"}
+    assert len(body["coefficients"]["bars"]) == 2
 
 
 def test_charts_for_a_method_with_no_panel_yet_is_422():

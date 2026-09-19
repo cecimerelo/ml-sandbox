@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
-from sklearn.metrics import r2_score
+from sklearn.metrics import auc, confusion_matrix, r2_score, roc_curve
 from sklearn.pipeline import Pipeline
 
 from mlsandbox.base import StrictModel
@@ -81,6 +81,42 @@ class LinearRegressionCharts(StrictModel):
     leverage: LeveragePlot
 
 
+class RocPoint(StrictModel):
+    false_positive_rate: float
+    true_positive_rate: float
+
+
+class RocCurve(StrictModel):
+    """`positive_class` is whichever of the two classes scikit-learn's `classes_`
+    lists second — an arbitrary but consistent choice (nothing in the uploaded data
+    says which outcome is "positive"), stated here so the chart can label it rather
+    than silently picking one."""
+
+    points: list[RocPoint]
+    auc: float
+    positive_class: str
+
+
+class ConfusionMatrix(StrictModel):
+    """`matrix[i][j]` is how many rows whose actual class was `labels[i]` the model
+    predicted as `labels[j]` — the order `classes_` already fixed, not sorted twice."""
+
+    labels: list[str]
+    matrix: list[list[int]]
+
+
+class LogisticRegressionCharts(StrictModel):
+    """`roc` is `None`, and `coefficients.bars` is empty, for a target with more than
+    two classes: FR-4.2's ROC curve, like ISLR's own treatment of it, is a
+    binary-classification chart, and a multiclass `coef_` has one row per class rather
+    than the single signed value per feature this chart plots. A multiclass target
+    still gets its confusion matrix, which scales to any class count."""
+
+    roc: RocCurve | None
+    confusion_matrix: ConfusionMatrix
+    coefficients: CoefficientPlot
+
+
 def _design_matrix(pipeline: Pipeline, features: pd.DataFrame) -> np.ndarray:
     """The matrix `model` actually saw, intercept column included.
 
@@ -101,21 +137,25 @@ def _leverage(design: np.ndarray) -> np.ndarray:
     return np.einsum("ij,jk,ik->i", design, gram_pinv, design)
 
 
+def _coefficient_plot(pipeline: Pipeline) -> CoefficientPlot:
+    """`model.coef_` flattened, feature names read from `prepare` — meaningful only
+    when `coef_` is a single row (linear regression, or binary logistic regression's
+    one row of log-odds), not a multiclass classifier's one-row-per-class matrix."""
+    prepare = pipeline.named_steps["prepare"]
+    model = pipeline.named_steps["model"]
+    feature_names = list(prepare.get_feature_names_out())
+    coefficients = np.asarray(model.coef_).ravel()
+    order = np.argsort(-np.abs(coefficients))
+    bars = [CoefficientBar(feature=feature_names[i], value=float(coefficients[i])) for i in order]
+    return CoefficientPlot(bars=bars)
+
+
 def linear_regression_charts(
     pipeline: Pipeline, features: pd.DataFrame, target: np.ndarray
 ) -> LinearRegressionCharts:
     predictions = pipeline.predict(features)
     residuals = target - predictions
-
-    prepare = pipeline.named_steps["prepare"]
-    model = pipeline.named_steps["model"]
-    feature_names = list(prepare.get_feature_names_out())
-    coefficients = np.asarray(model.coef_).ravel()
-
-    order = np.argsort(-np.abs(coefficients))
-    bars = [
-        CoefficientBar(feature=feature_names[i], value=float(coefficients[i])) for i in order
-    ]
+    coefficients = _coefficient_plot(pipeline)
 
     design = _design_matrix(pipeline, features)
     leverage = _leverage(design)
@@ -145,11 +185,45 @@ def linear_regression_charts(
             ],
             r2=float(r2_score(target, predictions)),
         ),
-        coefficients=CoefficientPlot(bars=bars),
+        coefficients=coefficients,
         leverage=LeveragePlot(
             points=[
                 LeveragePoint(leverage=float(h), studentized_residual=float(s))
                 for h, s in zip(leverage, studentized, strict=True)
             ]
         ),
+    )
+
+
+def logistic_regression_charts(
+    pipeline: Pipeline, features: pd.DataFrame, target: np.ndarray
+) -> LogisticRegressionCharts:
+    model = pipeline.named_steps["model"]
+    classes = [str(c) for c in model.classes_]
+    predictions = pipeline.predict(features)
+
+    matrix = confusion_matrix(target, predictions, labels=model.classes_)
+
+    roc: RocCurve | None = None
+    if len(classes) == 2:
+        positive_class = model.classes_[1]
+        probabilities = pipeline.predict_proba(features)[:, 1]
+        false_positive_rate, true_positive_rate, _ = roc_curve(
+            target, probabilities, pos_label=positive_class
+        )
+        roc = RocCurve(
+            points=[
+                RocPoint(false_positive_rate=float(f), true_positive_rate=float(t))
+                for f, t in zip(false_positive_rate, true_positive_rate, strict=True)
+            ],
+            auc=float(auc(false_positive_rate, true_positive_rate)),
+            positive_class=str(positive_class),
+        )
+
+    return LogisticRegressionCharts(
+        roc=roc,
+        confusion_matrix=ConfusionMatrix(labels=classes, matrix=matrix.tolist()),
+        # A multiclass `coef_` has one row per class — plotting it as one signed bar
+        # per feature would silently mix rows that mean different things.
+        coefficients=_coefficient_plot(pipeline) if len(classes) == 2 else CoefficientPlot(bars=[]),
     )

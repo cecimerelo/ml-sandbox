@@ -130,7 +130,7 @@ def inspect_target(frame: pd.DataFrame, column: str) -> Unpredictable | None:
             ),
         )
 
-    if _is_categorical(values):
+    if is_categorical_target(values):
         counts = values.value_counts()
         smallest = counts.index[-1]
         if counts.iloc[-1] < MIN_ROWS_PER_CLASS:
@@ -160,7 +160,7 @@ def detect(frame: pd.DataFrame, column: str) -> Detected | Unpredictable:
 
     target = usable[column]
     features = usable.drop(columns=[column])
-    task = "classification" if _is_categorical(target.dropna()) else "regression"
+    task = "classification" if is_categorical_target(target.dropna()) else "regression"
 
     return Detected(
         # The same call the study used to describe its own datasets. Not reimplemented:
@@ -214,13 +214,18 @@ def _is_continuous(values: pd.Series) -> bool:
     return pd.api.types.is_float_dtype(values)
 
 
-def _is_categorical(values: pd.Series) -> bool:
+def is_categorical_target(values: pd.Series) -> bool:
     """Whether an outcome is a set of categories rather than a number.
 
     Text is always categories. Numbers are categories only when there are few enough
     distinct values that treating them as an amount would be strange — which is a judgement
     the file cannot make for us, and is why `_uncertain` flags the borderline case rather
     than deciding it quietly.
+
+    Public rather than module-private: `/api/train` (`api.py`) uses the exact same test to
+    reject a "regression" task against a column of text before a fit ever starts, rather
+    than letting scikit-learn's own `could not convert string to float` reach the user as
+    a raw exception message.
     """
     if not pd.api.types.is_numeric_dtype(values):
         return True

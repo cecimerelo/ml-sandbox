@@ -80,7 +80,10 @@ export function TrainingPanel({
   resetSignal?: number;
 }) {
   const [job, setJob] = useState<TrainingStatus | null>(null);
-  const [failed, setFailed] = useState(false);
+  // The specific reason the last attempt failed — a validation message straight from
+  // the backend (e.g. "Can't be trained here: linear_regression") when there is one,
+  // rather than always the same generic sentence regardless of what actually went wrong.
+  const [failed, setFailed] = useState<string | null>(null);
   const [openCharts, setOpenCharts] = useState<string | null>(null);
   const jobRef = useRef<TrainingStatus | null>(null);
   jobRef.current = job;
@@ -92,7 +95,7 @@ export function TrainingPanel({
       void fetch(`/api/train/${current.id}/stop`, { method: 'POST' });
     }
     setJob(null);
-    setFailed(false);
+    setFailed(null);
     setOpenCharts(null);
     // Deliberately keyed on `resetSignal` alone — `jobRef` is read for its current value,
     // not to be reactive to it, the same reason `EdaBlock`'s equivalent effect only
@@ -104,7 +107,7 @@ export function TrainingPanel({
     const timer = setInterval(async () => {
       const next = await fetchJob(job.id);
       if (!next) {
-        setFailed(true);
+        setFailed(TRAINING['training.error']);
         return;
       }
       setJob(next);
@@ -114,7 +117,7 @@ export function TrainingPanel({
 
   async function start() {
     if (!file || !target || !task) return;
-    setFailed(false);
+    setFailed(null);
     const body = new FormData();
     body.append('file', file);
     body.append('target', target);
@@ -122,7 +125,19 @@ export function TrainingPanel({
     for (const method of methods) body.append('methods', method);
     const response = await fetch('/api/train', { method: 'POST', body });
     if (!response.ok) {
-      setFailed(true);
+      // A validation rejection (422 — an unknown column, a method that doesn't apply to
+      // this task, too many methods) carries its own `detail.message` from the backend;
+      // showing that instead of always the same sentence is the difference between
+      // "something went wrong" and "here's what to fix". Falls back to the generic
+      // message for a real crash, or a body that isn't the shape expected.
+      let message: string = TRAINING['training.error'];
+      try {
+        const body = await response.json();
+        if (typeof body?.detail?.message === 'string') message = body.detail.message;
+      } catch {
+        // Keep the generic message — the response wasn't JSON at all.
+      }
+      setFailed(message);
       return;
     }
     const { job_id } = await response.json();
@@ -166,7 +181,7 @@ export function TrainingPanel({
 
       {failed && (
         <Alert severity="error" sx={{ mt: 2 }}>
-          {TRAINING['training.error']}
+          {failed}
         </Alert>
       )}
 
@@ -236,12 +251,6 @@ export function TrainingPanel({
                 total: methods.length,
               })}
             </Alert>
-          )}
-
-          {job.done && (
-            <Button sx={{ mt: 2 }} onClick={() => void start()} disabled={!!disabledReason}>
-              {TRAINING['training.button.label']}
-            </Button>
           )}
         </Box>
       )}
@@ -320,7 +329,7 @@ function secondaryText(
   result: MethodResult | undefined,
 ): string | undefined {
   if (status === 'running') return fill(TRAINING['training.progress.current'], { method });
-  if (status === 'ok') return `Score: ${result?.mean_score?.toFixed(2)}`;
+  if (status === 'ok') return `Score: ${result?.mean_score?.toFixed(3)}`;
   if (status === 'timeout') {
     return fill(TRAINING['training.timeout'], {
       method,

@@ -6,6 +6,7 @@ import RadioGroup from '@mui/material/RadioGroup';
 import Typography from '@mui/material/Typography';
 
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -33,6 +34,14 @@ interface Props<T extends string> {
   /** The file did not settle this one (FR-8.2). Cleared by editing or by saying so. */
   uncertain?: boolean;
   onConfirm?: () => void;
+  /**
+   * The answer contradicts something the file settles with certainty — not a judgement
+   * call like `uncertain`, which the user can wave through with "Looks right". This one
+   * has no such button: the file's own column type isn't a matter of opinion, so the
+   * fix is to change the answer, and the caller keeps the submit button disabled while
+   * this is set.
+   */
+  error?: string;
 }
 
 /**
@@ -57,6 +66,7 @@ export function Question<T extends string>({
   detected,
   uncertain = false,
   onConfirm,
+  error,
 }: Props<T>) {
   const explanationId = `${id}-explanation`;
 
@@ -87,7 +97,16 @@ export function Question<T extends string>({
       {/* Provenance sits above the explanation, because it changes how the explanation
           should be read: a question already answered from the file is being checked, not
           answered. */}
-      {uncertain && (
+      {error && (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+          <ErrorOutlineIcon fontSize="small" aria-hidden color="error" />
+          <Typography variant="body2" component="span" color="error">
+            {error}
+          </Typography>
+        </Box>
+      )}
+
+      {uncertain && !error && (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
           <WarningAmberIcon fontSize="small" aria-hidden sx={{ color: chrome.unsure.hex }} />
           <Typography variant="body2" component="span" sx={{ color: chrome.unsure.hex }}>
@@ -101,7 +120,7 @@ export function Question<T extends string>({
         </Box>
       )}
 
-      {detected && !uncertain && (
+      {detected && !uncertain && !error && (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
           <AutoAwesomeIcon fontSize="small" aria-hidden sx={{ color: chrome.detected.hex }} />
           <Typography variant="body2" component="span" sx={{ color: chrome.detected.hex }}>
