@@ -404,3 +404,59 @@ describe('replacing one dataset with another', () => {
     }
   });
 });
+
+describe('answering "what are you predicting" against what the file settles', () => {
+  it('flags a contradiction and disables the button, rather than waiting for /api/train to reject it', async () => {
+    // DETECTION.task is regression and "task" isn't in `uncertain` — the file settles
+    // this with certainty. Overriding to a category anyway once reached scikit-learn as
+    // a raw "could not convert string to float" three steps later, at training.
+    const { user } = withDetection();
+    await answer(user, /what are you trying to predict/i, 'One of two categories');
+
+    expect(screen.getByText(/disagrees with your file|isn't that/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /get recommendation/i })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
+  });
+
+  it('names the answer the file actually supports', async () => {
+    const { user } = withDetection();
+    await answer(user, /what are you trying to predict/i, 'One of two categories');
+    expect(screen.getByText(/it looks like a number/i)).toBeInTheDocument();
+  });
+
+  it('says nothing when the override still agrees with an uncertain — not contradicted — detection', async () => {
+    // "task" is in `uncertain` here: the file itself could not settle it, so overriding
+    // it is a judgement call, not a contradiction of a known fact.
+    const { user } = withDetection({ ...DETECTION, uncertain: ['task'] });
+    await answer(user, /what are you trying to predict/i, 'One of two categories');
+
+    expect(screen.queryByText(/disagrees with your file|isn't that/i)).toBeNull();
+  });
+
+  it('clears once the answer agrees with the file again', async () => {
+    const { user } = withDetection();
+    await answer(user, /what are you trying to predict/i, 'One of two categories');
+    expect(screen.getByRole('button', { name: /get recommendation/i })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
+
+    await answer(user, /what are you trying to predict/i, 'A number');
+    expect(screen.queryByText(/disagrees with your file|isn't that/i)).toBeNull();
+  });
+
+  it('says nothing without a file to contradict', async () => {
+    // The no-dataset path (FR-1.3): every answer is the user's own, so there is nothing
+    // here for any of them to disagree with.
+    const user = userEvent.setup();
+    render(
+      <ThemeProvider theme={theme}>
+        <ProblemForm onSubmit={vi.fn()} />
+      </ThemeProvider>,
+    );
+    await answer(user, /what are you trying to predict/i, 'One of two categories');
+    expect(screen.queryByText(/disagrees with your file|isn't that/i)).toBeNull();
+  });
+});

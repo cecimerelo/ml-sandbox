@@ -8,7 +8,7 @@
  */
 
 import { ThemeProvider } from '@mui/material/styles';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
@@ -346,13 +346,16 @@ describe('changing the target after a recommendation exists', () => {
     vi.unstubAllGlobals();
   });
 
-  it('trains against the task the recommendation actually used, not detection\'s auto-filled one', async () => {
+  it('blocks "Get Recommendation" rather than letting a contradicted task reach training', async () => {
     // "What are you trying to predict?" is auto-filled from `detection.task` but stays
-    // user-editable — the auto-detected type can be wrong. Here detection says binary
-    // classification, but the answer submitted (and so the recommendation computed for)
-    // is regression. Training must follow what was actually asked, not `detection.task`.
+    // user-editable — the auto-detected type can be wrong, so an override is allowed.
+    // But here detection says binary classification with certainty, and the override is
+    // to "A number" anyway: `ProblemForm`'s own mismatch check (`taskMismatch`) is what
+    // stops this before /api/recommend is ever called, rather than relying on a
+    // regression-only method reaching /api/train alongside a "binary classification"
+    // task and failing there instead.
     const user = userEvent.setup();
-    let trainedTask: string | null = null;
+    const trainCalls: string[] = [];
     vi.stubGlobal(
       'fetch',
       vi.fn(async (url: string, init?: RequestInit) => {
@@ -378,28 +381,9 @@ describe('changing the target after a recommendation exists', () => {
             }),
           };
         }
-        if (url === '/api/recommend') {
+        if (url === '/api/recommend' || (url === '/api/train' && init?.method === 'POST')) {
+          trainCalls.push(url);
           return { ok: true, json: async () => recommendation() };
-        }
-        if (url === '/api/train' && init?.method === 'POST') {
-          trainedTask = (init.body as FormData).get('task') as string;
-          return { ok: true, json: async () => ({ job_id: 'job-1' }) };
-        }
-        if (url.startsWith('/api/train/')) {
-          return {
-            ok: true,
-            json: async () => ({
-              id: 'job-1',
-              methods: ['random_forest'],
-              budget_seconds: 60,
-              current: null,
-              halted_early: false,
-              aborted: false,
-              abort_detail: null,
-              done: true,
-              results: {},
-            }),
-          };
         }
         return { ok: false, json: async () => ({}) };
       }),
@@ -424,10 +408,9 @@ describe('changing the target after a recommendation exists', () => {
     await answer(user, /straight line/i, "I don't know");
     await answer(user, /only matter in combination/i, 'No');
     await user.click(screen.getByRole('button', { name: /get recommendation/i }));
-    await screen.findByText('Suggested method');
 
-    await user.click(screen.getByRole('button', { name: /train these methods/i }));
-    await waitFor(() => expect(trainedTask).toBe('regression'));
+    expect(screen.queryByText('Suggested method')).toBeNull();
+    expect(trainCalls).toEqual([]);
 
     vi.unstubAllGlobals();
   });

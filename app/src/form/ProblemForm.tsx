@@ -158,7 +158,21 @@ export function ProblemForm({
     ...(classificationAsked ? (['class_balance'] as const) : []),
   ];
   const missing = required.filter((key) => answers[key] === '');
-  const complete = missing.length === 0;
+
+  // The file settles this one with certainty (unlike the ambiguous-integer case
+  // `detection.uncertain` flags) — the target column's own type isn't a judgement call,
+  // so an answer that contradicts it is caught here rather than three steps later at
+  // "Train these methods", where it once reached scikit-learn as a raw type error.
+  const taskMismatch =
+    !!detection &&
+    answers.task !== '' &&
+    answers.task !== detection.task &&
+    !detection.uncertain.includes('task');
+  const taskMismatchMessage = taskMismatch
+    ? `Your file's target isn't that — it looks like ${TASKS.find((t) => t.value === detection!.task)?.label.toLowerCase()}. Pick that instead, or choose a different target column.`
+    : undefined;
+
+  const complete = missing.length === 0 && !taskMismatch;
 
   const submit = () => {
     if (!complete) return;
@@ -186,6 +200,7 @@ export function ProblemForm({
     options: { value: string; label: string }[],
     key: keyof Answers,
     detail?: string,
+    error?: string,
   ) => {
     const field = DETECTED_FIELD[key];
     const unsure = Boolean(field && detection?.uncertain.includes(field) && !confirmed.has(key));
@@ -204,13 +219,14 @@ export function ProblemForm({
         }}
         {...(detection && detail ? { detected: detail } : {})}
         {...(unsure ? { uncertain: true, onConfirm: () => setConfirmed((c) => new Set(c).add(key)) } : {})}
+        {...(error ? { error } : {})}
       />
     );
   };
 
   return (
     <Box component="form" onSubmit={(e) => { e.preventDefault(); submit(); }} noValidate>
-      {question('form.prediction-type', TASKS, 'task', 'detected from your file')}
+      {question('form.prediction-type', TASKS, 'task', 'detected from your file', taskMismatchMessage)}
       {question(
         'form.rows',
         ROWS,
@@ -247,7 +263,11 @@ export function ProblemForm({
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
         <Tooltip
           title={
-            complete ? '' : `${missing.length} question${missing.length === 1 ? '' : 's'} left`
+            complete
+              ? ''
+              : taskMismatch
+                ? 'Fix what you\'re predicting first — it disagrees with your file'
+                : `${missing.length} question${missing.length === 1 ? '' : 's'} left`
           }
           // Describes, never labels. Left to its default, MUI makes the tooltip text the
           // button's accessible name, so a screen reader announces "8 questions left"
