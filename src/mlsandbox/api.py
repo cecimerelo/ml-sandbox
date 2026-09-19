@@ -578,6 +578,7 @@ def stop_training(job_id: str) -> TrainingStatus:
 
 CHART_BUILDERS: dict[str, Callable[[Pipeline, pd.DataFrame, np.ndarray], StrictModel]] = {
     "linear_regression": charts.linear_regression_charts,
+    "logistic_regression": charts.logistic_regression_charts,
 }
 """Which methods #4.4's chart panel covers so far — one entry per sub-issue (#95-#107).
 A method missing here has no panel yet, not a bug; `method_charts` reports that as a
@@ -590,7 +591,7 @@ async def method_charts(
     method: str,
     file: Annotated[UploadFile, File()],
     target: Annotated[str, Form()],
-) -> charts.LinearRegressionCharts:
+) -> charts.LinearRegressionCharts | charts.LogisticRegressionCharts:
     """The fixed chart set for one already-trained method (FR-4.2).
 
     Reuses the pipeline `/api/train` already fit — never refits it — so what this draws

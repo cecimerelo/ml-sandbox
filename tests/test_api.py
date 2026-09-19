@@ -583,6 +583,18 @@ def test_strong_signal_houses_actually_has_signal_to_find():
     assert status["results"]["linear_regression"]["mean_score"] > 0.9
 
 
+def test_binary_sales_actually_has_signal_to_find():
+    job_id = train_file(
+        "binary-sales.csv",
+        ["logistic_regression"],
+        target="sold",
+        task="binary classification",
+    ).json()["job_id"]
+    status = wait_until_done(job_id)
+
+    assert status["results"]["logistic_regression"]["mean_score"] > 0.7
+
+
 def test_the_status_carries_the_timeout_tier_the_frontend_estimates_from():
     # houses.csv is well under 500 rows — the smallest tier (FR-8.4).
     job_id = train(["linear_regression"]).json()["job_id"]
@@ -640,10 +652,17 @@ def test_stopping_an_already_finished_job_is_a_harmless_no_op():
     assert response.json()["done"] is True
 
 
-def method_charts(job_id: str, method: str, target: str = "price"):
+def method_charts(
+    job_id: str,
+    method: str,
+    target: str = "price",
+    *,
+    file_bytes: bytes | None = None,
+    filename: str = "strong-signal-houses.csv",
+):
     return client.post(
         f"/api/train/{job_id}/{method}/charts",
-        files={"file": ("strong-signal-houses.csv", _strong_signal_houses(), "text/csv")},
+        files={"file": (filename, file_bytes or _strong_signal_houses(), "text/csv")},
         data={"target": target},
     )
 
@@ -652,6 +671,12 @@ def _strong_signal_houses() -> bytes:
     from mlsandbox.config import PROJECT_ROOT
 
     return (PROJECT_ROOT / "examples" / "strong-signal-houses.csv").read_bytes()
+
+
+def _binary_sales() -> bytes:
+    from mlsandbox.config import PROJECT_ROOT
+
+    return (PROJECT_ROOT / "examples" / "binary-sales.csv").read_bytes()
 
 
 def test_linear_regression_charts_reuse_the_already_fitted_pipeline():
@@ -668,6 +693,29 @@ def test_linear_regression_charts_reuse_the_already_fitted_pipeline():
     assert body["predicted_vs_actual"]["r2"] > 0.9
     assert len(body["leverage"]["points"]) == n_rows
     assert len(body["coefficients"]["bars"]) > 0
+
+
+def test_logistic_regression_charts_reuse_the_already_fitted_pipeline():
+    file_bytes = _binary_sales()
+    job_id = train_file(
+        "binary-sales.csv", ["logistic_regression"], target="sold", task="binary classification"
+    ).json()["job_id"]
+    wait_until_done(job_id)
+
+    response = method_charts(
+        job_id,
+        "logistic_regression",
+        target="sold",
+        file_bytes=file_bytes,
+        filename="binary-sales.csv",
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["roc"] is not None
+    assert 0.0 <= body["roc"]["auc"] <= 1.0
+    assert set(body["confusion_matrix"]["labels"]) == {"no", "yes"}
+    assert len(body["coefficients"]["bars"]) == 2
 
 
 def test_charts_for_a_method_with_no_panel_yet_is_422():

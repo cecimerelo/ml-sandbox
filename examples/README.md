@@ -48,3 +48,13 @@ built to have nothing to find is a demo working against its own fixture.
 score reads as real evidence of something — verified directly with `cross_val_score`
 before committing it: linear regression, random forest and KNN all land between 0.95 and
 0.99 R², not the ~0 every method gets on `houses.csv`.
+
+## `binary-sales.csv` — the same idea, for classification
+
+Regression's training demo needed real signal; classification's needs the same thing, plus
+an actual two-class target to exercise #96's ROC curve and confusion matrix. `sold` is
+`"yes"`/`"no"`, thresholded at the median of `0.08 × size_m2 + 1.2 × bedrooms + noise` — a
+real, if noisy, separation between the two classes, not a coin flip. Verified with
+`cross_val_score` before committing it: logistic regression lands at 0.81 balanced accuracy
+across 5 folds, not the ~0.5 chance level a label with no relationship to the columns would
+give.
