@@ -835,6 +835,24 @@ def test_knn_charts_reuse_the_already_fitted_pipeline():
     assert "confusion_matrix" not in body
 
 
+def test_naive_bayes_charts_reuse_the_already_fitted_pipeline():
+    file_bytes = _binary_sales()
+    job_id = train_file(
+        "binary-sales.csv", ["naive_bayes"], target="sold", task="binary classification"
+    ).json()["job_id"]
+    wait_until_done(job_id)
+
+    response = method_charts(
+        job_id, "naive_bayes", target="sold", file_bytes=file_bytes, filename="binary-sales.csv"
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["roc"] is not None
+    assert 0.0 <= body["roc"]["auc"] <= 1.0
+    assert set(body["confusion_matrix"]["labels"]) == {"no", "yes"}
+
+
 def test_charts_for_a_method_with_no_panel_yet_is_422():
     job_id = train(["decision_tree"]).json()["job_id"]
     wait_until_done(job_id)
