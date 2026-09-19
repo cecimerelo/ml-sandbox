@@ -485,6 +485,23 @@ async def start_training(
     usable = parsed.frame.dropna(subset=[target])
     features = usable.drop(columns=[target])
     target_values = usable[target].to_numpy()
+
+    # Answered as regression against a column of text or too-broad categories: fitting
+    # would fail on the first fold with scikit-learn's own "could not convert string to
+    # float", a message that names an implementation detail nobody asked about. Caught
+    # here, before any subprocess starts, the same principle as every check above it.
+    if ml_task == "regression" and detection.is_categorical_target(usable[target]):
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "reason": "not-numeric-for-regression",
+                "message": (
+                    f"{target} isn't numbers, so it can't be trained on as a number. "
+                    "Go back and answer what you're predicting as a category instead."
+                ),
+            },
+        )
+
     job = training.start(methods, ml_task, features, target_values)
     return TrainingStarted(job_id=job.id)
 

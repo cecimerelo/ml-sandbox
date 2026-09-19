@@ -634,6 +634,21 @@ def test_a_method_that_does_not_support_the_task_is_422():
     assert response.json()["detail"]["reason"] == "untrainable-method"
 
 
+def test_regression_against_a_text_target_is_422_not_a_raw_sklearn_crash():
+    # "sold" is "yes"/"no" — training a regressor on it would fail on the first fold
+    # with sklearn's own "could not convert string to float", not a message anyone
+    # asked for. This is the mismatch a manually-overridden "what are you predicting"
+    # answer can produce (#96's live testing: task=regression submitted against a
+    # column that is not numeric).
+    response = client.post(
+        "/api/train",
+        files={"file": ("binary-sales.csv", _binary_sales(), "text/csv")},
+        data={"target": "sold", "task": "regression", "methods": ["decision_tree"]},
+    )
+    assert response.status_code == 422
+    assert response.json()["detail"]["reason"] == "not-numeric-for-regression"
+
+
 def test_polling_an_unknown_job_id_is_404():
     assert client.get("/api/train/no-such-job").status_code == 404
 
