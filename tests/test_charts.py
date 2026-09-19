@@ -218,3 +218,65 @@ def test_fewer_than_two_numeric_columns_has_no_grid():
 
     assert result.boundary.grid == []
     assert result.boundary.numeric_features == []
+
+
+def _fit_knn(
+    task: str = "classification", n_classes: int = 2
+) -> tuple[object, pd.DataFrame, np.ndarray]:
+    rng = np.random.default_rng(0)
+    n = 200
+    features = pd.DataFrame(
+        {
+            "size_m2": rng.normal(100, 20, n),
+            "bedrooms": rng.integers(1, 5, n).astype(float),
+        }
+    )
+    score = features["size_m2"] + 10 * features["bedrooms"]
+    if task == "regression":
+        target = score.to_numpy() + rng.normal(0, 5, n)
+    else:
+        edges = np.quantile(score, np.linspace(0, 1, n_classes + 1)[1:-1]) if n_classes > 1 else []
+        target = np.digitize(score, edges).astype(str)
+    pipeline = methods.build("knn", task, seed=0)
+    pipeline.fit(features, target)
+    return pipeline, features, target
+
+
+def test_knn_tuning_curve_has_a_point_per_grid_value_and_names_the_chosen_k():
+    pipeline, features, target = _fit_knn()
+
+    result = charts.knn_charts(pipeline, features, target)
+
+    model = pipeline.named_steps["model"]
+    assert len(result.tuning.points) == len(model.cv_results_["param_n_neighbors"])
+    assert result.tuning.chosen_k == model.best_params_["n_neighbors"]
+    assert result.tuning.chosen_k in [p.k for p in result.tuning.points]
+
+
+def test_knn_classification_gets_a_boundary_too():
+    pipeline, features, target = _fit_knn()
+
+    result = charts.knn_charts(pipeline, features, target)
+
+    assert result.boundary.too_many_classes is False
+    assert len(result.boundary.grid) == charts.BOUNDARY_GRID_RESOLUTION**2
+    assert result.boundary.classes == ["0", "1"]
+
+
+def test_knn_regression_has_a_tuning_curve_but_no_meaningful_boundary():
+    pipeline, features, target = _fit_knn(task="regression")
+
+    result = charts.knn_charts(pipeline, features, target)
+
+    assert len(result.tuning.points) > 0
+    # A continuous target has far more than MAX_BOUNDARY_CLASSES distinct values, so
+    # the shared boundary helper reports it the same way it reports any other
+    # too-many-classes case, rather than a boundary fragmented into one region per row.
+    assert result.boundary.too_many_classes is True
+    assert result.boundary.grid == []
+
+
+def test_knn_has_no_confusion_matrix_field():
+    # FR-4.2 lists only a decision boundary and an accuracy-vs-K curve for KNN — no
+    # confusion matrix, unlike Logistic Regression or Naive Bayes.
+    assert "confusion_matrix" not in charts.KnnCharts.model_fields

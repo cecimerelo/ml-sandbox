@@ -815,6 +815,26 @@ def test_qda_boundary_honours_a_requested_feature_pair():
     assert body["boundary"]["feature_y"] == "size_m2"
 
 
+def test_knn_charts_reuse_the_already_fitted_pipeline():
+    file_bytes = _binary_sales()
+    job_id = train_file(
+        "binary-sales.csv", ["knn"], target="sold", task="binary classification"
+    ).json()["job_id"]
+    wait_until_done(job_id)
+
+    response = method_charts(
+        job_id, "knn", target="sold", file_bytes=file_bytes, filename="binary-sales.csv"
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body["tuning"]["points"]) > 0
+    assert body["tuning"]["chosen_k"] in [p["k"] for p in body["tuning"]["points"]]
+    assert body["boundary"]["too_many_classes"] is False
+    assert len(body["boundary"]["grid"]) > 0
+    assert "confusion_matrix" not in body
+
+
 def test_charts_for_a_method_with_no_panel_yet_is_422():
     job_id = train(["decision_tree"]).json()["job_id"]
     wait_until_done(job_id)

@@ -176,6 +176,32 @@ class DiscriminantCharts(StrictModel):
     confusion_matrix: ConfusionMatrix
 
 
+class TuningPoint(StrictModel):
+    k: int
+    score: float
+
+
+class TuningCurve(StrictModel):
+    """DESIGN.md's "Tuning curves" family: accuracy (or, for a regression KNN, the
+    study's own r2) at every `k` the internal grid search actually tried — read
+    straight from the already-fitted `GridSearchCV.cv_results_`, never a second round
+    of cross-validation just to draw a chart."""
+
+    points: list[TuningPoint]
+    chosen_k: int
+    """The value `GridSearchCV` actually picked — DESIGN.md's "chosen optimum gets a
+    filled dot plus a direct label" needs to know which point that is."""
+
+
+class KnnCharts(StrictModel):
+    """KNN's fixed set (FR-4.2): a decision boundary and its accuracy-vs-K curve. No
+    confusion matrix — FR-4.2 doesn't list one for this method, unlike Logistic
+    Regression or Naive Bayes."""
+
+    boundary: DecisionBoundary
+    tuning: TuningCurve
+
+
 def _design_matrix(pipeline: Pipeline, features: pd.DataFrame) -> np.ndarray:
     """The matrix `model` actually saw, intercept column included.
 
@@ -329,20 +355,20 @@ def _representative_row(features: pd.DataFrame) -> dict:
     return representative
 
 
-def discriminant_charts(
+def _decision_boundary(
     pipeline: Pipeline,
     features: pd.DataFrame,
     target: np.ndarray,
-    *,
-    feature_x: str | None = None,
-    feature_y: str | None = None,
-) -> DiscriminantCharts:
-    model = pipeline.named_steps["model"]
-    classes = [str(c) for c in model.classes_]
-    predictions = pipeline.predict(features)
-    matrix = confusion_matrix(target, predictions, labels=model.classes_)
-    confusion = ConfusionMatrix(labels=classes, matrix=matrix.tolist())
-
+    classes: list[str],
+    feature_x: str | None,
+    feature_y: str | None,
+) -> DecisionBoundary:
+    """The grid computation shared by every method with a decision boundary in its
+    fixed set (LDA/QDA, #97; KNN, #99). `classes` is supplied rather than read from
+    `model.classes_` here, since not every caller's `model` is a plain classifier with
+    that attribute (KNN's is a fitted `GridSearchCV`, whose own `.classes_` still works,
+    but the point stands for a future method whose doesn't).
+    """
     numeric = _numeric_columns(features)
     too_many_classes = len(classes) > MAX_BOUNDARY_CLASSES
 
@@ -350,17 +376,14 @@ def discriminant_charts(
         # Nothing to plot on a grid either way — same reasoning as logistic
         # regression's multiclass ROC: send the facts (`classes`, `numeric_features`),
         # let the caller explain why there's no chart rather than shipping an empty one.
-        return DiscriminantCharts(
-            boundary=DecisionBoundary(
-                feature_x=numeric[0] if numeric else "",
-                feature_y=numeric[1] if len(numeric) > 1 else "",
-                numeric_features=numeric,
-                classes=classes,
-                grid=[],
-                points=[],
-                too_many_classes=too_many_classes,
-            ),
-            confusion_matrix=confusion,
+        return DecisionBoundary(
+            feature_x=numeric[0] if numeric else "",
+            feature_y=numeric[1] if len(numeric) > 1 else "",
+            numeric_features=numeric,
+            classes=classes,
+            grid=[],
+            points=[],
+            too_many_classes=too_many_classes,
         )
 
     if feature_x in numeric and feature_y in numeric and feature_x != feature_y:
@@ -396,15 +419,67 @@ def discriminant_charts(
         for x, y, t in zip(features[fx], features[fy], target, strict=True)
     ]
 
-    return DiscriminantCharts(
-        boundary=DecisionBoundary(
-            feature_x=fx,
-            feature_y=fy,
-            numeric_features=numeric,
-            classes=classes,
-            grid=grid,
-            points=points,
-            too_many_classes=False,
-        ),
-        confusion_matrix=confusion,
+    return DecisionBoundary(
+        feature_x=fx,
+        feature_y=fy,
+        numeric_features=numeric,
+        classes=classes,
+        grid=grid,
+        points=points,
+        too_many_classes=False,
     )
+
+
+def discriminant_charts(
+    pipeline: Pipeline,
+    features: pd.DataFrame,
+    target: np.ndarray,
+    *,
+    feature_x: str | None = None,
+    feature_y: str | None = None,
+) -> DiscriminantCharts:
+    model = pipeline.named_steps["model"]
+    classes = [str(c) for c in model.classes_]
+    predictions = pipeline.predict(features)
+    matrix = confusion_matrix(target, predictions, labels=model.classes_)
+
+    return DiscriminantCharts(
+        boundary=_decision_boundary(pipeline, features, target, classes, feature_x, feature_y),
+        confusion_matrix=ConfusionMatrix(labels=classes, matrix=matrix.tolist()),
+    )
+
+
+def knn_charts(
+    pipeline: Pipeline,
+    features: pd.DataFrame,
+    target: np.ndarray,
+    *,
+    feature_x: str | None = None,
+    feature_y: str | None = None,
+) -> KnnCharts:
+    """`model` here is the already-fitted `GridSearchCV` `methods.build` wraps K in
+    (D-019/D-024's internal tuning) — the tuning curve is read from its own
+    `cv_results_`, not a second cross-validation run just to draw a chart.
+    """
+    model = pipeline.named_steps["model"]
+    # A classifier's `classes_` exists on the fitted GridSearchCV (delegated to
+    # `best_estimator_`); a regression KNN has none, so `target`'s own distinct values
+    # stand in — a continuous target has far more than `MAX_BOUNDARY_CLASSES`, which
+    # correctly (if incidentally) reports "too many classes" rather than a boundary
+    # fragmented into one region per row.
+    classes = (
+        [str(c) for c in model.classes_]
+        if hasattr(model, "classes_")
+        else sorted({str(v) for v in target})
+    )
+    boundary = _decision_boundary(pipeline, features, target, classes, feature_x, feature_y)
+
+    ks = [int(k) for k in model.cv_results_["param_n_neighbors"]]
+    scores = [float(s) for s in model.cv_results_["mean_test_score"]]
+    order = sorted(range(len(ks)), key=lambda i: ks[i])
+    tuning = TuningCurve(
+        points=[TuningPoint(k=ks[i], score=scores[i]) for i in order],
+        chosen_k=int(model.best_params_["n_neighbors"]),
+    )
+
+    return KnnCharts(boundary=boundary, tuning=tuning)
