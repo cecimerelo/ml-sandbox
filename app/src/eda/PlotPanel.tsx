@@ -1,6 +1,12 @@
+import OpenInFullIcon from '@mui/icons-material/OpenInFull';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import IconButton from '@mui/material/IconButton';
 import Paper from '@mui/material/Paper';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 import type React from 'react';
@@ -46,6 +52,22 @@ export function PlotPanel({
   aspect?: string;
 }) {
   const [showTable, setShowTable] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  const plotBox = (boxAspect: string) => (
+    // The same aspect box either way, so toggling never reflows the grid above it.
+    <Box
+      sx={{
+        mt: 2,
+        aspectRatio: boxAspect,
+        overflow: showTable ? 'auto' : 'visible',
+        border: showTable ? `1px solid ${chart.gridline.hex}` : 'none',
+        borderRadius: showTable ? 1 : 0,
+      }}
+    >
+      {showTable ? table : chartNode}
+    </Box>
+  );
 
   return (
     <Paper
@@ -69,23 +91,22 @@ export function PlotPanel({
             </Typography>
           )}
         </Box>
-        <Button size="small" onClick={() => setShowTable((v) => !v)} sx={{ flexShrink: 0 }}>
-          {showTable ? 'View as chart' : 'View as table'}
-        </Button>
+        <Box sx={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+          {/* Kept second in tab order: "View as table" is the one control every panel
+              has always guaranteed reachable first (#48) — Expand is additional, not a
+              replacement for it. */}
+          <Button size="small" onClick={() => setShowTable((v) => !v)}>
+            {showTable ? 'View as chart' : 'View as table'}
+          </Button>
+          <Tooltip title={`Expand ${title}`}>
+            <IconButton size="small" aria-label={`Expand ${title}`} onClick={() => setExpanded(true)}>
+              <OpenInFullIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Box>
       </Box>
 
-      {/* The same aspect box either way, so toggling never reflows the grid above it. */}
-      <Box
-        sx={{
-          mt: 2,
-          aspectRatio: aspect,
-          overflow: showTable ? 'auto' : 'visible',
-          border: showTable ? `1px solid ${chart.gridline.hex}` : 'none',
-          borderRadius: showTable ? 1 : 0,
-        }}
-      >
-        {showTable ? table : chartNode}
-      </Box>
+      {plotBox(aspect)}
 
       {!showTable && legend && <Box sx={{ mt: 1.5 }}>{legend}</Box>}
 
@@ -94,6 +115,26 @@ export function PlotPanel({
           {caption}
         </Typography>
       )}
+
+      {/* One-level dialog (EXPERIENCE.md's modal-depth rule) — the same chart/table
+          content, just given the width a panel sharing a grid row with three others
+          cannot spare. Escape and backdrop-click close it, MUI's own Dialog default. */}
+      <Dialog open={expanded} onClose={() => setExpanded(false)} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ textAlign: 'center' }}>{title}</DialogTitle>
+        <DialogContent>
+          {subtitle && (
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ mb: 1, whiteSpace: 'pre-line', textAlign: 'center' }}
+            >
+              {subtitle}
+            </Typography>
+          )}
+          {plotBox(aspect)}
+          {!showTable && legend && <Box sx={{ mt: 1.5 }}>{legend}</Box>}
+        </DialogContent>
+      </Dialog>
     </Paper>
   );
 }

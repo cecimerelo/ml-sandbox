@@ -40,9 +40,10 @@ function show(data: Histogram | CategoricalBars) {
 describe('a numeric column', () => {
   it('renders the histogram only, not a boxplot — that lives in its own section now', () => {
     const { container } = show(histogram());
-    // One "View as table" per panel; two would mean a second chart snuck in.
+    // One "View as table" per panel; two would mean a second chart snuck in. Scoped to
+    // `role="img"` rather than every `svg`: the panel's own Expand icon is an svg too.
     expect(screen.getAllByRole('button', { name: /view as table/i })).toHaveLength(1);
-    expect(container.querySelectorAll('svg')).toHaveLength(1);
+    expect(container.querySelectorAll('svg[role="img"]')).toHaveLength(1);
   });
 
   it('carries no subtitle — the how-to-read line lives in the section header', () => {

@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react';
 
+import { DiscriminantPanel } from './DiscriminantPanel';
 import { LinearRegressionPanel } from './LinearRegressionPanel';
 import { LogisticRegressionPanel } from './LogisticRegressionPanel';
 
@@ -7,6 +8,17 @@ export interface ChartPanelProps {
   jobId: string;
   file: File;
   target: string;
+}
+
+/** `DiscriminantPanel` is one component shared by two methods — it needs to know
+ * which one to call `/api/train/{jobId}/{method}/charts` with, unlike every other
+ * panel, which is already bound to a single method. */
+function LdaPanel(props: ChartPanelProps) {
+  return <DiscriminantPanel {...props} method="lda" />;
+}
+
+function QdaPanel(props: ChartPanelProps) {
+  return <DiscriminantPanel {...props} method="qda" />;
 }
 
 /**
@@ -17,4 +29,6 @@ export interface ChartPanelProps {
 export const CHART_PANELS: Record<string, ComponentType<ChartPanelProps>> = {
   linear_regression: LinearRegressionPanel,
   logistic_regression: LogisticRegressionPanel,
+  lda: LdaPanel,
+  qda: QdaPanel,
 };

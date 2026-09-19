@@ -23,7 +23,9 @@ describe('a single feature\'s boxplot', () => {
   it('renders one chart, in its own panel', () => {
     const { container } = show(boxplot());
     expect(screen.getByText('size_m2')).toBeInTheDocument();
-    expect(container.querySelectorAll('svg')).toHaveLength(1);
+    // Scoped to `role="img"` rather than every `svg`: the panel's own Expand icon is
+    // an svg too.
+    expect(container.querySelectorAll('svg[role="img"]')).toHaveLength(1);
     expect(screen.getAllByRole('button', { name: /view as table/i })).toHaveLength(1);
   });
 

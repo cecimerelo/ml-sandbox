@@ -72,3 +72,35 @@ export interface LogisticRegressionCharts {
    * single signed value per feature this chart plots. */
   coefficients: CoefficientPlot;
 }
+
+export interface BoundaryCell {
+  x: number;
+  y: number;
+  predicted_class: string;
+}
+
+export interface BoundaryPoint {
+  x: number;
+  y: number;
+  actual_class: string;
+}
+
+export interface DecisionBoundary {
+  feature_x: string;
+  feature_y: string;
+  /** Every numeric column — what a "swap the selected features" control (FR-4.3)
+   * chooses between. Always includes `feature_x`/`feature_y` themselves. */
+  numeric_features: string[];
+  classes: string[];
+  /** Empty when there aren't two numeric columns to plot, or when `classes.length`
+   * exceeds the family's class cap — either way, `too_many_classes` and
+   * `numeric_features` say which. */
+  grid: BoundaryCell[];
+  points: BoundaryPoint[];
+  too_many_classes: boolean;
+}
+
+export interface DiscriminantCharts {
+  boundary: DecisionBoundary;
+  confusion_matrix: ConfusionMatrix;
+}
