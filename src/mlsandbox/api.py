@@ -11,17 +11,22 @@ Only the health endpoint lives here so far. `/recommend` arrives with 2.2.
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from functools import lru_cache
 from pathlib import Path
 from typing import Annotated
 
+import numpy as np
+import pandas as pd
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from sklearn.pipeline import Pipeline
 
 from mlsandbox import (
     artifact,
     characteristics,
+    charts,
     detection,
     eda,
     layer1,
@@ -569,6 +574,67 @@ def stop_training(job_id: str) -> TrainingStatus:
     job = _find_job(job_id)
     training.request_stop(job)
     return TrainingStatus.of(job)
+
+
+CHART_BUILDERS: dict[str, Callable[[Pipeline, pd.DataFrame, np.ndarray], StrictModel]] = {
+    "linear_regression": charts.linear_regression_charts,
+}
+"""Which methods #4.4's chart panel covers so far — one entry per sub-issue (#95-#107).
+A method missing here has no panel yet, not a bug; `method_charts` reports that as a
+plain 422 rather than a 404, since the method and job are both real."""
+
+
+@app.post("/api/train/{job_id}/{method}/charts")
+async def method_charts(
+    job_id: str,
+    method: str,
+    file: Annotated[UploadFile, File()],
+    target: Annotated[str, Form()],
+) -> charts.LinearRegressionCharts:
+    """The fixed chart set for one already-trained method (FR-4.2).
+
+    Reuses the pipeline `/api/train` already fit — never refits it — so what this draws
+    is guaranteed to be the same model the training panel scored (#83's grill-me: fit
+    once, chart from it, not a second fit that could quietly disagree). The dataset
+    itself is not retained between the two calls (FR-7.2): the browser sends the file
+    again here, exactly as it does for every other dataset-touching endpoint, and only
+    fresh X/y come out of it.
+    """
+    job = _find_job(job_id)
+    builder = CHART_BUILDERS.get(method)
+    if builder is None:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "reason": "no-charts-for-method",
+                "message": f"No chart panel yet for {method}.",
+            },
+        )
+    result = job.result_for(method)
+    if result is None or result.status != "ok" or result.fitted is None:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "reason": "no-fitted-method",
+                "message": f"{method} has no completed fit in this job.",
+            },
+        )
+
+    parsed = upload.read(await file.read(), filename=file.filename or "")
+    if isinstance(parsed, upload.Rejected):
+        raise HTTPException(
+            status_code=422, detail={"reason": parsed.reason, "message": parsed.message}
+        )
+    if target not in parsed.frame.columns:
+        raise HTTPException(
+            status_code=422,
+            detail={"reason": "unknown-column", "message": f"Not a column in this file: {target}."},
+        )
+
+    usable = parsed.frame.dropna(subset=[target])
+    features = usable.drop(columns=[target])
+    target_values = usable[target].to_numpy()
+    return builder(result.fitted, features, target_values)
 
 
 FRONTEND_DIST = PROJECT_ROOT / "app" / "dist"

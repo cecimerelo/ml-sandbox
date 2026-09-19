@@ -303,6 +303,83 @@ describe('what the run says about itself', () => {
   });
 });
 
+describe('viewing a method\'s charts', () => {
+  function okResult(method: string, score: number) {
+    return {
+      method,
+      status: 'ok' as const,
+      mean_score: score,
+      std_score: 0.01,
+      fold_scores: [],
+      fit_seconds: 1,
+      detail: null,
+    };
+  }
+
+  it('offers "View charts" only for a method with a chart panel implemented', async () => {
+    stubTraining([
+      status({
+        methods: ['linear_regression', 'random_forest'],
+        done: true,
+        results: {
+          linear_regression: okResult('linear_regression', 0.9),
+          random_forest: okResult('random_forest', 0.8),
+        },
+      }),
+    ]);
+    const user = userEvent.setup();
+    show({ methods: ['linear_regression', 'random_forest'] });
+    await user.click(screen.getByRole('button', { name: /train these methods/i }));
+
+    await screen.findByText(/score: 0\.90/i);
+    expect(screen.getAllByRole('button', { name: /view charts/i })).toHaveLength(1);
+  });
+
+  it('opens the chart panel on click and can be closed again', async () => {
+    const finished = status({
+      methods: ['linear_regression'],
+      done: true,
+      results: { linear_regression: okResult('linear_regression', 0.9) },
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url === '/api/train' && init?.method === 'POST') {
+          return { ok: true, json: async () => ({ job_id: 'job-1' }) };
+        }
+        if (url === '/api/train/job-1') {
+          return { ok: true, json: async () => finished };
+        }
+        if (url === '/api/train/job-1/linear_regression/charts') {
+          return {
+            ok: true,
+            json: async () => ({
+              residual: { points: [] },
+              predicted_vs_actual: { points: [], r2: 0.9 },
+              coefficients: { bars: [] },
+              leverage: { points: [] },
+            }),
+          };
+        }
+        throw new Error(`unexpected fetch: ${url}`);
+      }),
+    );
+
+    const user = userEvent.setup();
+    show({ methods: ['linear_regression'] });
+    await user.click(screen.getByRole('button', { name: /train these methods/i }));
+    await screen.findByText(/score: 0\.90/i);
+
+    await user.click(screen.getByRole('button', { name: /view charts/i }));
+    expect(await screen.findByText('Residual plot')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /hide charts/i }));
+    // `Collapse` animates the panel closed and unmounts it afterward, so the removal
+    // isn't synchronous with the click.
+    await waitFor(() => expect(screen.queryByText('Residual plot')).toBeNull());
+  });
+});
+
 describe('a new recommendation while training is in flight', () => {
   it('stops the previous job and returns to the idle button', async () => {
     stubTraining([status({ current: 'random_forest' })]);
