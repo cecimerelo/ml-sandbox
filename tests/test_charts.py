@@ -124,3 +124,97 @@ def test_multiclass_logistic_regression_has_no_roc_or_coefficients_but_has_a_con
     assert result.coefficients.bars == []
     assert result.confusion_matrix.labels == ["0", "1", "2"]
     assert len(result.confusion_matrix.matrix) == 3
+
+
+def _fit_discriminant(
+    method: str, n_classes: int = 2, n: int = 200
+) -> tuple[object, pd.DataFrame, np.ndarray]:
+    rng = np.random.default_rng(0)
+    features = pd.DataFrame(
+        {
+            "size_m2": rng.normal(100, 20, n),
+            "bedrooms": rng.integers(1, 5, n).astype(float),
+            # Pure noise, unrelated to the target — the pair-selection test asserts
+            # this one is never picked over the two informative columns.
+            "noise": rng.normal(0, 1, n),
+        }
+    )
+    score = features["size_m2"] + 10 * features["bedrooms"]
+    edges = np.quantile(score, np.linspace(0, 1, n_classes + 1)[1:-1]) if n_classes > 1 else []
+    target = np.digitize(score, edges).astype(str)
+    pipeline = methods.build(method, "classification", seed=0)
+    pipeline.fit(features, target)
+    return pipeline, features, target
+
+
+def test_lda_boundary_picks_the_two_most_informative_numeric_features():
+    pipeline, features, target = _fit_discriminant("lda", n_classes=2)
+
+    result = charts.discriminant_charts(pipeline, features, target)
+
+    assert {result.boundary.feature_x, result.boundary.feature_y} == {"size_m2", "bedrooms"}
+    assert "noise" not in {result.boundary.feature_x, result.boundary.feature_y}
+
+
+def test_qda_boundary_grid_has_the_expected_resolution():
+    pipeline, features, target = _fit_discriminant("qda", n_classes=2)
+
+    result = charts.discriminant_charts(pipeline, features, target)
+
+    assert len(result.boundary.grid) == charts.BOUNDARY_GRID_RESOLUTION**2
+    assert len(result.boundary.points) == len(features)
+    assert result.boundary.too_many_classes is False
+
+
+def test_confusion_matrix_and_boundary_report_the_same_classes():
+    pipeline, features, target = _fit_discriminant("lda", n_classes=3)
+
+    result = charts.discriminant_charts(pipeline, features, target)
+
+    assert result.confusion_matrix.labels == result.boundary.classes == ["0", "1", "2"]
+
+
+def test_a_caller_can_override_the_auto_selected_feature_pair():
+    pipeline, features, target = _fit_discriminant("lda", n_classes=2)
+
+    result = charts.discriminant_charts(
+        pipeline, features, target, feature_x="noise", feature_y="bedrooms"
+    )
+
+    assert (result.boundary.feature_x, result.boundary.feature_y) == ("noise", "bedrooms")
+    assert len(result.boundary.grid) == charts.BOUNDARY_GRID_RESOLUTION**2
+
+
+def test_an_invalid_override_falls_back_to_auto_selection():
+    pipeline, features, target = _fit_discriminant("lda", n_classes=2)
+
+    result = charts.discriminant_charts(
+        pipeline, features, target, feature_x="not_a_column", feature_y="bedrooms"
+    )
+
+    assert {result.boundary.feature_x, result.boundary.feature_y} == {"size_m2", "bedrooms"}
+
+
+def test_more_than_the_class_cap_has_no_grid_but_still_has_a_confusion_matrix():
+    pipeline, features, target = _fit_discriminant("lda", n_classes=7, n=700)
+
+    result = charts.discriminant_charts(pipeline, features, target)
+
+    assert result.boundary.too_many_classes is True
+    assert result.boundary.grid == []
+    assert result.boundary.points == []
+    assert len(result.confusion_matrix.labels) == 7
+
+
+def test_fewer_than_two_numeric_columns_has_no_grid():
+    rng = np.random.default_rng(0)
+    n = 200
+    features = pd.DataFrame({"city": rng.choice(["Madrid", "Sevilla"], n)})
+    target = rng.choice(["yes", "no"], n)
+    pipeline = methods.build("lda", "classification", seed=0)
+    pipeline.fit(features, target)
+
+    result = charts.discriminant_charts(pipeline, features, target)
+
+    assert result.boundary.grid == []
+    assert result.boundary.numeric_features == []

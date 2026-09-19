@@ -1,5 +1,5 @@
 import { ThemeProvider } from '@mui/material/styles';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import type React from 'react';
@@ -69,5 +69,32 @@ describe('View as table', () => {
 
     await user.keyboard('{Enter}');
     expect(screen.getByTestId('table')).toBeInTheDocument();
+  });
+});
+
+describe('Expand', () => {
+  it('opens the same chart in a dialog, and closes on Escape', async () => {
+    const user = userEvent.setup();
+    show();
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+    await user.click(screen.getByRole('button', { name: /expand size_m2/i }));
+
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByTestId('chart')).toBeInTheDocument();
+
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+  });
+
+  it('shows the table inside the dialog too, when that is the active view', async () => {
+    const user = userEvent.setup();
+    show();
+
+    await user.click(screen.getByRole('button', { name: /view as table/i }));
+    await user.click(screen.getByRole('button', { name: /expand size_m2/i }));
+
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByTestId('table')).toBeInTheDocument();
   });
 });

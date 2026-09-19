@@ -17,10 +17,19 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+from sklearn.feature_selection import f_classif
 from sklearn.metrics import auc, confusion_matrix, r2_score, roc_curve
 from sklearn.pipeline import Pipeline
 
 from mlsandbox.base import StrictModel
+
+BOUNDARY_GRID_RESOLUTION = 40
+"""Cells per axis for a decision-boundary grid — 1,600 cells, fine enough to read the
+shape of a region without the payload scaling with the dataset's own row count."""
+
+MAX_BOUNDARY_CLASSES = 6
+"""DESIGN.md's "Boundaries" family: above this, a boundary plot is not rendered at
+all — a plot needing that many distinguishable regions is not a visualization."""
 
 
 class ScatterPoint(StrictModel):
@@ -117,6 +126,56 @@ class LogisticRegressionCharts(StrictModel):
     coefficients: CoefficientPlot
 
 
+class BoundaryCell(StrictModel):
+    """One point on the decision-boundary grid — `predicted_class` is what the pipeline
+    predicts with `feature_x`/`feature_y` at `(x, y)` and every other feature held at a
+    representative value (mean for a numeric column, mode for a categorical one)."""
+
+    x: float
+    y: float
+    predicted_class: str
+
+
+class BoundaryPoint(StrictModel):
+    """One real row, projected onto `feature_x`/`feature_y` — plotted over the grid so
+    the boundary can be read against the data it was actually fit on."""
+
+    x: float
+    y: float
+    actual_class: str
+
+
+class DecisionBoundary(StrictModel):
+    """FR-4.3: the system auto-selects `feature_x`/`feature_y` (by ANOVA F-score, the
+    two numeric columns that individually separate the classes best) unless the caller
+    names its own pair — the mechanism FR-4.3's "the user can swap the selected
+    features" needs. `grid` and `points` are both empty when there aren't two numeric
+    columns to plot, or when `classes` has more than `MAX_BOUNDARY_CLASSES` — a boundary
+    over that many regions is not a visualization DESIGN.md asks for, not a bug here.
+    """
+
+    feature_x: str
+    feature_y: str
+    numeric_features: list[str]
+    """Every numeric column — what a "swap the selected features" control chooses
+    between. Always includes `feature_x`/`feature_y` themselves."""
+    classes: list[str]
+    grid: list[BoundaryCell]
+    points: list[BoundaryPoint]
+    too_many_classes: bool
+
+
+class DiscriminantCharts(StrictModel):
+    """LDA and QDA's fixed set (FR-4.2): a decision boundary and a confusion matrix.
+    Shared by both — neither method has a coefficient plot LDA/QDA's own kind of
+    boundary is drawn from (QDA has no single coefficient at all; LDA's only reduces
+    cleanly to one for the binary case), so unlike Logistic Regression there is no
+    third chart to fall back to when the boundary itself can't be shown."""
+
+    boundary: DecisionBoundary
+    confusion_matrix: ConfusionMatrix
+
+
 def _design_matrix(pipeline: Pipeline, features: pd.DataFrame) -> np.ndarray:
     """The matrix `model` actually saw, intercept column included.
 
@@ -151,8 +210,11 @@ def _coefficient_plot(pipeline: Pipeline) -> CoefficientPlot:
 
 
 def linear_regression_charts(
-    pipeline: Pipeline, features: pd.DataFrame, target: np.ndarray
+    pipeline: Pipeline, features: pd.DataFrame, target: np.ndarray, **_unused: object
 ) -> LinearRegressionCharts:
+    """`**_unused` swallows `feature_x`/`feature_y` — every `CHART_BUILDERS` entry gets
+    called with them (FR-4.3's decision-boundary override), even the ones with no
+    boundary to place them on."""
     predictions = pipeline.predict(features)
     residuals = target - predictions
     coefficients = _coefficient_plot(pipeline)
@@ -196,8 +258,9 @@ def linear_regression_charts(
 
 
 def logistic_regression_charts(
-    pipeline: Pipeline, features: pd.DataFrame, target: np.ndarray
+    pipeline: Pipeline, features: pd.DataFrame, target: np.ndarray, **_unused: object
 ) -> LogisticRegressionCharts:
+    """`**_unused`: see `linear_regression_charts`."""
     model = pipeline.named_steps["model"]
     classes = [str(c) for c in model.classes_]
     predictions = pipeline.predict(features)
@@ -226,4 +289,122 @@ def logistic_regression_charts(
         # A multiclass `coef_` has one row per class — plotting it as one signed bar
         # per feature would silently mix rows that mean different things.
         coefficients=_coefficient_plot(pipeline) if len(classes) == 2 else CoefficientPlot(bars=[]),
+    )
+
+
+def _numeric_columns(features: pd.DataFrame) -> list[str]:
+    return [c for c in features.columns if pd.api.types.is_numeric_dtype(features[c])]
+
+
+def _best_boundary_pair(
+    features: pd.DataFrame, target: np.ndarray, numeric: list[str]
+) -> tuple[str, str]:
+    """The two numeric columns that individually separate the classes best.
+
+    ANOVA F-score, not the model's own coefficients: QDA has no single coefficient at
+    all (a quadratic boundary per class), and LDA's only reduces to one cleanly for the
+    binary case — a model-agnostic, data-only ranking is the one thing that works
+    identically for both, and reads the same way a reader would expect "most important"
+    to mean here: which column, alone, tells the classes apart most clearly.
+    """
+    values = features[numeric].apply(lambda col: col.fillna(col.mean()))
+    scores, _ = f_classif(values.to_numpy(), target)
+    scores = np.nan_to_num(scores)
+    order = np.argsort(-scores)
+    return numeric[order[0]], numeric[order[1]]
+
+
+def _representative_row(features: pd.DataFrame) -> dict:
+    """Every feature held fixed at its typical value — the mean for a numeric column,
+    the most frequent value for a categorical one — while the boundary grid varies only
+    `feature_x`/`feature_y`. The standard way to read a 2-D slice out of a boundary fit
+    on more than two dimensions: everything else stands still.
+    """
+    representative = {}
+    for column in features.columns:
+        if pd.api.types.is_numeric_dtype(features[column]):
+            representative[column] = features[column].mean()
+        else:
+            representative[column] = features[column].mode(dropna=True).iloc[0]
+    return representative
+
+
+def discriminant_charts(
+    pipeline: Pipeline,
+    features: pd.DataFrame,
+    target: np.ndarray,
+    *,
+    feature_x: str | None = None,
+    feature_y: str | None = None,
+) -> DiscriminantCharts:
+    model = pipeline.named_steps["model"]
+    classes = [str(c) for c in model.classes_]
+    predictions = pipeline.predict(features)
+    matrix = confusion_matrix(target, predictions, labels=model.classes_)
+    confusion = ConfusionMatrix(labels=classes, matrix=matrix.tolist())
+
+    numeric = _numeric_columns(features)
+    too_many_classes = len(classes) > MAX_BOUNDARY_CLASSES
+
+    if len(numeric) < 2 or too_many_classes:
+        # Nothing to plot on a grid either way — same reasoning as logistic
+        # regression's multiclass ROC: send the facts (`classes`, `numeric_features`),
+        # let the caller explain why there's no chart rather than shipping an empty one.
+        return DiscriminantCharts(
+            boundary=DecisionBoundary(
+                feature_x=numeric[0] if numeric else "",
+                feature_y=numeric[1] if len(numeric) > 1 else "",
+                numeric_features=numeric,
+                classes=classes,
+                grid=[],
+                points=[],
+                too_many_classes=too_many_classes,
+            ),
+            confusion_matrix=confusion,
+        )
+
+    if feature_x in numeric and feature_y in numeric and feature_x != feature_y:
+        fx, fy = feature_x, feature_y
+    else:
+        fx, fy = _best_boundary_pair(features, target, numeric)
+
+    representative = _representative_row(features)
+    x_min, x_max = features[fx].min(), features[fx].max()
+    y_min, y_max = features[fy].min(), features[fy].max()
+    # A constant column has no width to draw a grid across — one wide enough to still
+    # place the single value in the middle, the same reading `ScatterChart` gives it.
+    if x_min == x_max:
+        x_min, x_max = x_min - 1, x_max + 1
+    if y_min == y_max:
+        y_min, y_max = y_min - 1, y_max + 1
+
+    xs = np.linspace(x_min, x_max, BOUNDARY_GRID_RESOLUTION)
+    ys = np.linspace(y_min, y_max, BOUNDARY_GRID_RESOLUTION)
+    xx, yy = np.meshgrid(xs, ys)
+
+    grid_df = pd.DataFrame([representative] * xx.size).reset_index(drop=True)
+    grid_df[fx] = xx.ravel()
+    grid_df[fy] = yy.ravel()
+    grid_predictions = pipeline.predict(grid_df)
+
+    grid = [
+        BoundaryCell(x=float(x), y=float(y), predicted_class=str(p))
+        for x, y, p in zip(xx.ravel(), yy.ravel(), grid_predictions, strict=True)
+    ]
+    points = [
+        BoundaryPoint(x=float(x), y=float(y), actual_class=str(t))
+        for x, y, t in zip(features[fx], features[fy], target, strict=True)
+    ]
+
+    return DiscriminantCharts(
+        boundary=DecisionBoundary(
+            feature_x=fx,
+            feature_y=fy,
+            numeric_features=numeric,
+            classes=classes,
+            grid=grid,
+            points=points,
+            too_many_classes=False,
+        ),
+        confusion_matrix=confusion,
     )

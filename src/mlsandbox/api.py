@@ -16,12 +16,9 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Annotated
 
-import numpy as np
-import pandas as pd
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from sklearn.pipeline import Pipeline
 
 from mlsandbox import (
     artifact,
@@ -593,9 +590,16 @@ def stop_training(job_id: str) -> TrainingStatus:
     return TrainingStatus.of(job)
 
 
-CHART_BUILDERS: dict[str, Callable[[Pipeline, pd.DataFrame, np.ndarray], StrictModel]] = {
+ChartBuilder = Callable[..., StrictModel]
+"""`(pipeline, features, target, *, feature_x=None, feature_y=None) -> StrictModel`.
+Every builder accepts the two keyword-only overrides — FR-4.3's "swap the selected
+features" needs them for a decision boundary — even the ones that ignore them."""
+
+CHART_BUILDERS: dict[str, ChartBuilder] = {
     "linear_regression": charts.linear_regression_charts,
     "logistic_regression": charts.logistic_regression_charts,
+    "lda": charts.discriminant_charts,
+    "qda": charts.discriminant_charts,
 }
 """Which methods #4.4's chart panel covers so far — one entry per sub-issue (#95-#107).
 A method missing here has no panel yet, not a bug; `method_charts` reports that as a
@@ -608,7 +612,11 @@ async def method_charts(
     method: str,
     file: Annotated[UploadFile, File()],
     target: Annotated[str, Form()],
-) -> charts.LinearRegressionCharts | charts.LogisticRegressionCharts:
+    feature_x: Annotated[str | None, Form()] = None,
+    feature_y: Annotated[str | None, Form()] = None,
+) -> (
+    charts.LinearRegressionCharts | charts.LogisticRegressionCharts | charts.DiscriminantCharts
+):
     """The fixed chart set for one already-trained method (FR-4.2).
 
     Reuses the pipeline `/api/train` already fit — never refits it — so what this draws
@@ -617,6 +625,10 @@ async def method_charts(
     itself is not retained between the two calls (FR-7.2): the browser sends the file
     again here, exactly as it does for every other dataset-touching endpoint, and only
     fresh X/y come out of it.
+
+    `feature_x`/`feature_y` are FR-4.3's "swap the selected features" — ignored by
+    every builder except a decision boundary's, which falls back to its own
+    auto-selection when they're absent or not a valid pair.
     """
     job = _find_job(job_id)
     builder = CHART_BUILDERS.get(method)
@@ -652,7 +664,7 @@ async def method_charts(
     usable = parsed.frame.dropna(subset=[target])
     features = usable.drop(columns=[target])
     target_values = usable[target].to_numpy()
-    return builder(result.fitted, features, target_values)
+    return builder(result.fitted, features, target_values, feature_x=feature_x, feature_y=feature_y)
 
 
 FRONTEND_DIST = PROJECT_ROOT / "app" / "dist"

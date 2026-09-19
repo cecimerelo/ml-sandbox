@@ -11,9 +11,17 @@ export function useChartData<T>(
   method: string,
   file: File,
   target: string,
+  /** Method-specific overrides beyond file/target — FR-4.3's "swap the selected
+   * features" (`feature_x`/`feature_y`) is the first of these. Absent for every method
+   * with nothing to override. */
+  extraParams?: Record<string, string>,
 ): { data: T | null; failed: boolean } {
   const [data, setData] = useState<T | null>(null);
   const [failed, setFailed] = useState(false);
+  // Compared by value below, not by the object reference `extraParams` gets on every
+  // render — a plain object literal passed inline at the call site would otherwise
+  // refetch on every render even when nothing in it actually changed.
+  const extraParamsKey = extraParams ? JSON.stringify(extraParams) : '';
 
   useEffect(() => {
     let cancelled = false;
@@ -23,6 +31,9 @@ export function useChartData<T>(
       const body = new FormData();
       body.append('file', file);
       body.append('target', target);
+      for (const [key, value] of Object.entries(extraParams ?? {})) {
+        body.append(key, value);
+      }
       try {
         const response = await fetch(`/api/train/${jobId}/${method}/charts`, {
           method: 'POST',
@@ -42,7 +53,9 @@ export function useChartData<T>(
     return () => {
       cancelled = true;
     };
-  }, [jobId, method, file, target]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- extraParamsKey stands in
+    // for extraParams (see its own comment above); including both would defeat the point.
+  }, [jobId, method, file, target, extraParamsKey]);
 
   return { data, failed };
 }
