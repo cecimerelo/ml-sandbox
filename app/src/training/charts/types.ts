@@ -119,3 +119,10 @@ export interface KnnCharts {
   boundary: DecisionBoundary;
   tuning: KnnTuningCurve;
 }
+
+export interface NaiveBayesCharts {
+  /** `null` for a target with more than two classes — a binary-only chart, per
+   * `mlsandbox.charts.naive_bayes_charts`. */
+  roc: RocCurve | null;
+  confusion_matrix: ConfusionMatrix;
+}

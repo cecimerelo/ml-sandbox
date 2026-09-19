@@ -4,6 +4,7 @@ import { DiscriminantPanel } from './DiscriminantPanel';
 import { KnnPanel } from './KnnPanel';
 import { LinearRegressionPanel } from './LinearRegressionPanel';
 import { LogisticRegressionPanel } from './LogisticRegressionPanel';
+import { NaiveBayesPanel } from './NaiveBayesPanel';
 
 export interface ChartPanelProps {
   jobId: string;
@@ -33,4 +34,5 @@ export const CHART_PANELS: Record<string, ComponentType<ChartPanelProps>> = {
   lda: LdaPanel,
   qda: QdaPanel,
   knn: KnnPanel,
+  naive_bayes: NaiveBayesPanel,
 };
