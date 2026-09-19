@@ -114,20 +114,42 @@ it('offers no axis swap when there are fewer than two numeric features', async (
 });
 
 it('re-fetches with the chosen pair when the axis selects change', async () => {
+  const initial = binaryCharts();
+  initial.boundary.numeric_features = ['size_m2', 'bedrooms', 'age_years'];
   const swapped = binaryCharts();
-  swapped.boundary.feature_x = 'bedrooms';
-  stubCharts([binaryCharts(), swapped]);
+  swapped.boundary.feature_x = 'age_years';
+  swapped.boundary.numeric_features = ['size_m2', 'bedrooms', 'age_years'];
+  stubCharts([initial, swapped]);
   const user = userEvent.setup();
   show();
 
   await screen.findByText('Decision boundary');
   await user.click(screen.getByLabelText(/horizontal axis/i));
-  await user.click(screen.getByRole('option', { name: 'bedrooms' }));
+  await user.click(screen.getByRole('option', { name: 'age_years' }));
 
   await waitFor(() => {
     const calls = vi.mocked(fetch).mock.calls;
     const last = calls[calls.length - 1]!;
     const body = last[1]?.body as FormData;
-    expect(body.get('feature_x')).toBe('bedrooms');
+    expect(body.get('feature_x')).toBe('age_years');
   });
+});
+
+it('excludes the vertical axis\'s column from the horizontal axis choices, and vice versa', async () => {
+  const threeFeatures = binaryCharts();
+  threeFeatures.boundary.numeric_features = ['size_m2', 'bedrooms', 'age_years'];
+  stubCharts([threeFeatures]);
+  const user = userEvent.setup();
+  show();
+
+  await screen.findByText('Decision boundary');
+
+  await user.click(screen.getByLabelText(/horizontal axis/i));
+  const horizontalOptions = await screen.findAllByRole('option');
+  expect(horizontalOptions.map((o) => o.textContent)).not.toContain('bedrooms');
+  await user.keyboard('{Escape}');
+
+  await user.click(screen.getByLabelText(/vertical axis/i));
+  const verticalOptions = await screen.findAllByRole('option');
+  expect(verticalOptions.map((o) => o.textContent)).not.toContain('size_m2');
 });

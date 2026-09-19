@@ -77,11 +77,15 @@ export function DiscriminantPanel({
                       setOverride({ x: event.target.value, y: boundary.feature_y })
                     }
                   >
-                    {boundary.numeric_features.map((feature) => (
-                      <MenuItem key={feature} value={feature}>
-                        {feature}
-                      </MenuItem>
-                    ))}
+                    {/* Excludes whatever the vertical axis already plots — the same
+                        column on both axes has no boundary to draw. */}
+                    {boundary.numeric_features
+                      .filter((feature) => feature !== boundary.feature_y)
+                      .map((feature) => (
+                        <MenuItem key={feature} value={feature}>
+                          {feature}
+                        </MenuItem>
+                      ))}
                   </Select>
                 </FormControl>
                 <FormControl size="small" sx={{ minWidth: 160 }}>
@@ -94,11 +98,13 @@ export function DiscriminantPanel({
                       setOverride({ x: boundary.feature_x, y: event.target.value })
                     }
                   >
-                    {boundary.numeric_features.map((feature) => (
-                      <MenuItem key={feature} value={feature}>
-                        {feature}
-                      </MenuItem>
-                    ))}
+                    {boundary.numeric_features
+                      .filter((feature) => feature !== boundary.feature_x)
+                      .map((feature) => (
+                        <MenuItem key={feature} value={feature}>
+                          {feature}
+                        </MenuItem>
+                      ))}
                   </Select>
                 </FormControl>
               </Box>
