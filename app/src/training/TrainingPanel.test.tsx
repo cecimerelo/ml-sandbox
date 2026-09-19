@@ -144,6 +144,40 @@ describe('a successful run', () => {
     });
   });
 
+  it('does not offer to train again once a run has a solution', async () => {
+    stubTraining([
+      status({
+        done: true,
+        results: {
+          random_forest: {
+            method: 'random_forest',
+            status: 'ok',
+            mean_score: 0.87,
+            std_score: 0.02,
+            fold_scores: [],
+            fit_seconds: 1,
+            detail: null,
+          },
+          logistic_regression: {
+            method: 'logistic_regression',
+            status: 'ok',
+            mean_score: 0.81,
+            std_score: 0.03,
+            fold_scores: [],
+            fit_seconds: 1,
+            detail: null,
+          },
+        },
+      }),
+    ]);
+    const user = userEvent.setup();
+    show();
+    await user.click(screen.getByRole('button', { name: /train these methods/i }));
+
+    await screen.findByText(/score: 0\.87/i);
+    expect(screen.queryByRole('button', { name: /train these methods/i })).toBeNull();
+  });
+
   it('explains what Score means once a real score has landed, not before', async () => {
     stubTraining([
       status({ current: 'random_forest' }),

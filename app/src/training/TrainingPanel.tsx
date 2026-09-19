@@ -237,12 +237,6 @@ export function TrainingPanel({
               })}
             </Alert>
           )}
-
-          {job.done && (
-            <Button sx={{ mt: 2 }} onClick={() => void start()} disabled={!!disabledReason}>
-              {TRAINING['training.button.label']}
-            </Button>
-          )}
         </Box>
       )}
     </Paper>
