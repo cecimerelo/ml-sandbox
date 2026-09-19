@@ -45,3 +45,30 @@ export interface LinearRegressionCharts {
   coefficients: CoefficientPlot;
   leverage: LeveragePlot;
 }
+
+export interface RocPoint {
+  false_positive_rate: number;
+  true_positive_rate: number;
+}
+
+export interface RocCurve {
+  points: RocPoint[];
+  auc: number;
+  positive_class: string;
+}
+
+export interface ConfusionMatrix {
+  labels: string[];
+  /** `matrix[i][j]`: rows whose actual class was `labels[i]`, predicted as `labels[j]`. */
+  matrix: number[][];
+}
+
+export interface LogisticRegressionCharts {
+  /** `null` for a target with more than two classes — a binary-only chart, per
+   * `mlsandbox.charts.logistic_regression_charts`. */
+  roc: RocCurve | null;
+  confusion_matrix: ConfusionMatrix;
+  /** Empty for a multiclass target — `coef_` has one row per class there, not the
+   * single signed value per feature this chart plots. */
+  coefficients: CoefficientPlot;
+}

@@ -1,26 +1,13 @@
-import Box from '@mui/material/Box';
-import CircularProgress from '@mui/material/CircularProgress';
 import Grid from '@mui/material/Grid';
-import Typography from '@mui/material/Typography';
-import { useEffect, useState } from 'react';
 
 import { DistributionTable } from '../../eda/DistributionTable';
 import { PlotPanel } from '../../eda/PlotPanel';
-import { CoefficientChart, coefficientRows } from './CoefficientChart';
+import { ChartFetchStatus } from './ChartFetchStatus';
+import { CoefficientChart, coefficientChartAspect, coefficientRows } from './CoefficientChart';
+import { GoalSubtitle } from './GoalSubtitle';
 import { ScatterChart, scatterSummaryRows } from './ScatterChart';
 import type { LinearRegressionCharts } from './types';
-
-/** The "what am I looking at" line, plus a bold "what good looks like" line on its own
- * row underneath — the goal a reader should check the chart against. */
-function GoalSubtitle({ description, goal }: { description: string; goal: React.ReactNode }) {
-  return (
-    <>
-      {description}
-      <br />
-      <strong>👀 Goal: {goal}</strong>
-    </>
-  );
-}
+import { useChartData } from './useChartData';
 
 /**
  * The Linear Regression method's fixed chart set (FR-4.2, #95): residual plot,
@@ -39,53 +26,14 @@ export function LinearRegressionPanel({
   file: File;
   target: string;
 }) {
-  const [data, setData] = useState<LinearRegressionCharts | null>(null);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    setData(null);
-    setFailed(false);
-    async function load() {
-      const body = new FormData();
-      body.append('file', file);
-      body.append('target', target);
-      try {
-        const response = await fetch(`/api/train/${jobId}/linear_regression/charts`, {
-          method: 'POST',
-          body,
-        });
-        if (cancelled) return;
-        if (!response.ok) {
-          setFailed(true);
-          return;
-        }
-        setData(await response.json());
-      } catch {
-        if (!cancelled) setFailed(true);
-      }
-    }
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [jobId, file, target]);
-
-  if (failed) {
-    return (
-      <Typography color="text.secondary">
-        We couldn't compute these charts. Try again — training itself already finished, so this
-        is only the chart step.
-      </Typography>
-    );
-  }
-
-  if (!data) {
-    return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-        <CircularProgress size={24} aria-label="Computing charts" />
-      </Box>
-    );
+  const { data, failed } = useChartData<LinearRegressionCharts>(
+    jobId,
+    'linear_regression',
+    file,
+    target,
+  );
+  if (failed || !data) {
+    return <ChartFetchStatus failed={failed} loaded={data !== null} />;
   }
 
   return (
@@ -159,6 +107,7 @@ export function LinearRegressionPanel({
           }
           chart={<CoefficientChart bars={data.coefficients.bars} />}
           table={<DistributionTable rows={coefficientRows(data.coefficients.bars)} columnLabel="Feature" valueLabel="Coefficient" />}
+          aspect={coefficientChartAspect(data.coefficients.bars)}
         />
       </Grid>
 

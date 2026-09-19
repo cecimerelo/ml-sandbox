@@ -13,6 +13,18 @@ const BAR_RADIUS = 4;
  * magnitude, so this is a plain slice, not a re-sort. */
 const TOP_N = 20;
 
+/** `PlotPanel`'s box holds a fixed aspect ratio (`spacing.plotAspect` by default) — this
+ * chart's own height instead grows and shrinks with how many bars there are, from one
+ * feature up to `TOP_N`. Passing a mismatched fixed aspect either squeezes many bars
+ * into too little height or, with very few bars, letterboxes a couple of short bars in
+ * a mostly-empty box. The caller passes this back to `PlotPanel`'s `aspect` prop so the
+ * box always matches what's actually being drawn. */
+export function coefficientChartAspect(bars: CoefficientBar[]): string {
+  const rows = Math.max(1, Math.min(bars.length, TOP_N));
+  const height = rows * ROW_HEIGHT + MARGIN.top + MARGIN.bottom;
+  return `${WIDTH} / ${height}`;
+}
+
 /**
  * DESIGN.md's "Coefficients / importance" family. Sign is real here — unlike a plain
  * importance score — so bars use the diverging ramp rather than one uniform hue, per
