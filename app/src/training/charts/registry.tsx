@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 
 import { DiscriminantPanel } from './DiscriminantPanel';
+import { KnnPanel } from './KnnPanel';
 import { LinearRegressionPanel } from './LinearRegressionPanel';
 import { LogisticRegressionPanel } from './LogisticRegressionPanel';
 
@@ -31,4 +32,5 @@ export const CHART_PANELS: Record<string, ComponentType<ChartPanelProps>> = {
   logistic_regression: LogisticRegressionPanel,
   lda: LdaPanel,
   qda: QdaPanel,
+  knn: KnnPanel,
 };
