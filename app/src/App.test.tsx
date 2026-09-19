@@ -8,7 +8,7 @@
  */
 
 import { ThemeProvider } from '@mui/material/styles';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
@@ -343,6 +343,92 @@ describe('changing the target after a recommendation exists', () => {
     await user.click(screen.getByRole('option', { name: 'b' }));
 
     expect(screen.queryByText('Suggested method')).toBeNull();
+    vi.unstubAllGlobals();
+  });
+
+  it('trains against the task the recommendation actually used, not detection\'s auto-filled one', async () => {
+    // "What are you trying to predict?" is auto-filled from `detection.task` but stays
+    // user-editable — the auto-detected type can be wrong. Here detection says binary
+    // classification, but the answer submitted (and so the recommendation computed for)
+    // is regression. Training must follow what was actually asked, not `detection.task`.
+    const user = userEvent.setup();
+    let trainedTask: string | null = null;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string, init?: RequestInit) => {
+        if (url === '/api/dataset') {
+          return { ok: true, json: async () => ({ columns: ['a', 'b'], rows: 5, skipped: [] }) };
+        }
+        if (url === '/api/dataset/detect') {
+          return {
+            ok: true,
+            json: async () => ({
+              task: 'binary classification',
+              rows: '500-10k',
+              features: '10-50',
+              feature_types: 'numeric',
+              missing: 'none',
+              class_balance: 'roughly equal',
+              n_rows: 5,
+              n_features: 1,
+              n_classes: 2,
+              missing_rate: 0,
+              dropped_rows: 0,
+              uncertain: [],
+            }),
+          };
+        }
+        if (url === '/api/recommend') {
+          return { ok: true, json: async () => recommendation() };
+        }
+        if (url === '/api/train' && init?.method === 'POST') {
+          trainedTask = (init.body as FormData).get('task') as string;
+          return { ok: true, json: async () => ({ job_id: 'job-1' }) };
+        }
+        if (url.startsWith('/api/train/')) {
+          return {
+            ok: true,
+            json: async () => ({
+              id: 'job-1',
+              methods: ['random_forest'],
+              budget_seconds: 60,
+              current: null,
+              halted_early: false,
+              aborted: false,
+              abort_detail: null,
+              done: true,
+              results: {},
+            }),
+          };
+        }
+        return { ok: false, json: async () => ({}) };
+      }),
+    );
+    renderAt('/');
+
+    await user.upload(screen.getByLabelText(/upload a csv/i), file('good.csv'));
+    await screen.findByText('good.csv');
+
+    // Training needs a target column, not just an answered form — picking one is what
+    // fires `onDetected` and fills `detection` (task: binary classification here).
+    await user.click(screen.getByRole('combobox', { name: /predict/i }));
+    await user.click(screen.getByRole('option', { name: 'a' }));
+
+    // Overrides the auto-filled "One of two categories" away to "A number".
+    await answer(user, /what are you trying to predict/i, 'A number');
+    await answer(user, /how many rows/i, '500 to 10,000');
+    await answer(user, /how many columns/i, '10 to 50');
+    await answer(user, /what kind of columns/i, 'Numbers');
+    await answer(user, /how much of your data is missing/i, 'None');
+    await answer(user, /explain individual predictions/i, 'Not important');
+    await answer(user, /straight line/i, "I don't know");
+    await answer(user, /only matter in combination/i, 'No');
+    await user.click(screen.getByRole('button', { name: /get recommendation/i }));
+    await screen.findByText('Suggested method');
+
+    await user.click(screen.getByRole('button', { name: /train these methods/i }));
+    await waitFor(() => expect(trainedTask).toBe('regression'));
+
     vi.unstubAllGlobals();
   });
 });

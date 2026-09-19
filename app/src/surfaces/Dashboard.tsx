@@ -4,7 +4,7 @@ import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import { useEffect, useRef, useState } from 'react';
 
-import type { RecommendationRequest } from '../api/types';
+import type { RecommendationRequest, Task } from '../api/types';
 import { EdaBlock } from '../eda/EdaBlock';
 import { FormSummaryBar } from '../form/FormSummaryBar';
 import { ProblemForm } from '../form/ProblemForm';
@@ -27,6 +27,14 @@ import { spacing } from '../theme/tokens';
  */
 export function Dashboard() {
   const [result, setResult] = useState<Recommendation | null>(null);
+  // The task `result` was actually computed for — not necessarily `detection.task`.
+  // `ProblemForm`'s "What are you trying to predict?" is auto-filled from `detection`
+  // but stays user-editable afterward (the auto-detected type can be wrong), so what
+  // gets submitted to `/api/recommend` can disagree with the live `detection.task`.
+  // Training needs the task the *methods on screen* were ranked for, not whatever the
+  // form/detection currently say — mixing them once sent a regression-only method
+  // (linear_regression) to `/api/train` alongside a "binary classification" task.
+  const [resultTask, setResultTask] = useState<Task | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
   const [stale, setStale] = useState(false);
   const [dataset, setDataset] = useState<{ file: File; summary: DatasetSummary } | null>(null);
@@ -47,6 +55,7 @@ export function Dashboard() {
     // Cleared before the request. Leaving the previous recommendation on screen while a
     // new one is computed shows an answer to a question the user has already changed.
     setResult(null);
+    setResultTask(null);
     try {
       const response = await fetch('/api/recommend', {
         method: 'POST',
@@ -58,6 +67,7 @@ export function Dashboard() {
         return;
       }
       setResult(await response.json());
+      setResultTask(request.task);
       // Collapsing here, not only via `Done`, is what "or automatically on the next Get
       // Recommendation" means: a re-run from the expanded form puts the summary bar back
       // without a second click.
@@ -137,6 +147,7 @@ export function Dashboard() {
             // `onCleared`'s own comment: a new file is a new premise, not just an old
             // answer going stale.
             setResult(null);
+            setResultTask(null);
             setStale(false);
           }}
           onCleared={() => {
@@ -147,6 +158,7 @@ export function Dashboard() {
             // dimmed answer to a question the form can no longer even ask — removing
             // the file took the premise with it, not just made the answer old.
             setResult(null);
+            setResultTask(null);
             setStale(false);
           }}
         />
@@ -170,6 +182,7 @@ export function Dashboard() {
               // only updates on the next "Get Recommendation" click. Same reasoning as
               // `onCleared` below: the premise changed, not just the answer's age.
               setResult(null);
+              setResultTask(null);
               setStale(false);
             }}
           />
@@ -227,6 +240,7 @@ export function Dashboard() {
       <div ref={resultRef}>
         <DashboardResult
           result={result}
+          resultTask={resultTask}
           failed={failed}
           stale={stale}
           dataset={dataset}
@@ -240,6 +254,7 @@ export function Dashboard() {
 
 function DashboardResult({
   result,
+  resultTask,
   failed,
   stale,
   dataset,
@@ -247,6 +262,11 @@ function DashboardResult({
   trainSignal,
 }: {
   result: Recommendation | null;
+  /** The task `result` was actually computed for — may disagree with `detection.task`
+   * if the form's own "What are you trying to predict?" was edited away from what got
+   * auto-filled from `detection`. Training must rank against the same task the methods
+   * on screen were ranked for, never the live (and possibly since-changed) detection. */
+  resultTask: Task | null;
   failed: string | null;
   stale: boolean;
   dataset: { file: File; summary: DatasetSummary } | null;
@@ -275,7 +295,7 @@ function DashboardResult({
       <TrainingPanel
         file={dataset?.file ?? null}
         target={detection?.target ?? null}
-        task={detection?.task ?? null}
+        task={resultTask}
         methods={methods}
         resetSignal={trainSignal}
       />
