@@ -104,3 +104,18 @@ export interface DiscriminantCharts {
   boundary: DecisionBoundary;
   confusion_matrix: ConfusionMatrix;
 }
+
+export interface KnnTuningPoint {
+  k: number;
+  score: number;
+}
+
+export interface KnnTuningCurve {
+  points: KnnTuningPoint[];
+  chosen_k: number;
+}
+
+export interface KnnCharts {
+  boundary: DecisionBoundary;
+  tuning: KnnTuningCurve;
+}

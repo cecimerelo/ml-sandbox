@@ -600,6 +600,7 @@ CHART_BUILDERS: dict[str, ChartBuilder] = {
     "logistic_regression": charts.logistic_regression_charts,
     "lda": charts.discriminant_charts,
     "qda": charts.discriminant_charts,
+    "knn": charts.knn_charts,
 }
 """Which methods #4.4's chart panel covers so far — one entry per sub-issue (#95-#107).
 A method missing here has no panel yet, not a bug; `method_charts` reports that as a
@@ -615,7 +616,10 @@ async def method_charts(
     feature_x: Annotated[str | None, Form()] = None,
     feature_y: Annotated[str | None, Form()] = None,
 ) -> (
-    charts.LinearRegressionCharts | charts.LogisticRegressionCharts | charts.DiscriminantCharts
+    charts.LinearRegressionCharts
+    | charts.LogisticRegressionCharts
+    | charts.DiscriminantCharts
+    | charts.KnnCharts
 ):
     """The fixed chart set for one already-trained method (FR-4.2).
 

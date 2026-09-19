@@ -1,17 +1,11 @@
-import Box from '@mui/material/Box';
-import FormControl from '@mui/material/FormControl';
 import Grid from '@mui/material/Grid';
-import InputLabel from '@mui/material/InputLabel';
-import MenuItem from '@mui/material/MenuItem';
-import Select from '@mui/material/Select';
-import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 
 import { PlotPanel } from '../../eda/PlotPanel';
 import { spacing } from '../../theme/tokens';
 import { ChartFetchStatus } from './ChartFetchStatus';
 import { ConfusionMatrixChart, ConfusionMatrixTable } from './ConfusionMatrixChart';
-import { boundarySummary, DecisionBoundaryChart } from './DecisionBoundaryChart';
+import { DecisionBoundarySection } from './DecisionBoundarySection';
 import { GoalSubtitle } from './GoalSubtitle';
 import type { DiscriminantCharts } from './types';
 import { useChartData } from './useChartData';
@@ -47,69 +41,13 @@ export function DiscriminantPanel({
     return <ChartFetchStatus failed={failed} loaded={data !== null} />;
   }
 
-  const { boundary } = data;
-  const canSwap = boundary.numeric_features.length >= 2;
-
   return (
     <Grid container spacing={2}>
       <Grid item xs={12} sm={6}>
-        <PlotPanel
-          title="Decision boundary"
-          subtitle={
-            <GoalSubtitle
-              description={`Each region is what the model predicts across ${boundary.feature_x} and ${boundary.feature_y}; each point is one real row, at its actual outcome.`}
-              goal="Points should mostly sit inside the region matching their own shape and colour — that's the model getting them right."
-            />
-          }
-          chart={<DecisionBoundaryChart boundary={boundary} />}
-          table={<Typography color="text.secondary">{boundarySummary(boundary)}</Typography>}
-          aspect={spacing.plotAspectSquare}
-          legend={
-            canSwap && (
-              <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                <FormControl size="small" sx={{ minWidth: 160 }}>
-                  <InputLabel id={`${method}-feature-x`}>Horizontal axis</InputLabel>
-                  <Select
-                    labelId={`${method}-feature-x`}
-                    label="Horizontal axis"
-                    value={boundary.feature_x}
-                    onChange={(event) =>
-                      setOverride({ x: event.target.value, y: boundary.feature_y })
-                    }
-                  >
-                    {/* Excludes whatever the vertical axis already plots — the same
-                        column on both axes has no boundary to draw. */}
-                    {boundary.numeric_features
-                      .filter((feature) => feature !== boundary.feature_y)
-                      .map((feature) => (
-                        <MenuItem key={feature} value={feature}>
-                          {feature}
-                        </MenuItem>
-                      ))}
-                  </Select>
-                </FormControl>
-                <FormControl size="small" sx={{ minWidth: 160 }}>
-                  <InputLabel id={`${method}-feature-y`}>Vertical axis</InputLabel>
-                  <Select
-                    labelId={`${method}-feature-y`}
-                    label="Vertical axis"
-                    value={boundary.feature_y}
-                    onChange={(event) =>
-                      setOverride({ x: boundary.feature_x, y: event.target.value })
-                    }
-                  >
-                    {boundary.numeric_features
-                      .filter((feature) => feature !== boundary.feature_x)
-                      .map((feature) => (
-                        <MenuItem key={feature} value={feature}>
-                          {feature}
-                        </MenuItem>
-                      ))}
-                  </Select>
-                </FormControl>
-              </Box>
-            )
-          }
+        <DecisionBoundarySection
+          idPrefix={method}
+          boundary={data.boundary}
+          onSwap={(x, y) => setOverride({ x, y })}
         />
       </Grid>
 
