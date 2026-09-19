@@ -583,6 +583,15 @@ def test_strong_signal_houses_actually_has_signal_to_find():
     assert status["results"]["linear_regression"]["mean_score"] > 0.9
 
 
+def test_linear_regression_demo_actually_has_signal_to_find():
+    job_id = train_file(
+        "linear-regression-demo.csv", ["linear_regression"], target="price"
+    ).json()["job_id"]
+    status = wait_until_done(job_id)
+
+    assert status["results"]["linear_regression"]["mean_score"] > 0.9
+
+
 def test_binary_sales_actually_has_signal_to_find():
     job_id = train_file(
         "binary-sales.csv",
@@ -708,6 +717,30 @@ def test_linear_regression_charts_reuse_the_already_fitted_pipeline():
     assert body["predicted_vs_actual"]["r2"] > 0.9
     assert len(body["leverage"]["points"]) == n_rows
     assert len(body["coefficients"]["bars"]) > 0
+
+
+def test_linear_regression_demo_charts_have_a_real_high_leverage_point():
+    # linear-regression-demo.csv plants two deliberately extreme rows specifically so
+    # the leverage chart has something worth flagging, not a tight, uneventful cluster
+    # (strong-signal-houses.csv's leverage all sits within 0.009-0.022).
+    from mlsandbox.config import PROJECT_ROOT
+
+    job_id = train_file(
+        "linear-regression-demo.csv", ["linear_regression"], target="price"
+    ).json()["job_id"]
+    wait_until_done(job_id)
+
+    response = method_charts(
+        job_id,
+        "linear_regression",
+        target="price",
+        file_bytes=(PROJECT_ROOT / "examples" / "linear-regression-demo.csv").read_bytes(),
+        filename="linear-regression-demo.csv",
+    )
+
+    assert response.status_code == 200
+    leverage = [p["leverage"] for p in response.json()["leverage"]["points"]]
+    assert max(leverage) > 0.3
 
 
 def test_logistic_regression_charts_reuse_the_already_fitted_pipeline():
