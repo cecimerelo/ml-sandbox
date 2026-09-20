@@ -53,6 +53,24 @@ it('renders nothing broken for an empty tuning curve', () => {
   expect(screen.getByRole('img')).toBeInTheDocument();
 });
 
+it('renders on a log x-axis without breaking, for a grid spanning orders of magnitude (#100)', () => {
+  render(
+    <TuningCurveChart
+      points={[
+        { x: 0.001, score: 0.5 },
+        { x: 1, score: 0.9 },
+        { x: 1000, score: 0.6 },
+      ]}
+      chosenX={1}
+      xLabel="α"
+      formatX={(a) => `α = ${a}`}
+      xScale="log"
+    />,
+  );
+  const image = screen.getByRole('img');
+  expect(image.getAttribute('aria-label')).toMatch(/Chosen: α = 1/);
+});
+
 it('sorts table rows by x ascending regardless of input order', () => {
   const rows = tuningRows([
     { x: 5, score: 0.85 },

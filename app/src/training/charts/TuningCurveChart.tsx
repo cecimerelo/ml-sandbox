@@ -1,4 +1,4 @@
-import { scaleLinear } from 'd3-scale';
+import { scaleLinear, scaleLog } from 'd3-scale';
 
 import { chart, series } from '../../theme/tokens';
 
@@ -25,12 +25,18 @@ export function TuningCurveChart({
   chosenX,
   xLabel,
   formatX = (x) => String(x),
+  xScale = 'linear',
 }: {
   points: TuningPoint[];
   chosenX: number;
   xLabel: string;
   /** How to render the chosen value in the direct label — `K = 7`, `λ = 0.3`. */
   formatX?: (x: number) => string;
+  /** Ridge/Lasso's α/C grid (#100) spans several orders of magnitude by construction —
+   * the same grid the estimator's own `*CV` search explored — so it needs a log x-axis
+   * or the curve reads as a handful of points bunched against the left edge. K's own
+   * grid (#99) is a short, roughly linear sequence and stays on the default. */
+  xScale?: 'linear' | 'log';
 }) {
   const plotWidth = WIDTH - MARGIN.left - MARGIN.right;
   const plotHeight = HEIGHT - MARGIN.top - MARGIN.bottom;
@@ -42,7 +48,9 @@ export function TuningCurveChart({
   }
 
   const xs = points.map((p) => p.x);
-  const x = scaleLinear().domain([Math.min(...xs), Math.max(...xs)]).range([0, plotWidth]);
+  const x = (xScale === 'log' ? scaleLog() : scaleLinear())
+    .domain([Math.min(...xs), Math.max(...xs)])
+    .range([0, plotWidth]);
   // Bounded-metric convention (DESIGN.md): accuracy/R²-like scores run the full 0-1.
   const y = scaleLinear().domain([0, 1]).range([plotHeight, 0]);
 

@@ -126,3 +126,36 @@ export interface NaiveBayesCharts {
   roc: RocCurve | null;
   confusion_matrix: ConfusionMatrix;
 }
+
+export interface RegularizationPoint {
+  x: number;
+  score: number;
+}
+
+export interface RegularizationCurve {
+  points: RegularizationPoint[];
+  chosen_x: number;
+  /** The estimator's own parameter name — "α" for Ridge/Lasso, "C" for the
+   * `LogisticRegressionCV` classification uses. */
+  x_label: string;
+}
+
+export interface ShrinkagePoint {
+  feature: string;
+  x: number;
+  coefficient: number;
+}
+
+export interface ShrinkagePath {
+  points: ShrinkagePoint[];
+  /** The top 3 by |coefficient| at the chosen regularization strength — empty for a
+   * multiclass classification Ridge/Lasso, the same reason Logistic Regression's own
+   * coefficient plot is empty for a multiclass target. */
+  promoted_features: string[];
+  x_label: string;
+}
+
+export interface ShrinkageCharts {
+  shrinkage: ShrinkagePath;
+  tuning: RegularizationCurve;
+}
