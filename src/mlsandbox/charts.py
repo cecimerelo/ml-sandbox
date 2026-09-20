@@ -24,6 +24,8 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+from sklearn.cross_decomposition import PLSRegression
+from sklearn.decomposition import PCA
 from sklearn.feature_selection import f_classif
 from sklearn.linear_model import (
     Lasso,
@@ -281,6 +283,37 @@ class ShrinkageCharts(StrictModel):
     `(1.0,)`) — the two differ only in which sklearn `*CV` class this reads."""
 
     shrinkage: ShrinkagePath
+    tuning: RegularizationCurve
+
+
+class ComponentPoint(StrictModel):
+    x: int
+    x_variance: float
+    y_variance: float | None
+    """Cumulative variance explained in the target by the first `x` components —
+    `None` for PCR: PCA is unsupervised, so it has no notion of the target at all.
+    Present for PLS, whose components are chosen specifically to explain it."""
+
+
+class VarianceExplainedCurve(StrictModel):
+    """DESIGN.md's "Tuning curves" family: cumulative variance explained at every
+    component count from 1 up to the most this dataset's design matrix can support —
+    a full sweep, not just the handful of counts the internal grid search tried, so
+    the curve reads as a curve rather than three or four dots."""
+
+    points: list[ComponentPoint]
+    chosen_x: int
+    x_label: str
+
+
+class PcrPlsCharts(StrictModel):
+    """PCR and PLS's fixed set (FR-4.2, #101): variance explained vs. components, and
+    CV score vs. components — "the pair that actually picks how many components to
+    keep." `tuning` reuses `RegularizationCurve` unchanged: it is the same
+    shape (a bounded score against a hyperparameter the internal `GridSearchCV`
+    already tried), just relabelled from α/C to "components"."""
+
+    variance_explained: VarianceExplainedCurve
     tuning: RegularizationCurve
 
 
@@ -714,3 +747,101 @@ def shrinkage_charts(
     else:
         shrinkage, tuning = _regression_shrinkage(pipeline, features, target)
     return ShrinkageCharts(shrinkage=shrinkage, tuning=tuning)
+
+
+def _pcr_charts(pipeline: Pipeline, features: pd.DataFrame, target: np.ndarray) -> PcrPlsCharts:
+    model = pipeline.named_steps["model"]
+    prepare = pipeline.named_steps["prepare"]
+    design = np.asarray(prepare.transform(features))
+
+    # A fresh, unrestricted PCA on the same design matrix — never the pipeline's own
+    # predictions, just the predictors' own variance structure. PCA's components are
+    # nested (the first k of an unrestricted fit are identical to a k-component
+    # fit's), so this one fit fully describes every possible component count.
+    full_pca = PCA().fit(design)
+    cumulative = np.cumsum(full_pca.explained_variance_ratio_)
+    variance_points = [
+        ComponentPoint(x=i + 1, x_variance=float(cumulative[i]), y_variance=None)
+        for i in range(len(cumulative))
+    ]
+
+    chosen_count = int(model.best_estimator_.named_steps["pca"].n_components_)
+
+    # `cv_results_` keeps the raw variance-threshold fractions PCA was tuned over
+    # (0.7/0.9/0.95) — not the component counts those thresholds resolve to. Reading
+    # the same threshold off this fit's own cumulative curve recovers them, exactly
+    # what `PCA(n_components=<fraction>)` does internally.
+    fractions = [float(f) for f in model.cv_results_["param_pca__n_components"]]
+    scores = [float(s) for s in model.cv_results_["mean_test_score"]]
+    resolved = [int(np.searchsorted(cumulative, f) + 1) for f in fractions]
+    order = sorted(range(len(resolved)), key=lambda i: resolved[i])
+    tuning = RegularizationCurve(
+        points=[RegularizationPoint(x=resolved[i], score=scores[i]) for i in order],
+        chosen_x=chosen_count,
+        x_label="components",
+    )
+
+    return PcrPlsCharts(
+        variance_explained=VarianceExplainedCurve(
+            points=variance_points, chosen_x=chosen_count, x_label="components"
+        ),
+        tuning=tuning,
+    )
+
+
+def _pls_charts(pipeline: Pipeline, features: pd.DataFrame, target: np.ndarray) -> PcrPlsCharts:
+    model = pipeline.named_steps["model"]
+    prepare = pipeline.named_steps["prepare"]
+    design = np.asarray(prepare.transform(features))
+    y = np.asarray(target, dtype=float).reshape(-1, 1)
+
+    max_components = min(design.shape[0] - 1, design.shape[1])
+    full_pls = PLSRegression(n_components=max_components).fit(design, y)
+
+    # PLS's own internal scaling (mean-centred, divided by the sample std) — matched
+    # here so the reconstructed sum of squares below is a fraction of the same total
+    # `PLSRegression` itself operates on, not an arbitrary rescaling of it.
+    scaled = (design - design.mean(axis=0)) / design.std(axis=0, ddof=1)
+    total_variance = float(np.sum(scaled**2))
+
+    variance_points = []
+    for k in range(1, max_components + 1):
+        reconstruction = full_pls.x_scores_[:, :k] @ full_pls.x_loadings_[:, :k].T
+        x_variance = float(np.sum(reconstruction**2) / total_variance)
+        # Y can't be read off the one fit above the way X can: scikit-learn's PLS
+        # deflates Y using X's own scores, not Y's, so reconstructing from
+        # `y_scores_`/`y_loadings_` does not recover a valid variance-explained
+        # fraction (verified experimentally — it summed past 1). A fresh
+        # k-component fit's own R² against the target is the real number, and cheap:
+        # PLS is a small model, the same reasoning that makes Ridge/Lasso's
+        # one-fit-per-grid-candidate shrinkage path affordable.
+        y_model = PLSRegression(n_components=k).fit(design, y)
+        y_variance = float(r2_score(y, y_model.predict(design)))
+        variance_points.append(ComponentPoint(x=k, x_variance=x_variance, y_variance=y_variance))
+
+    chosen_count = int(model.best_params_["n_components"])
+    ks = [int(k) for k in model.cv_results_["param_n_components"]]
+    scores = [float(s) for s in model.cv_results_["mean_test_score"]]
+    order = sorted(range(len(ks)), key=lambda i: ks[i])
+    tuning = RegularizationCurve(
+        points=[RegularizationPoint(x=ks[i], score=scores[i]) for i in order],
+        chosen_x=chosen_count,
+        x_label="components",
+    )
+
+    return PcrPlsCharts(
+        variance_explained=VarianceExplainedCurve(
+            points=variance_points, chosen_x=chosen_count, x_label="components"
+        ),
+        tuning=tuning,
+    )
+
+
+def pcr_pls_charts(
+    pipeline: Pipeline, features: pd.DataFrame, target: np.ndarray, **_unused: object
+) -> PcrPlsCharts:
+    """`**_unused`: see `linear_regression_charts`."""
+    model = pipeline.named_steps["model"]
+    if isinstance(model.estimator, PLSRegression):
+        return _pls_charts(pipeline, features, target)
+    return _pcr_charts(pipeline, features, target)

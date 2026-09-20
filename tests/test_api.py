@@ -884,6 +884,33 @@ def test_lasso_charts_reuse_the_already_fitted_pipeline():
     assert len(body["shrinkage"]["points"]) > 0
 
 
+def test_pcr_charts_reuse_the_already_fitted_pipeline():
+    job_id = train_file("strong-signal-houses.csv", ["pcr"]).json()["job_id"]
+    wait_until_done(job_id)
+
+    response = method_charts(job_id, "pcr")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body["variance_explained"]["points"]) > 0
+    assert body["variance_explained"]["points"][-1]["x_variance"] == pytest.approx(1.0)
+    assert all(p["y_variance"] is None for p in body["variance_explained"]["points"])
+    assert body["tuning"]["chosen_x"] in [p["x"] for p in body["tuning"]["points"]]
+
+
+def test_pls_charts_reuse_the_already_fitted_pipeline():
+    job_id = train_file("strong-signal-houses.csv", ["pls"]).json()["job_id"]
+    wait_until_done(job_id)
+
+    response = method_charts(job_id, "pls")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body["variance_explained"]["points"]) > 0
+    assert all(p["y_variance"] is not None for p in body["variance_explained"]["points"])
+    assert body["tuning"]["chosen_x"] in [p["x"] for p in body["tuning"]["points"]]
+
+
 def test_charts_for_a_method_with_no_panel_yet_is_422():
     job_id = train(["decision_tree"]).json()["job_id"]
     wait_until_done(job_id)
