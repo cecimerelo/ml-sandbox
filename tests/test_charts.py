@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from mlsandbox import charts, methods
 
@@ -325,3 +326,81 @@ def test_multiclass_naive_bayes_has_no_roc_but_has_a_confusion_matrix():
 
     assert result.roc is None
     assert result.confusion_matrix.labels == ["0", "1", "2"]
+
+
+def _fit_shrinkage(
+    method: str, task: str = "regression", n_classes: int = 2
+) -> tuple[object, pd.DataFrame, np.ndarray]:
+    rng = np.random.default_rng(0)
+    n = 200
+    features = pd.DataFrame(
+        {
+            "size_m2": rng.normal(100, 20, n),
+            "bedrooms": rng.integers(1, 5, n).astype(float),
+            "age_years": rng.normal(20, 8, n),
+        }
+    )
+    score = 3 * features["size_m2"] - 2 * features["bedrooms"] + features["age_years"]
+    if task == "regression":
+        target = score.to_numpy() + rng.normal(0, 5, n)
+    else:
+        edges = np.quantile(score, np.linspace(0, 1, n_classes + 1)[1:-1]) if n_classes > 1 else []
+        target = np.digitize(score, edges).astype(str)
+    pipeline = methods.build(method, task, seed=0)
+    pipeline.fit(features, target)
+    return pipeline, features, target
+
+
+@pytest.mark.parametrize("method", ["ridge", "lasso"])
+def test_regression_shrinkage_has_a_point_per_feature_per_alpha(method):
+    pipeline, features, target = _fit_shrinkage(method)
+
+    result = charts.shrinkage_charts(pipeline, features, target)
+
+    n_alphas = len(result.tuning.points)
+    assert n_alphas > 1
+    assert len(result.shrinkage.points) == n_alphas * len(features.columns)
+    assert result.shrinkage.x_label == result.tuning.x_label == "α"
+
+
+@pytest.mark.parametrize("method", ["ridge", "lasso"])
+def test_regression_shrinkage_promotes_the_largest_coefficients(method):
+    pipeline, features, target = _fit_shrinkage(method)
+
+    result = charts.shrinkage_charts(pipeline, features, target)
+
+    assert result.shrinkage.promoted_features[0] == "size_m2"
+    assert len(result.shrinkage.promoted_features) <= 3
+
+
+@pytest.mark.parametrize("method", ["ridge", "lasso"])
+def test_regression_tuning_curve_names_the_chosen_alpha(method):
+    pipeline, features, target = _fit_shrinkage(method)
+
+    result = charts.shrinkage_charts(pipeline, features, target)
+
+    model = pipeline.named_steps["model"]
+    assert result.tuning.chosen_x == pytest.approx(model.alpha_)
+    assert result.tuning.chosen_x in [p.x for p in result.tuning.points]
+
+
+@pytest.mark.parametrize("method", ["ridge", "lasso"])
+def test_binary_classification_shrinkage_uses_c(method):
+    pipeline, features, target = _fit_shrinkage(method, task="classification", n_classes=2)
+
+    result = charts.shrinkage_charts(pipeline, features, target)
+
+    assert result.tuning.x_label == result.shrinkage.x_label == "C"
+    assert len(result.shrinkage.points) > 0
+    assert result.shrinkage.promoted_features[0] == "size_m2"
+
+
+@pytest.mark.parametrize("method", ["ridge", "lasso"])
+def test_multiclass_classification_has_a_tuning_curve_but_no_shrinkage_path(method):
+    pipeline, features, target = _fit_shrinkage(method, task="classification", n_classes=3)
+
+    result = charts.shrinkage_charts(pipeline, features, target)
+
+    assert len(result.tuning.points) > 0
+    assert result.shrinkage.points == []
+    assert result.shrinkage.promoted_features == []

@@ -853,6 +853,37 @@ def test_naive_bayes_charts_reuse_the_already_fitted_pipeline():
     assert set(body["confusion_matrix"]["labels"]) == {"no", "yes"}
 
 
+def test_ridge_charts_reuse_the_already_fitted_pipeline():
+    job_id = train_file("strong-signal-houses.csv", ["ridge"]).json()["job_id"]
+    wait_until_done(job_id)
+
+    response = method_charts(job_id, "ridge")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body["shrinkage"]["points"]) > 0
+    assert body["shrinkage"]["x_label"] == "α"
+    assert len(body["shrinkage"]["promoted_features"]) > 0
+    assert body["tuning"]["chosen_x"] in [p["x"] for p in body["tuning"]["points"]]
+
+
+def test_lasso_charts_reuse_the_already_fitted_pipeline():
+    file_bytes = _binary_sales()
+    job_id = train_file(
+        "binary-sales.csv", ["lasso"], target="sold", task="binary classification"
+    ).json()["job_id"]
+    wait_until_done(job_id)
+
+    response = method_charts(
+        job_id, "lasso", target="sold", file_bytes=file_bytes, filename="binary-sales.csv"
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["tuning"]["x_label"] == "C"
+    assert len(body["shrinkage"]["points"]) > 0
+
+
 def test_charts_for_a_method_with_no_panel_yet_is_422():
     job_id = train(["decision_tree"]).json()["job_id"]
     wait_until_done(job_id)

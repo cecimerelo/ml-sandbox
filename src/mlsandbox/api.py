@@ -602,6 +602,8 @@ CHART_BUILDERS: dict[str, ChartBuilder] = {
     "qda": charts.discriminant_charts,
     "knn": charts.knn_charts,
     "naive_bayes": charts.naive_bayes_charts,
+    "ridge": charts.shrinkage_charts,
+    "lasso": charts.shrinkage_charts,
 }
 """Which methods #4.4's chart panel covers so far — one entry per sub-issue (#95-#107).
 A method missing here has no panel yet, not a bug; `method_charts` reports that as a
@@ -622,6 +624,7 @@ async def method_charts(
     | charts.DiscriminantCharts
     | charts.KnnCharts
     | charts.NaiveBayesCharts
+    | charts.ShrinkageCharts
 ):
     """The fixed chart set for one already-trained method (FR-4.2).
 
