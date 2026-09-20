@@ -205,6 +205,21 @@ def test_more_than_the_class_cap_has_no_grid_but_still_has_a_confusion_matrix():
     assert result.boundary.grid == []
     assert result.boundary.points == []
     assert len(result.confusion_matrix.labels) == 7
+    # 7 categories across 700 rows is a real, if fine-grained, category count — not
+    # the near-one-class-per-row signature `looks_continuous` flags.
+    assert result.boundary.looks_continuous is False
+
+
+def test_a_target_with_nearly_one_class_per_row_looks_continuous():
+    # Classification against a target with as many distinct values as rows means the
+    # wrong kind of column was used, not merely "too many categories" — e.g. training
+    # a classifier against a continuous column like price.
+    pipeline, features, target = _fit_discriminant("lda", n_classes=180, n=200)
+
+    result = charts.discriminant_charts(pipeline, features, target)
+
+    assert result.boundary.too_many_classes is True
+    assert result.boundary.looks_continuous is True
 
 
 def test_fewer_than_two_numeric_columns_has_no_grid():
