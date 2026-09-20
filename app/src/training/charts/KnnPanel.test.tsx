@@ -109,3 +109,22 @@ it('re-fetches with the chosen pair when the axis selects change', async () => {
     expect(body.get('feature_x')).toBe('age_years');
   });
 });
+
+it('excludes the vertical axis\'s column from the horizontal axis choices, and vice versa', async () => {
+  const threeFeatures = charts();
+  threeFeatures.boundary.numeric_features = ['size_m2', 'bedrooms', 'age_years'];
+  stubCharts([threeFeatures]);
+  const user = userEvent.setup();
+  show();
+
+  await screen.findByText('Decision boundary');
+
+  await user.click(screen.getByLabelText(/horizontal axis/i));
+  const horizontalOptions = await screen.findAllByRole('option');
+  expect(horizontalOptions.map((o) => o.textContent)).not.toContain('bedrooms');
+  await user.keyboard('{Escape}');
+
+  await user.click(screen.getByLabelText(/vertical axis/i));
+  const verticalOptions = await screen.findAllByRole('option');
+  expect(verticalOptions.map((o) => o.textContent)).not.toContain('size_m2');
+});
