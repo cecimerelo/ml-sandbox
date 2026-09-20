@@ -48,6 +48,10 @@ MAX_BOUNDARY_CLASSES = 6
 """DESIGN.md's "Boundaries" family: above this, a boundary plot is not rendered at
 all — a plot needing that many distinguishable regions is not a visualization."""
 
+CURVE_GRID_RESOLUTION = 100
+"""Points swept across one feature's own range for a fitted-curve plot — a 1-D line,
+so it can afford a finer grid than the 2-D boundary's `BOUNDARY_GRID_RESOLUTION`."""
+
 
 class ScatterPoint(StrictModel):
     x: float
@@ -315,6 +319,28 @@ class PcrPlsCharts(StrictModel):
 
     variance_explained: VarianceExplainedCurve
     tuning: RegularizationCurve
+
+
+class FittedCurve(StrictModel):
+    """One feature's curve (DESIGN.md's "Actual-vs-predicted pairs" family): `curve`
+    is the pipeline's own prediction as that one feature sweeps its observed range,
+    every other feature held at a representative value — the same one-axis-at-a-time
+    reading `_decision_boundary` already gives a 2-D boundary. `actual` is the real
+    (feature, target) pairs, unmodified, plotted for comparison."""
+
+    feature: str
+    curve: list[ScatterPoint]
+    actual: list[ScatterPoint]
+
+
+class BasisCharts(StrictModel):
+    """Polynomial, Polynomial-with-Interactions, and Splines' fixed set (FR-4.2,
+    #102): a fitted curve and a residual plot. `polynomial_interactions` has no row
+    of its own in FR-4.2 — mechanically it is the same kind of model as `polynomial`
+    (linear regression over transformed features), so it gets the same chart set."""
+
+    fitted_curve: FittedCurve
+    residual: ResidualPlot
 
 
 def _design_matrix(pipeline: Pipeline, features: pd.DataFrame) -> np.ndarray:
@@ -845,3 +871,59 @@ def pcr_pls_charts(
     if isinstance(model.estimator, PLSRegression):
         return _pls_charts(pipeline, features, target)
     return _pcr_charts(pipeline, features, target)
+
+
+def _best_curve_feature(features: pd.DataFrame, target: np.ndarray, numeric: list[str]) -> str:
+    """The numeric column most linearly related to the target — the one axis a
+    single fitted-curve plot can show, chosen the same evidence-based way
+    `_best_boundary_pair` chooses its two: by how well it alone tracks the outcome,
+    not by an arbitrary column order."""
+    correlations = [
+        abs(np.corrcoef(features[column].fillna(features[column].mean()), target)[0, 1])
+        for column in numeric
+    ]
+    correlations = np.nan_to_num(correlations)
+    return numeric[int(np.argmax(correlations))]
+
+
+def basis_charts(
+    pipeline: Pipeline, features: pd.DataFrame, target: np.ndarray, **_unused: object
+) -> BasisCharts:
+    """Polynomial / Polynomial-with-Interactions / Splines' fixed set (#102).
+    `**_unused`: see `linear_regression_charts`."""
+    predictions = pipeline.predict(features)
+    residual = ResidualPlot(
+        points=[
+            ScatterPoint(x=float(p), y=float(t - p))
+            for p, t in zip(predictions, target, strict=True)
+        ]
+    )
+
+    numeric = _numeric_columns(features)
+    if not numeric:
+        empty = FittedCurve(feature="", curve=[], actual=[])
+        return BasisCharts(fitted_curve=empty, residual=residual)
+
+    feature = _best_curve_feature(features, target, numeric)
+    representative = _representative_row(features)
+    grid_values = np.linspace(
+        features[feature].min(), features[feature].max(), CURVE_GRID_RESOLUTION
+    )
+    grid_df = pd.DataFrame([representative] * CURVE_GRID_RESOLUTION).reset_index(drop=True)
+    grid_df[feature] = grid_values
+    curve_predictions = pipeline.predict(grid_df)
+
+    return BasisCharts(
+        fitted_curve=FittedCurve(
+            feature=feature,
+            curve=[
+                ScatterPoint(x=float(v), y=float(p))
+                for v, p in zip(grid_values, curve_predictions, strict=True)
+            ],
+            actual=[
+                ScatterPoint(x=float(v), y=float(t))
+                for v, t in zip(features[feature], target, strict=True)
+            ],
+        ),
+        residual=residual,
+    )

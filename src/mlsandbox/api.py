@@ -606,6 +606,9 @@ CHART_BUILDERS: dict[str, ChartBuilder] = {
     "lasso": charts.shrinkage_charts,
     "pcr": charts.pcr_pls_charts,
     "pls": charts.pcr_pls_charts,
+    "polynomial": charts.basis_charts,
+    "polynomial_interactions": charts.basis_charts,
+    "splines": charts.basis_charts,
 }
 """Which methods #4.4's chart panel covers so far — one entry per sub-issue (#95-#107).
 A method missing here has no panel yet, not a bug; `method_charts` reports that as a
@@ -628,6 +631,7 @@ async def method_charts(
     | charts.NaiveBayesCharts
     | charts.ShrinkageCharts
     | charts.PcrPlsCharts
+    | charts.BasisCharts
 ):
     """The fixed chart set for one already-trained method (FR-4.2).
 
