@@ -132,6 +132,14 @@ the dataset has information to support, and a high-cardinality identifier would 
 turn a small dataset into a wide one. Rarer levels collapse into a single `infrequent`
 column rather than being dropped."""
 
+RIDGE_ALPHAS = tuple(np.logspace(-3, 3, 25))
+"""`RidgeCV`'s default is three candidates — `(0.1, 1.0, 10.0)` — too sparse a grid to
+pick a genuinely well-tuned alpha from, and (#100) too sparse for its own CV-error and
+coefficient-shrinkage charts to read as a curve rather than three dots. 25 points across
+three orders of magnitude either side of 1, matching the range `LassoCV` explores on its
+own. Changing this changes Ridge's picked alpha across the whole benchmark — re-run
+scripts/run_benchmark.py and scripts/package_model.py after touching it."""
+
 
 Explainability = Literal["readable", "with effort", "opaque"]
 """How a method's answers can be justified to the person they affect.
@@ -264,7 +272,9 @@ ESTIMATORS: dict[str, dict[Task, Callable[[], BaseEstimator]]] = {
         "classification": lambda: LogisticRegression(max_iter=2000),
     },
     "ridge": {
-        "regression": lambda: RidgeCV(scoring=SCORING["regression"]),
+        "regression": lambda: RidgeCV(
+            alphas=RIDGE_ALPHAS, scoring=SCORING["regression"], store_cv_results=True
+        ),
         # l1_ratios=(0,) is pure L2. `penalty` was deprecated in scikit-learn 1.8 and is
         # removed in 1.10 — using it would break the study on the next release, which a
         # thesis claiming reproducibility cannot afford.
