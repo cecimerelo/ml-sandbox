@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { expect, it } from 'vitest';
 
 import { VarianceExplainedChart, varianceExplainedRows } from './VarianceExplainedChart';
@@ -24,18 +25,28 @@ it('draws only the predictors line when there is no target variance (PCR)', () =
   const { container } = render(
     <VarianceExplainedChart points={pcrPoints()} chosenX={2} xLabel="components" />,
   );
-  expect(container.querySelectorAll('polyline')).toHaveLength(1);
-  expect(screen.getByText('predictors')).toBeInTheDocument();
-  expect(screen.queryByText('target')).toBeNull();
+  // Each line is a transparent wide hit-area plus a visible stroke, one pair per series.
+  expect(container.querySelectorAll('polyline')).toHaveLength(2);
 });
 
 it('draws both lines when target variance is present (PLS)', () => {
   const { container } = render(
     <VarianceExplainedChart points={plsPoints()} chosenX={2} xLabel="components" />,
   );
-  expect(container.querySelectorAll('polyline')).toHaveLength(2);
-  expect(screen.getByText('predictors')).toBeInTheDocument();
-  expect(screen.getByText('target')).toBeInTheDocument();
+  expect(container.querySelectorAll('polyline')).toHaveLength(4);
+});
+
+it('reveals each line\'s identity and value at the chosen component count on hover', async () => {
+  const user = userEvent.setup();
+  render(<VarianceExplainedChart points={plsPoints()} chosenX={2} xLabel="components" />);
+
+  const predictorsLine = screen.getByLabelText('predictors: 0.500');
+  await user.hover(predictorsLine);
+  expect(await screen.findByRole('tooltip')).toHaveTextContent('predictors: 0.500');
+
+  const targetLine = screen.getByLabelText('target: 0.950');
+  await user.hover(targetLine);
+  expect(await screen.findByRole('tooltip')).toHaveTextContent('target: 0.950');
 });
 
 it('labels the chosen component count in the image description', () => {

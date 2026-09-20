@@ -1,3 +1,4 @@
+import Tooltip from '@mui/material/Tooltip';
 import { scaleLinear } from 'd3-scale';
 
 import { chart, series } from '../../theme/tokens';
@@ -14,7 +15,11 @@ const OPTIMUM_RADIUS = 5;
  * count grows. `x_variance` (predictors) is always drawn; `y_variance` (target) only
  * exists for PLS — PCA never sees the target — so a second `series-2` line appears
  * only when the data has it. Bounded-metric convention: the y-axis always runs the
- * full 0-1, both curves converging toward it as more components are kept.
+ * full 0-1, both curves converging toward it as more components are kept. Each
+ * line's identity and current value are on hover, not a standing label, matching
+ * the "Shrinkage paths" family's own convention — with only up to 2 series here
+ * there's no crowding, but a hover value is still more exact than reading it off
+ * the axis for the value at the chosen component count specifically.
  */
 export function VarianceExplainedChart({
   points,
@@ -50,9 +55,6 @@ export function VarianceExplainedChart({
     ? sorted.map((p) => `${x(p.x)},${y(p.y_variance ?? 0)}`).join(' ')
     : null;
   const chosen = sorted.find((p) => p.x === chosenX);
-  const lastX = sorted[sorted.length - 1];
-  const lastY = hasYVariance ? sorted[sorted.length - 1] : null;
-  const anchor = x((lastX?.x ?? 0)) > plotWidth * 0.7 ? 'end' : 'start';
 
   const summary = sorted
     .map((p) => `${xLabel} ${p.x}: predictors ${p.x_variance.toFixed(3)}${p.y_variance !== null ? `, target ${p.y_variance.toFixed(3)}` : ''}`)
@@ -66,18 +68,27 @@ export function VarianceExplainedChart({
       style={{ width: '100%', height: '100%' }}
     >
       <g transform={`translate(${MARGIN.left}, ${MARGIN.top})`}>
-        <polyline points={xLine} fill="none" stroke={series[1].hex} strokeWidth={2} />
-        {yLine && <polyline points={yLine} fill="none" stroke={series[2].hex} strokeWidth={2} />}
-
-        {lastX && (
-          <text x={x(lastX.x)} y={y(lastX.x_variance) - 6} fontSize={11} textAnchor={anchor} fill={series[1].hex}>
-            predictors
-          </text>
-        )}
-        {lastY && lastY.y_variance !== null && (
-          <text x={x(lastY.x)} y={y(lastY.y_variance) - 6} fontSize={11} textAnchor={anchor} fill={series[2].hex}>
-            target
-          </text>
+        <Tooltip
+          title={`predictors: ${chosen ? chosen.x_variance.toFixed(3) : 'n/a'}`}
+          disableInteractive
+        >
+          <g>
+            {/* A transparent, wider stroke widens the hoverable hit area past the
+                2px visible line — hovering a thin line precisely is otherwise hard. */}
+            <polyline points={xLine} fill="none" stroke="transparent" strokeWidth={10} />
+            <polyline points={xLine} fill="none" stroke={series[1].hex} strokeWidth={2} />
+          </g>
+        </Tooltip>
+        {yLine && (
+          <Tooltip
+            title={`target: ${chosen?.y_variance !== null && chosen?.y_variance !== undefined ? chosen.y_variance.toFixed(3) : 'n/a'}`}
+            disableInteractive
+          >
+            <g>
+              <polyline points={yLine} fill="none" stroke="transparent" strokeWidth={10} />
+              <polyline points={yLine} fill="none" stroke={series[2].hex} strokeWidth={2} />
+            </g>
+          </Tooltip>
         )}
 
         {chosen && (
