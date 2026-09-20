@@ -34,6 +34,7 @@ function binaryCharts(): DiscriminantCharts {
         { x: 3, y: 3, actual_class: 'yes' },
       ],
       too_many_classes: false,
+      looks_continuous: false,
     },
     confusion_matrix: { labels: ['no', 'yes'], matrix: [[40, 10], [5, 45]] },
   };
@@ -49,6 +50,7 @@ function unavailableCharts(overrides: Partial<DiscriminantCharts['boundary']>): 
       grid: [],
       points: [],
       too_many_classes: false,
+      looks_continuous: false,
       ...overrides,
     },
     confusion_matrix: { labels: ['no', 'yes'], matrix: [[40, 10], [5, 45]] },

@@ -98,6 +98,10 @@ export interface DecisionBoundary {
   grid: BoundaryCell[];
   points: BoundaryPoint[];
   too_many_classes: boolean;
+  /** `true` when classes outnumber half the rows — the signature of a continuous
+   * column (price, an ID) trained as if it were categorical, not just a category
+   * count too high to plot. */
+  looks_continuous: boolean;
 }
 
 export interface DiscriminantCharts {

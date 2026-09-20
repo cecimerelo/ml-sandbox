@@ -34,6 +34,7 @@ function charts(): KnnCharts {
         { x: 3, y: 3, actual_class: 'yes' },
       ],
       too_many_classes: false,
+      looks_continuous: false,
     },
     tuning: {
       points: [

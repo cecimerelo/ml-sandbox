@@ -22,6 +22,7 @@ function boundary(overrides: Partial<DecisionBoundary> = {}): DecisionBoundary {
       { x: 3, y: 3, actual_class: 'b' },
     ],
     too_many_classes: false,
+    looks_continuous: false,
     ...overrides,
   };
 }
@@ -52,6 +53,21 @@ it('renders a text explanation instead of a chart for too many classes', () => {
   );
   expect(screen.queryByRole('img')).toBeNull();
   expect(screen.getByText(/too many/i)).toBeInTheDocument();
+});
+
+it('renders a distinct explanation when the target looks continuous rather than categorical', () => {
+  render(
+    <DecisionBoundaryChart
+      boundary={boundary({
+        too_many_classes: true,
+        looks_continuous: true,
+        classes: Array(401).fill('c'),
+        grid: [],
+      })}
+    />,
+  );
+  expect(screen.queryByRole('img')).toBeNull();
+  expect(screen.getByText(/looks continuous/i)).toBeInTheDocument();
 });
 
 it('renders a text explanation instead of a chart without two numeric columns', () => {

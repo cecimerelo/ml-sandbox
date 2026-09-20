@@ -182,6 +182,15 @@ function FacetedBoundary({ boundary }: { boundary: DecisionBoundary }) {
  * all — both are facts about the data, not a broken chart.
  */
 export function DecisionBoundaryChart({ boundary }: { boundary: DecisionBoundary }) {
+  if (boundary.looks_continuous) {
+    return (
+      <Typography color="text.secondary">
+        This column looks continuous — {boundary.classes.length} distinct values across not many
+        more rows — rather than a genuine set of categories, so there's no boundary to draw.
+        Try a regression method instead, or a target column with a small, fixed set of outcomes.
+      </Typography>
+    );
+  }
   if (boundary.too_many_classes) {
     return (
       <Typography color="text.secondary">
@@ -207,6 +216,9 @@ export function DecisionBoundaryChart({ boundary }: { boundary: DecisionBoundary
  * isn't tabular data. Ships the stated text summary instead — the two features
  * plotted, the class count, and each class's row count in the projection. */
 export function boundarySummary(boundary: DecisionBoundary): string {
+  if (boundary.looks_continuous) {
+    return `This column looks continuous (${boundary.classes.length} distinct values) rather than a set of categories.`;
+  }
   if (boundary.too_many_classes) {
     return `${boundary.classes.length} categories — too many for a boundary plot.`;
   }
