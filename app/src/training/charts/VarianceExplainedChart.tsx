@@ -1,7 +1,7 @@
 import Tooltip from '@mui/material/Tooltip';
 import { scaleLinear } from 'd3-scale';
 
-import { chart, series } from '../../theme/tokens';
+import { chart, chartTooltipSx, series } from '../../theme/tokens';
 import type { ComponentPoint } from './types';
 
 const WIDTH = 320;
@@ -71,6 +71,7 @@ export function VarianceExplainedChart({
         <Tooltip
           title={`predictors: ${chosen ? chosen.x_variance.toFixed(3) : 'n/a'}`}
           disableInteractive
+          slotProps={{ tooltip: { sx: chartTooltipSx } }}
         >
           <g>
             {/* A transparent, wider stroke widens the hoverable hit area past the
@@ -83,6 +84,7 @@ export function VarianceExplainedChart({
           <Tooltip
             title={`target: ${chosen?.y_variance !== null && chosen?.y_variance !== undefined ? chosen.y_variance.toFixed(3) : 'n/a'}`}
             disableInteractive
+            slotProps={{ tooltip: { sx: chartTooltipSx } }}
           >
             <g>
               <polyline points={yLine} fill="none" stroke="transparent" strokeWidth={10} />
