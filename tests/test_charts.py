@@ -497,3 +497,54 @@ def test_pls_tuning_curve_names_the_chosen_component_count():
     assert result.tuning.chosen_x == model.best_params_["n_components"]
     assert result.tuning.x_label == "components"
     assert result.tuning.chosen_x in [p.x for p in result.tuning.points]
+
+
+def _fit_basis(method: str, n: int = 300) -> tuple[object, pd.DataFrame, np.ndarray]:
+    rng = np.random.default_rng(0)
+    features = pd.DataFrame(
+        {
+            "size_m2": rng.normal(100, 20, n),
+            "bedrooms": rng.integers(1, 5, n).astype(float),
+        }
+    )
+    target = (
+        3 * features["size_m2"]
+        - 0.02 * features["size_m2"] ** 2
+        + 10 * features["bedrooms"]
+        + rng.normal(0, 5, n)
+    )
+    pipeline = methods.build(method, "regression", seed=0)
+    pipeline.fit(features, target.to_numpy())
+    return pipeline, features, target.to_numpy()
+
+
+@pytest.mark.parametrize("method", ["polynomial", "polynomial_interactions", "splines"])
+def test_fitted_curve_picks_the_most_correlated_feature(method):
+    pipeline, features, target = _fit_basis(method)
+
+    result = charts.basis_charts(pipeline, features, target)
+
+    # size_m2 drives the target quadratically; bedrooms is a much weaker linear term.
+    assert result.fitted_curve.feature == "size_m2"
+    assert len(result.fitted_curve.curve) == charts.CURVE_GRID_RESOLUTION
+    assert len(result.fitted_curve.actual) == len(features)
+
+
+@pytest.mark.parametrize("method", ["polynomial", "polynomial_interactions", "splines"])
+def test_fitted_curve_sweeps_the_feature_s_observed_range(method):
+    pipeline, features, target = _fit_basis(method)
+
+    result = charts.basis_charts(pipeline, features, target)
+
+    curve_xs = [p.x for p in result.fitted_curve.curve]
+    assert min(curve_xs) == pytest.approx(features["size_m2"].min())
+    assert max(curve_xs) == pytest.approx(features["size_m2"].max())
+
+
+@pytest.mark.parametrize("method", ["polynomial", "polynomial_interactions", "splines"])
+def test_basis_residual_has_one_point_per_row(method):
+    pipeline, features, target = _fit_basis(method)
+
+    result = charts.basis_charts(pipeline, features, target)
+
+    assert len(result.residual.points) == len(features)

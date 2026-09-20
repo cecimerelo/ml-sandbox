@@ -911,6 +911,20 @@ def test_pls_charts_reuse_the_already_fitted_pipeline():
     assert body["tuning"]["chosen_x"] in [p["x"] for p in body["tuning"]["points"]]
 
 
+@pytest.mark.parametrize("method", ["polynomial", "polynomial_interactions", "splines"])
+def test_basis_charts_reuse_the_already_fitted_pipeline(method):
+    job_id = train_file("strong-signal-houses.csv", [method]).json()["job_id"]
+    wait_until_done(job_id)
+
+    response = method_charts(job_id, method)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body["fitted_curve"]["curve"]) > 0
+    assert len(body["fitted_curve"]["actual"]) > 0
+    assert len(body["residual"]["points"]) > 0
+
+
 def test_charts_for_a_method_with_no_panel_yet_is_422():
     job_id = train(["decision_tree"]).json()["job_id"]
     wait_until_done(job_id)

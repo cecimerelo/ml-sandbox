@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react';
 
+import { BasisPanel } from './BasisPanel';
 import { DiscriminantPanel } from './DiscriminantPanel';
 import { KnnPanel } from './KnnPanel';
 import { LinearRegressionPanel } from './LinearRegressionPanel';
@@ -43,6 +44,19 @@ function PlsPanel(props: ChartPanelProps) {
   return <PcrPlsPanel {...props} method="pls" />;
 }
 
+/** `BasisPanel` is shared by three methods (#102). */
+function PolynomialPanel(props: ChartPanelProps) {
+  return <BasisPanel {...props} method="polynomial" />;
+}
+
+function PolynomialInteractionsPanel(props: ChartPanelProps) {
+  return <BasisPanel {...props} method="polynomial_interactions" />;
+}
+
+function SplinesPanel(props: ChartPanelProps) {
+  return <BasisPanel {...props} method="splines" />;
+}
+
 /**
  * Which trained methods have a chart panel implemented so far (#83, FR-4.2) — one entry
  * per sub-issue, the frontend twin of `mlsandbox.api.CHART_BUILDERS`. A method missing
@@ -59,4 +73,7 @@ export const CHART_PANELS: Record<string, ComponentType<ChartPanelProps>> = {
   lasso: LassoPanel,
   pcr: PcrPanel,
   pls: PlsPanel,
+  polynomial: PolynomialPanel,
+  polynomial_interactions: PolynomialInteractionsPanel,
+  splines: SplinesPanel,
 };

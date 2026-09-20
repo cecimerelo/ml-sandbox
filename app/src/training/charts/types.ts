@@ -183,3 +183,17 @@ export interface PcrPlsCharts {
   variance_explained: VarianceExplainedCurve;
   tuning: RegularizationCurve;
 }
+
+export interface FittedCurve {
+  feature: string;
+  /** The pipeline's own prediction as `feature` sweeps its observed range, every
+   * other feature held at a representative value. */
+  curve: ScatterPoint[];
+  /** The real (feature, target) pairs, unmodified. */
+  actual: ScatterPoint[];
+}
+
+export interface BasisCharts {
+  fitted_curve: FittedCurve;
+  residual: ResidualPlot;
+}
