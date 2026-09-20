@@ -178,6 +178,12 @@ class DecisionBoundary(StrictModel):
     grid: list[BoundaryCell]
     points: list[BoundaryPoint]
     too_many_classes: bool
+    looks_continuous: bool
+    """`too_many_classes` alone doesn't say why: a genuinely categorical column with,
+    say, 12 rare categories reads very differently from a column that is actually
+    continuous (price, an ID) and so has nearly as many "classes" as rows — the second
+    means the wrong kind of column was used as a classification target at all, not
+    just too many categories to plot. `True` when classes outnumber half the rows."""
 
 
 class DiscriminantCharts(StrictModel):
@@ -469,6 +475,10 @@ def _decision_boundary(
     """
     numeric = _numeric_columns(features)
     too_many_classes = len(classes) > MAX_BOUNDARY_CLASSES
+    # More than half the rows each getting their own "class" is the signature of a
+    # continuous column trained as if it were categorical (price, an ID) — not just a
+    # category count too high to plot, a target of the wrong kind entirely.
+    looks_continuous = too_many_classes and len(classes) > len(target) / 2
 
     if len(numeric) < 2 or too_many_classes:
         # Nothing to plot on a grid either way — same reasoning as logistic
@@ -482,6 +492,7 @@ def _decision_boundary(
             grid=[],
             points=[],
             too_many_classes=too_many_classes,
+            looks_continuous=looks_continuous,
         )
 
     if feature_x in numeric and feature_y in numeric and feature_x != feature_y:
@@ -525,6 +536,7 @@ def _decision_boundary(
         grid=grid,
         points=points,
         too_many_classes=False,
+        looks_continuous=False,
     )
 
 
