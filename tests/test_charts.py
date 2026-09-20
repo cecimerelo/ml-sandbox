@@ -242,6 +242,23 @@ def _fit_knn(
     return pipeline, features, target
 
 
+def _fit_naive_bayes(n_classes: int = 2) -> tuple[object, pd.DataFrame, np.ndarray]:
+    rng = np.random.default_rng(0)
+    n = 200
+    features = pd.DataFrame(
+        {
+            "size_m2": rng.normal(100, 20, n),
+            "bedrooms": rng.integers(1, 5, n),
+        }
+    )
+    score = features["size_m2"] + 10 * features["bedrooms"]
+    edges = np.quantile(score, np.linspace(0, 1, n_classes + 1)[1:-1]) if n_classes > 1 else []
+    target = np.digitize(score, edges).astype(str)
+    pipeline = methods.build("naive_bayes", "classification", seed=0)
+    pipeline.fit(features, target)
+    return pipeline, features, target
+
+
 def test_knn_tuning_curve_has_a_point_per_grid_value_and_names_the_chosen_k():
     pipeline, features, target = _fit_knn()
 
@@ -280,3 +297,31 @@ def test_knn_has_no_confusion_matrix_field():
     # FR-4.2 lists only a decision boundary and an accuracy-vs-K curve for KNN — no
     # confusion matrix, unlike Logistic Regression or Naive Bayes.
     assert "confusion_matrix" not in charts.KnnCharts.model_fields
+
+
+def test_binary_naive_bayes_gets_a_roc_curve():
+    pipeline, features, target = _fit_naive_bayes(n_classes=2)
+
+    result = charts.naive_bayes_charts(pipeline, features, target)
+
+    assert result.roc is not None
+    assert 0.0 <= result.roc.auc <= 1.0
+    assert result.roc.positive_class == "1"
+
+
+def test_naive_bayes_confusion_matrix_matches_the_two_classes():
+    pipeline, features, target = _fit_naive_bayes(n_classes=2)
+
+    result = charts.naive_bayes_charts(pipeline, features, target)
+
+    assert result.confusion_matrix.labels == ["0", "1"]
+    assert sum(sum(row) for row in result.confusion_matrix.matrix) == len(features)
+
+
+def test_multiclass_naive_bayes_has_no_roc_but_has_a_confusion_matrix():
+    pipeline, features, target = _fit_naive_bayes(n_classes=3)
+
+    result = charts.naive_bayes_charts(pipeline, features, target)
+
+    assert result.roc is None
+    assert result.confusion_matrix.labels == ["0", "1", "2"]

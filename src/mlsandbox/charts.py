@@ -202,6 +202,16 @@ class KnnCharts(StrictModel):
     tuning: TuningCurve
 
 
+class NaiveBayesCharts(StrictModel):
+    """Confusion matrix, ROC curve — FR-4.2. No coefficient plot: `GaussianNB` stores
+    each class's per-feature mean and variance, not the single signed weight per
+    feature a coefficient plot draws, so unlike Logistic Regression there is nothing
+    third to fall back to."""
+
+    roc: RocCurve | None
+    confusion_matrix: ConfusionMatrix
+
+
 def _design_matrix(pipeline: Pipeline, features: pd.DataFrame) -> np.ndarray:
     """The matrix `model` actually saw, intercept column included.
 
@@ -283,6 +293,30 @@ def linear_regression_charts(
     )
 
 
+def _roc_curve(
+    pipeline: Pipeline, features: pd.DataFrame, target: np.ndarray, classes: np.ndarray
+) -> RocCurve | None:
+    """`None` for anything but a two-class target — FR-4.2's ROC curve, like ISLR's own
+    treatment of it, only means something for binary classification. `positive_class`
+    is whichever of the two `classes_` lists second: an arbitrary but consistent
+    choice, since nothing in the uploaded data says which outcome is "positive"."""
+    if len(classes) != 2:
+        return None
+    positive_class = classes[1]
+    probabilities = pipeline.predict_proba(features)[:, 1]
+    false_positive_rate, true_positive_rate, _ = roc_curve(
+        target, probabilities, pos_label=positive_class
+    )
+    return RocCurve(
+        points=[
+            RocPoint(false_positive_rate=float(f), true_positive_rate=float(t))
+            for f, t in zip(false_positive_rate, true_positive_rate, strict=True)
+        ],
+        auc=float(auc(false_positive_rate, true_positive_rate)),
+        positive_class=str(positive_class),
+    )
+
+
 def logistic_regression_charts(
     pipeline: Pipeline, features: pd.DataFrame, target: np.ndarray, **_unused: object
 ) -> LogisticRegressionCharts:
@@ -290,31 +324,29 @@ def logistic_regression_charts(
     model = pipeline.named_steps["model"]
     classes = [str(c) for c in model.classes_]
     predictions = pipeline.predict(features)
-
     matrix = confusion_matrix(target, predictions, labels=model.classes_)
 
-    roc: RocCurve | None = None
-    if len(classes) == 2:
-        positive_class = model.classes_[1]
-        probabilities = pipeline.predict_proba(features)[:, 1]
-        false_positive_rate, true_positive_rate, _ = roc_curve(
-            target, probabilities, pos_label=positive_class
-        )
-        roc = RocCurve(
-            points=[
-                RocPoint(false_positive_rate=float(f), true_positive_rate=float(t))
-                for f, t in zip(false_positive_rate, true_positive_rate, strict=True)
-            ],
-            auc=float(auc(false_positive_rate, true_positive_rate)),
-            positive_class=str(positive_class),
-        )
-
     return LogisticRegressionCharts(
-        roc=roc,
+        roc=_roc_curve(pipeline, features, target, model.classes_),
         confusion_matrix=ConfusionMatrix(labels=classes, matrix=matrix.tolist()),
         # A multiclass `coef_` has one row per class — plotting it as one signed bar
         # per feature would silently mix rows that mean different things.
         coefficients=_coefficient_plot(pipeline) if len(classes) == 2 else CoefficientPlot(bars=[]),
+    )
+
+
+def naive_bayes_charts(
+    pipeline: Pipeline, features: pd.DataFrame, target: np.ndarray, **_unused: object
+) -> NaiveBayesCharts:
+    """`**_unused`: see `linear_regression_charts`."""
+    model = pipeline.named_steps["model"]
+    classes = [str(c) for c in model.classes_]
+    predictions = pipeline.predict(features)
+    matrix = confusion_matrix(target, predictions, labels=model.classes_)
+
+    return NaiveBayesCharts(
+        roc=_roc_curve(pipeline, features, target, model.classes_),
+        confusion_matrix=ConfusionMatrix(labels=classes, matrix=matrix.tolist()),
     )
 
 
