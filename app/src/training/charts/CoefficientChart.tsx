@@ -1,7 +1,7 @@
 import Tooltip from '@mui/material/Tooltip';
 import { scaleBand, scaleLinear } from 'd3-scale';
 
-import { chart, diverging } from '../../theme/tokens';
+import { chart, chartTooltipSx, diverging } from '../../theme/tokens';
 import type { CoefficientBar } from './types';
 
 const WIDTH = 320;
@@ -67,7 +67,12 @@ export function CoefficientChart({ bars: allBars }: { bars: CoefficientBar[] }) 
           const barWidth = Math.max(Math.abs(x(bar.value) - zero), 1);
           const fill = bar.value >= 0 ? diverging.pos500.hex : diverging.neg500.hex;
           return (
-            <Tooltip key={bar.feature} title={`${bar.feature}: ${bar.value.toFixed(3)}`} disableInteractive>
+            <Tooltip
+              key={bar.feature}
+              title={`${bar.feature}: ${bar.value.toFixed(3)}`}
+              disableInteractive
+              slotProps={{ tooltip: { sx: chartTooltipSx } }}
+            >
               <rect x={barX} y={barY} width={barWidth} height={y.bandwidth()} rx={BAR_RADIUS} fill={fill} />
             </Tooltip>
           );

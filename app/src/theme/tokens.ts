@@ -114,6 +114,15 @@ export const chart = {
 } as const;
 
 /**
+ * MUI `Tooltip`'s own default (11px) reads fine for a button's chrome, but a chart
+ * hovering over a hairline to read one exact number needs it larger to be worth the
+ * hover at all. Applied via `slotProps={{ tooltip: { sx: chartTooltipSx } }}` on
+ * every per-mark chart tooltip (`CoefficientChart`, `ShrinkagePathChart`,
+ * `VarianceExplainedChart`) so they read as one family, not five one-off sizes.
+ */
+export const chartTooltipSx = { fontSize: '0.8125rem' } as const;
+
+/**
  * Sequential (magnitude, one hue, light → dark). Never a rainbow.
  *
  * The full range is legal for *continuous* magnitude — heatmap cells, where the lightest

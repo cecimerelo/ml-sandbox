@@ -1,7 +1,7 @@
 import Tooltip from '@mui/material/Tooltip';
 import { scaleLog, scaleLinear } from 'd3-scale';
 
-import { chart, series } from '../../theme/tokens';
+import { chart, chartTooltipSx, series } from '../../theme/tokens';
 import type { ShrinkagePoint } from './types';
 
 const WIDTH = 320;
@@ -101,6 +101,7 @@ export function ShrinkagePathChart({
                 key={line.feature}
                 title={`${line.feature}: ${last?.coefficient.toFixed(3) ?? 'n/a'}`}
                 disableInteractive
+                slotProps={{ tooltip: { sx: chartTooltipSx } }}
               >
                 <g>
                   {/* A transparent, wider stroke widens the hoverable hit area past the
@@ -129,6 +130,7 @@ export function ShrinkagePathChart({
                 key={line.feature}
                 title={`${line.feature}: ${last?.coefficient.toFixed(3) ?? 'n/a'}`}
                 disableInteractive
+                slotProps={{ tooltip: { sx: chartTooltipSx } }}
               >
                 <g>
                   <polyline points={linePoints} fill="none" stroke="transparent" strokeWidth={10} />
