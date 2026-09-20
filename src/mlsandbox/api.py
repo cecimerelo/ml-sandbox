@@ -609,6 +609,7 @@ CHART_BUILDERS: dict[str, ChartBuilder] = {
     "polynomial": charts.basis_charts,
     "polynomial_interactions": charts.basis_charts,
     "splines": charts.basis_charts,
+    "decision_tree": charts.decision_tree_charts,
 }
 """Which methods #4.4's chart panel covers so far — one entry per sub-issue (#95-#107).
 A method missing here has no panel yet, not a bug; `method_charts` reports that as a
@@ -632,6 +633,7 @@ async def method_charts(
     | charts.ShrinkageCharts
     | charts.PcrPlsCharts
     | charts.BasisCharts
+    | charts.DecisionTreeCharts
 ):
     """The fixed chart set for one already-trained method (FR-4.2).
 
