@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { expect, it } from 'vitest';
 
 import { ShrinkagePathChart, shrinkageRows } from './ShrinkagePathChart';
@@ -26,21 +27,22 @@ it('labels the promoted features and describes the rest in the summary', () => {
   expect(image.getAttribute('aria-label')).toMatch(/Largest magnitude: size_m2, bedrooms/);
 });
 
-it('draws one polyline per feature', () => {
+it('draws a hit area and a visible polyline per feature', () => {
   const { container } = render(
     <ShrinkagePathChart points={points()} promotedFeatures={['size_m2']} xLabel="α" />,
   );
-  expect(container.querySelectorAll('polyline')).toHaveLength(3);
+  expect(container.querySelectorAll('polyline')).toHaveLength(6);
 });
 
-it('draws a direct label only for the promoted features', () => {
-  const { container } = render(
-    <ShrinkagePathChart points={points()} promotedFeatures={['size_m2']} xLabel="α" />,
-  );
-  const labels = [...container.querySelectorAll('text')].map((el) => el.textContent);
-  expect(labels).toContain('size_m2');
-  expect(labels).not.toContain('bedrooms');
-  expect(labels).not.toContain('age_years');
+it('reveals a feature\'s name and ending value on hover, promoted or not', async () => {
+  const user = userEvent.setup();
+  render(<ShrinkagePathChart points={points()} promotedFeatures={['size_m2']} xLabel="α" />);
+
+  // `bedrooms` isn't promoted — its identity should still be reachable on hover,
+  // just muted-and-unlabelled at rest, not permanently unreachable.
+  const bedroomsGroup = screen.getByLabelText('bedrooms: -0.400');
+  await user.hover(bedroomsGroup);
+  expect(await screen.findByRole('tooltip')).toHaveTextContent('bedrooms: -0.400');
 });
 
 it('renders nothing broken for an empty shrinkage path', () => {

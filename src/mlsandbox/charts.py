@@ -33,6 +33,7 @@ from sklearn.linear_model import (
     RidgeCV,
 )
 from sklearn.metrics import auc, confusion_matrix, r2_score, roc_curve
+from sklearn.model_selection import cross_val_score
 from sklearn.pipeline import Pipeline
 
 from mlsandbox.base import StrictModel
@@ -233,9 +234,10 @@ class RegularizationPoint(StrictModel):
 
 class RegularizationCurve(StrictModel):
     """DESIGN.md's "Tuning curves" family, generalised past KNN's integer K to a
-    continuous regularization strength. `score` is always oriented so higher is
-    better — Ridge's own R² already is, Lasso's `mse_path_` is negated to match, so
-    the chart never needs to know which estimator produced the curve."""
+    continuous regularization strength. `score` is always the same bounded,
+    higher-is-better metric regardless of which estimator produced the curve — see
+    `_regression_shrinkage`'s own docstring for why neither `RidgeCV` nor `LassoCV`'s
+    own stored curve can be reused as-is here."""
 
     points: list[RegularizationPoint]
     chosen_x: float
@@ -596,18 +598,28 @@ def _regression_shrinkage(
 
     if isinstance(model, RidgeCV):
         alphas = np.asarray(model.alphas, dtype=float)
-        # `cv_results_` is per-left-out-sample here (RidgeCV's efficient LOO, its
-        # default when `cv` is left unset) — averaging over samples is still the
-        # right reduction to "score at this alpha", just a different inner split
-        # than the study's own 5-fold outer CV.
-        scores = np.mean(model.cv_results_, axis=0)
         fit_at = Ridge
     else:
         alphas = np.asarray(model.alphas_, dtype=float)
-        # `mse_path_` is an error, not a score — negated so higher is better here
-        # too, the same convention `RegularizationCurve.score` always uses.
-        scores = -np.mean(model.mse_path_, axis=1)
         fit_at = Lasso
+
+    # Neither `*CV`'s own stored curve is usable here: `RidgeCV`'s `cv_results_` is
+    # only meaningful in its native per-left-out-sample units — its default `cv=None`
+    # runs the efficient LOO algorithm unique to Ridge, and averaging its raw output
+    # does not reconstruct `scoring="r2"`, despite that being the metric passed in.
+    # `LassoCV`'s own `mse_path_` is a genuine per-fold error, but on the target's raw
+    # scale — plotting it next to Ridge's differently-scaled numbers, or against this
+    # chart's assumed bounded 0-1 axis, either dwarfs the other or renders as a flat
+    # line pinned off-screen. Re-scoring every candidate alpha with a fresh 5-fold R²
+    # (`SCORING["regression"]`, methods.py) sidesteps both problems: one comparable,
+    # bounded metric for either estimator, on the alpha grid the original tuning
+    # already considered.
+    scores = np.array(
+        [
+            cross_val_score(fit_at(alpha=float(a)), design, target, cv=5, scoring="r2").mean()
+            for a in alphas
+        ]
+    )
 
     order = np.argsort(alphas)
     tuning = RegularizationCurve(

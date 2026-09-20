@@ -1,3 +1,4 @@
+import Tooltip from '@mui/material/Tooltip';
 import { scaleLog, scaleLinear } from 'd3-scale';
 
 import { chart, series } from '../../theme/tokens';
@@ -31,11 +32,13 @@ function groupByFeature(points: ShrinkagePoint[]): FeatureLine[] {
  * DESIGN.md's "Shrinkage paths" family — the one family that exceeds 4 series. Every
  * feature's coefficient path is drawn in `chart-ink-muted` at 40% opacity; the 3
  * largest-magnitude coefficients at the chosen regularization strength promote to
- * `series-1`/`series-2`/`series-3` at full opacity with a direct label at their
- * rightmost point. The x-axis (α or C) spans several orders of magnitude by
- * construction — the grid `RidgeCV`/`LassoCV`/`LogisticRegressionCV` explored their
- * own alpha/C candidates across — so it runs on a log scale, or a genuinely varying
- * curve reads as a handful of points bunched against the left edge.
+ * `series-1`/`series-2`/`series-3` at full opacity. The name is on hover, not a
+ * standing direct label: shrinkage converges every path toward similar values at the
+ * strong end of the path, so labels planted there print on top of each other rather
+ * than beside distinct lines. The x-axis (α or C) spans several orders of magnitude
+ * by construction — the grid `RidgeCV`/`LassoCV`/`LogisticRegressionCV` explored
+ * their own alpha/C candidates across — so it runs on a log scale, or a genuinely
+ * varying curve reads as a handful of points bunched against the left edge.
  */
 export function ShrinkagePathChart({
   points,
@@ -90,43 +93,48 @@ export function ShrinkagePathChart({
 
         {lines
           .filter((line) => !promoted.has(line.feature))
-          .map((line) => (
-            <polyline
-              key={line.feature}
-              points={line.points.map((p) => `${x(p.x)},${y(p.coefficient)}`).join(' ')}
-              fill="none"
-              stroke={chart.inkMuted.hex}
-              strokeOpacity={MUTED_OPACITY}
-              strokeWidth={1}
-            />
-          ))}
+          .map((line) => {
+            const linePoints = line.points.map((p) => `${x(p.x)},${y(p.coefficient)}`).join(' ');
+            const last = line.points[line.points.length - 1];
+            return (
+              <Tooltip
+                key={line.feature}
+                title={`${line.feature}: ${last?.coefficient.toFixed(3) ?? 'n/a'}`}
+                disableInteractive
+              >
+                <g>
+                  {/* A transparent, wider stroke widens the hoverable hit area past the
+                      1px visible line — hovering a hairline precisely is otherwise hard. */}
+                  <polyline points={linePoints} fill="none" stroke="transparent" strokeWidth={10} />
+                  <polyline
+                    points={linePoints}
+                    fill="none"
+                    stroke={chart.inkMuted.hex}
+                    strokeOpacity={MUTED_OPACITY}
+                    strokeWidth={1}
+                  />
+                </g>
+              </Tooltip>
+            );
+          })}
 
         {lines
           .filter((line) => promoted.has(line.feature))
           .map((line) => {
             const color = promotedColor.get(line.feature)!;
+            const linePoints = line.points.map((p) => `${x(p.x)},${y(p.coefficient)}`).join(' ');
             const last = line.points[line.points.length - 1];
             return (
-              <g key={line.feature}>
-                <polyline
-                  points={line.points.map((p) => `${x(p.x)},${y(p.coefficient)}`).join(' ')}
-                  fill="none"
-                  stroke={color}
-                  strokeWidth={2}
-                />
-                {last && (
-                  <text
-                    x={x(last.x)}
-                    y={y(last.coefficient)}
-                    dy={-4}
-                    fontSize={11}
-                    textAnchor={x(last.x) > plotWidth * 0.7 ? 'end' : 'start'}
-                    fill={color}
-                  >
-                    {line.feature}
-                  </text>
-                )}
-              </g>
+              <Tooltip
+                key={line.feature}
+                title={`${line.feature}: ${last?.coefficient.toFixed(3) ?? 'n/a'}`}
+                disableInteractive
+              >
+                <g>
+                  <polyline points={linePoints} fill="none" stroke="transparent" strokeWidth={10} />
+                  <polyline points={linePoints} fill="none" stroke={color} strokeWidth={2} />
+                </g>
+              </Tooltip>
             );
           })}
 
