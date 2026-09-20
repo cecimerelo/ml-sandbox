@@ -1,12 +1,19 @@
 """Per-method chart data (FR-4.2, #83), computed from an already-fitted pipeline.
 
-Nothing here fits a model — `TrainingJob.results[method].fitted` (D-053) is the pipeline
-this reads from, the same object `/api/train` produced. The dataset comes in fresh on
-every call (FR-7.2: re-sent by the frontend, never retained past the request, same
-promise `eda.py` already makes for the upload/detect/EDA paths) and is used only to
-compute predictions/residuals against that pipeline — never to refit it, so the chart a
-user sees is guaranteed to be the same model the training panel scored, not a second fit
-that could disagree with it.
+`TrainingJob.results[method].fitted` (D-053) — the pipeline `/api/train` already
+produced — is never refit to change what it predicts: every chart's residuals,
+predictions, and decision regions come from that one fitted model, so what a user sees
+here is guaranteed to agree with what the training panel scored. The dataset comes in
+fresh on every call (FR-7.2: re-sent by the frontend, never retained between requests,
+the same promise `eda.py` makes for the upload/detect/EDA paths).
+
+**One family is a deliberate exception.** Ridge/Lasso's coefficient-shrinkage path
+(#100) is about the hyperparameter landscape the fit lives in, not the fit's own
+predictions — no sklearn `*CV` object retains a coefficient trajectory across every
+alpha it tried, only the one it chose. Drawing that path means fitting one plain
+`Ridge`/`Lasso`/`LogisticRegression` per candidate already in that same `*CV`'s own
+grid — never a new grid, never a value the original tuning didn't already consider — so
+the chosen point on the path still matches the pipeline exactly.
 
 Table forms (DESIGN.md's "Table-view form, per family") are the frontend's job: it
 already has the same points this module returns and can reduce them to summary
@@ -18,6 +25,13 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 from sklearn.feature_selection import f_classif
+from sklearn.linear_model import (
+    Lasso,
+    LogisticRegression,
+    LogisticRegressionCV,
+    Ridge,
+    RidgeCV,
+)
 from sklearn.metrics import auc, confusion_matrix, r2_score, roc_curve
 from sklearn.pipeline import Pipeline
 
@@ -210,6 +224,56 @@ class NaiveBayesCharts(StrictModel):
 
     roc: RocCurve | None
     confusion_matrix: ConfusionMatrix
+
+
+class RegularizationPoint(StrictModel):
+    x: float
+    score: float
+
+
+class RegularizationCurve(StrictModel):
+    """DESIGN.md's "Tuning curves" family, generalised past KNN's integer K to a
+    continuous regularization strength. `score` is always oriented so higher is
+    better — Ridge's own R² already is, Lasso's `mse_path_` is negated to match, so
+    the chart never needs to know which estimator produced the curve."""
+
+    points: list[RegularizationPoint]
+    chosen_x: float
+    x_label: str
+    """The estimator's own parameter name — "α" for Ridge/Lasso, "C" for the
+    `LogisticRegressionCV` classification uses. Not converted to a single "λ": `C` is
+    the inverse of a regularization strength, and forcing that conversion risks a sign
+    error for a labelling choice alone."""
+
+
+class ShrinkagePoint(StrictModel):
+    feature: str
+    x: float
+    coefficient: float
+
+
+class ShrinkagePath(StrictModel):
+    """DESIGN.md's "Shrinkage paths" family: every feature's coefficient at every
+    regularization strength `RegularizationCurve` plots. `promoted_features` are the
+    top 3 by |coefficient| at the chosen strength — DESIGN.md's stated exception to
+    "do not generate hues" for this one family, direct-labelled instead of coloured
+    like every other line chart. Empty for a multiclass classification Ridge/Lasso:
+    `coef_` there has one row per class, the same reason Logistic Regression's own
+    coefficient plot is empty for a multiclass target."""
+
+    points: list[ShrinkagePoint]
+    promoted_features: list[str]
+    x_label: str
+
+
+class ShrinkageCharts(StrictModel):
+    """Ridge and Lasso's fixed set (FR-4.2): a coefficient shrinkage path and a
+    CV-error/score-vs-regularization curve. Shared by both, and by their
+    classification counterparts (`LogisticRegressionCV` with `l1_ratios=(0.0,)` or
+    `(1.0,)`) — the two differ only in which sklearn `*CV` class this reads."""
+
+    shrinkage: ShrinkagePath
+    tuning: RegularizationCurve
 
 
 def _design_matrix(pipeline: Pipeline, features: pd.DataFrame) -> np.ndarray:
@@ -515,3 +579,114 @@ def knn_charts(
     )
 
     return KnnCharts(boundary=boundary, tuning=tuning)
+
+
+def _promoted(feature_names: list[str], coefficients: np.ndarray, n: int = 3) -> list[str]:
+    order = np.argsort(-np.abs(coefficients))
+    return [feature_names[i] for i in order[:n]]
+
+
+def _regression_shrinkage(
+    pipeline: Pipeline, features: pd.DataFrame, target: np.ndarray
+) -> tuple[ShrinkagePath, RegularizationCurve]:
+    model = pipeline.named_steps["model"]
+    prepare = pipeline.named_steps["prepare"]
+    feature_names = list(prepare.get_feature_names_out())
+    design = np.asarray(prepare.transform(features))
+
+    if isinstance(model, RidgeCV):
+        alphas = np.asarray(model.alphas, dtype=float)
+        # `cv_results_` is per-left-out-sample here (RidgeCV's efficient LOO, its
+        # default when `cv` is left unset) — averaging over samples is still the
+        # right reduction to "score at this alpha", just a different inner split
+        # than the study's own 5-fold outer CV.
+        scores = np.mean(model.cv_results_, axis=0)
+        fit_at = Ridge
+    else:
+        alphas = np.asarray(model.alphas_, dtype=float)
+        # `mse_path_` is an error, not a score — negated so higher is better here
+        # too, the same convention `RegularizationCurve.score` always uses.
+        scores = -np.mean(model.mse_path_, axis=1)
+        fit_at = Lasso
+
+    order = np.argsort(alphas)
+    tuning = RegularizationCurve(
+        points=[RegularizationPoint(x=float(alphas[i]), score=float(scores[i])) for i in order],
+        chosen_x=float(model.alpha_),
+        x_label="α",
+    )
+
+    shrinkage_points = [
+        ShrinkagePoint(feature=name, x=float(alpha), coefficient=float(coef))
+        for alpha in alphas
+        for name, coef in zip(
+            feature_names,
+            np.asarray(fit_at(alpha=float(alpha)).fit(design, target).coef_).ravel(),
+            strict=True,
+        )
+    ]
+    promoted = _promoted(feature_names, np.asarray(model.coef_).ravel())
+
+    return ShrinkagePath(points=shrinkage_points, promoted_features=promoted, x_label="α"), tuning
+
+
+def _classification_shrinkage(
+    pipeline: Pipeline, features: pd.DataFrame, target: np.ndarray
+) -> tuple[ShrinkagePath, RegularizationCurve]:
+    model = pipeline.named_steps["model"]
+    prepare = pipeline.named_steps["prepare"]
+    feature_names = list(prepare.get_feature_names_out())
+    design = np.asarray(prepare.transform(features))
+
+    cs = np.asarray(model.Cs_, dtype=float)
+    # `scores_`: (n_folds, n_l1_ratios, n_Cs) with `use_legacy_attributes=False`
+    # (methods.py's own setting) — one unified array, not the legacy per-class
+    # one-vs-rest dict this had before scikit-learn 1.10. Averaged across folds and
+    # the one l1_ratio candidate; `C_` is already a single chosen value under this
+    # same setting, not one per class.
+    scores = np.mean(model.scores_, axis=(0, 1))
+    chosen_x = float(model.C_)
+
+    order = np.argsort(cs)
+    tuning = RegularizationCurve(
+        points=[RegularizationPoint(x=float(cs[i]), score=float(scores[i])) for i in order],
+        chosen_x=chosen_x,
+        x_label="C",
+    )
+
+    # A multiclass coef_ has one row per class — the same reason Logistic
+    # Regression's own coefficient plot is empty past two classes.
+    if len(model.classes_) != 2:
+        return ShrinkagePath(points=[], promoted_features=[], x_label="C"), tuning
+
+    # `l1_ratio`, not `penalty` — deprecated in scikit-learn 1.8 and removed in 1.10,
+    # the same reason `methods.py`'s own `LogisticRegressionCV` construction avoids it.
+    l1_ratio = float(model.l1_ratios[0])
+    shrinkage_points = [
+        ShrinkagePoint(feature=name, x=float(c), coefficient=float(coef))
+        for c in cs
+        for name, coef in zip(
+            feature_names,
+            np.asarray(
+                LogisticRegression(C=float(c), l1_ratio=l1_ratio, solver="saga", max_iter=2000)
+                .fit(design, target)
+                .coef_
+            ).ravel(),
+            strict=True,
+        )
+    ]
+    promoted = _promoted(feature_names, np.asarray(model.coef_).ravel())
+
+    return ShrinkagePath(points=shrinkage_points, promoted_features=promoted, x_label="C"), tuning
+
+
+def shrinkage_charts(
+    pipeline: Pipeline, features: pd.DataFrame, target: np.ndarray, **_unused: object
+) -> ShrinkageCharts:
+    """`**_unused`: see `linear_regression_charts`."""
+    model = pipeline.named_steps["model"]
+    if isinstance(model, LogisticRegressionCV):
+        shrinkage, tuning = _classification_shrinkage(pipeline, features, target)
+    else:
+        shrinkage, tuning = _regression_shrinkage(pipeline, features, target)
+    return ShrinkageCharts(shrinkage=shrinkage, tuning=tuning)
