@@ -163,3 +163,23 @@ export interface ShrinkageCharts {
   shrinkage: ShrinkagePath;
   tuning: RegularizationCurve;
 }
+
+export interface ComponentPoint {
+  x: number;
+  x_variance: number;
+  /** Cumulative variance explained in the target — `null` for PCR: PCA never sees
+   * the target, so there is no such number. Present for PLS, whose components are
+   * chosen specifically to explain it. */
+  y_variance: number | null;
+}
+
+export interface VarianceExplainedCurve {
+  points: ComponentPoint[];
+  chosen_x: number;
+  x_label: string;
+}
+
+export interface PcrPlsCharts {
+  variance_explained: VarianceExplainedCurve;
+  tuning: RegularizationCurve;
+}

@@ -419,3 +419,81 @@ def test_multiclass_classification_has_a_tuning_curve_but_no_shrinkage_path(meth
     assert len(result.tuning.points) > 0
     assert result.shrinkage.points == []
     assert result.shrinkage.promoted_features == []
+
+
+def _fit_components(method: str) -> tuple[object, pd.DataFrame, np.ndarray]:
+    rng = np.random.default_rng(0)
+    n = 200
+    features = pd.DataFrame(
+        {
+            "size_m2": rng.normal(100, 20, n),
+            "bedrooms": rng.integers(1, 5, n).astype(float),
+            "age_years": rng.normal(20, 8, n),
+            "garden_m2": rng.normal(30, 10, n),
+            "distance_km": rng.normal(5, 2, n),
+        }
+    )
+    score = 3 * features["size_m2"] - 2 * features["bedrooms"] + features["age_years"]
+    target = score.to_numpy() + rng.normal(0, 5, n)
+    pipeline = methods.build(method, "regression", seed=0)
+    pipeline.fit(features, target)
+    return pipeline, features, target
+
+
+def test_pcr_variance_explained_sweeps_every_possible_component_count():
+    pipeline, features, target = _fit_components("pcr")
+
+    result = charts.pcr_pls_charts(pipeline, features, target)
+
+    assert [p.x for p in result.variance_explained.points] == list(
+        range(1, len(result.variance_explained.points) + 1)
+    )
+    assert result.variance_explained.points[-1].x_variance == pytest.approx(1.0)
+    # Cumulative variance is monotonically non-decreasing.
+    values = [p.x_variance for p in result.variance_explained.points]
+    assert values == sorted(values)
+
+
+def test_pcr_has_no_y_variance():
+    # PCA is unsupervised — it never sees the target, so there is no "variance in y
+    # explained" for PCR the way there is for PLS.
+    pipeline, features, target = _fit_components("pcr")
+
+    result = charts.pcr_pls_charts(pipeline, features, target)
+
+    assert all(p.y_variance is None for p in result.variance_explained.points)
+
+
+def test_pcr_tuning_curve_resolves_variance_thresholds_to_component_counts():
+    pipeline, features, target = _fit_components("pcr")
+
+    result = charts.pcr_pls_charts(pipeline, features, target)
+
+    model = pipeline.named_steps["model"]
+    assert result.tuning.chosen_x == model.best_estimator_.named_steps["pca"].n_components_
+    assert result.tuning.x_label == "components"
+    # Resolved to real component counts, never the raw 0.7/0.9/0.95 grid fractions.
+    assert all(x == int(x) and x >= 1 for x in [p.x for p in result.tuning.points])
+
+
+def test_pls_variance_explained_has_both_x_and_y_variance():
+    pipeline, features, target = _fit_components("pls")
+
+    result = charts.pcr_pls_charts(pipeline, features, target)
+
+    assert len(result.variance_explained.points) > 1
+    assert all(p.y_variance is not None for p in result.variance_explained.points)
+    x_values = [p.x_variance for p in result.variance_explained.points]
+    assert x_values == sorted(x_values)
+    assert result.variance_explained.points[-1].x_variance == pytest.approx(1.0)
+
+
+def test_pls_tuning_curve_names_the_chosen_component_count():
+    pipeline, features, target = _fit_components("pls")
+
+    result = charts.pcr_pls_charts(pipeline, features, target)
+
+    model = pipeline.named_steps["model"]
+    assert result.tuning.chosen_x == model.best_params_["n_components"]
+    assert result.tuning.x_label == "components"
+    assert result.tuning.chosen_x in [p.x for p in result.tuning.points]

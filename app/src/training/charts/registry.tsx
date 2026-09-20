@@ -5,6 +5,7 @@ import { KnnPanel } from './KnnPanel';
 import { LinearRegressionPanel } from './LinearRegressionPanel';
 import { LogisticRegressionPanel } from './LogisticRegressionPanel';
 import { NaiveBayesPanel } from './NaiveBayesPanel';
+import { PcrPlsPanel } from './PcrPlsPanel';
 import { RidgeLassoPanel } from './RidgeLassoPanel';
 
 export interface ChartPanelProps {
@@ -33,6 +34,15 @@ function LassoPanel(props: ChartPanelProps) {
   return <RidgeLassoPanel {...props} method="lasso" />;
 }
 
+/** `PcrPlsPanel` is likewise shared by two methods (#101). */
+function PcrPanel(props: ChartPanelProps) {
+  return <PcrPlsPanel {...props} method="pcr" />;
+}
+
+function PlsPanel(props: ChartPanelProps) {
+  return <PcrPlsPanel {...props} method="pls" />;
+}
+
 /**
  * Which trained methods have a chart panel implemented so far (#83, FR-4.2) — one entry
  * per sub-issue, the frontend twin of `mlsandbox.api.CHART_BUILDERS`. A method missing
@@ -47,4 +57,6 @@ export const CHART_PANELS: Record<string, ComponentType<ChartPanelProps>> = {
   naive_bayes: NaiveBayesPanel,
   ridge: RidgePanel,
   lasso: LassoPanel,
+  pcr: PcrPanel,
+  pls: PlsPanel,
 };
