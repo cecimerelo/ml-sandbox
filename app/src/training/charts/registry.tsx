@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 
 import { BasisPanel } from './BasisPanel';
+import { DecisionTreePanel } from './DecisionTreePanel';
 import { DiscriminantPanel } from './DiscriminantPanel';
 import { KnnPanel } from './KnnPanel';
 import { LinearRegressionPanel } from './LinearRegressionPanel';
@@ -76,4 +77,5 @@ export const CHART_PANELS: Record<string, ComponentType<ChartPanelProps>> = {
   polynomial: PolynomialPanel,
   polynomial_interactions: PolynomialInteractionsPanel,
   splines: SplinesPanel,
+  decision_tree: DecisionTreePanel,
 };
