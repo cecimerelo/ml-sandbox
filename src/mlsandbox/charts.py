@@ -15,12 +15,23 @@ alpha it tried, only the one it chose. Drawing that path means fitting one plain
 grid — never a new grid, never a value the original tuning didn't already consider — so
 the chosen point on the path still matches the pipeline exactly.
 
+**Decision Tree's pruning curve (#103) is a second, different exception.** Ridge/Lasso
+replay a grid their own `*CV` already searched; `decision_tree` has no internal tuner at
+all (D-019's `tuning="none"`) — it is fit once, unpruned, and never cross-validated. Its
+"CV error vs. tree size" chart runs a cost-complexity-pruning sweep that never happened
+during training, so the curve's own optimum is a diagnostic about what pruning *would*
+do, not a claim about what the deployed tree did. The chosen point marked on it is the
+real tree's own leaf count, not the sweep's best score, so the marker still means "this
+is what shipped" rather than "this is what should have shipped."
+
 Table forms (DESIGN.md's "Table-view form, per family") are the frontend's job: it
 already has the same points this module returns and can reduce them to summary
 statistics or a feature×value list without another round trip.
 """
 
 from __future__ import annotations
+
+import itertools
 
 import numpy as np
 import pandas as pd
@@ -37,8 +48,10 @@ from sklearn.linear_model import (
 from sklearn.metrics import auc, confusion_matrix, r2_score, roc_curve
 from sklearn.model_selection import cross_val_score
 from sklearn.pipeline import Pipeline
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 
 from mlsandbox.base import StrictModel
+from mlsandbox.methods import SCORING
 
 BOUNDARY_GRID_RESOLUTION = 40
 """Cells per axis for a decision-boundary grid — 1,600 cells, fine enough to read the
@@ -51,6 +64,18 @@ all — a plot needing that many distinguishable regions is not a visualization.
 CURVE_GRID_RESOLUTION = 100
 """Points swept across one feature's own range for a fitted-curve plot — a 1-D line,
 so it can afford a finer grid than the 2-D boundary's `BOUNDARY_GRID_RESOLUTION`."""
+
+TREE_DEPTH_CAP = 4
+"""DESIGN.md's decision-tree diagram: a hard depth ceiling regardless of panel width
+— a depth-4 tree is already 16 leaves, "orders of magnitude" past what any panel
+can hold if it went further. The frontend may cap even lower to fit its own width;
+this is only the backend's outer bound."""
+
+PRUNING_CURVE_POINTS = 15
+"""How many candidates to take from `cost_complexity_pruning_path`'s own alphas —
+that path can hold anywhere from a couple of dozen to several hundred values
+(one for nearly every possible prune), far more than a line chart needs to read as
+a curve. Evenly spaced across the path, always including its first and last."""
 
 
 class ScatterPoint(StrictModel):
@@ -341,6 +366,77 @@ class BasisCharts(StrictModel):
 
     fitted_curve: FittedCurve
     residual: ResidualPlot
+
+
+class TreeNode(StrictModel):
+    """One rendered node — a real split/leaf from `model.tree_`, or a synthetic
+    truncation stub standing in for everything past `TREE_DEPTH_CAP`."""
+
+    id: int
+    parent_id: int | None
+    depth: int
+    is_leaf: bool
+    split_feature: str | None
+    split_threshold: float | None
+    n_samples: int
+    predicted_value: str
+    """The class label (classifier) or formatted mean (regressor) at this node —
+    already a display string, since the two cases have nothing else in common."""
+    truncated_splits: int | None
+    """Set only on a truncation stub: how many real internal (non-leaf) nodes were
+    collapsed into it — DESIGN.md's "⋯ N more splits" label."""
+
+
+class DecisionTreeDiagram(StrictModel):
+    """DESIGN.md's `{components.tree-diagram}`: nodes in traversal order (root
+    first), depth-capped at `TREE_DEPTH_CAP` with a truncation stub per branch that
+    exceeds it — "a branch never just stops." `total_depth` is the real, unrendered
+    tree's own depth, for the subtitle's truncation statement."""
+
+    nodes: list[TreeNode]
+    rendered_depth: int
+    total_depth: int
+
+
+class FeatureImportanceBar(StrictModel):
+    feature: str
+    value: float
+
+
+class FeatureImportancePlot(StrictModel):
+    """Every feature's importance, sorted descending — DESIGN.md's "Coefficients /
+    importance" family, but single-hue: `feature_importances_` is never negative, so
+    the diverging ramp coefficients use for sign has nothing to show here."""
+
+    bars: list[FeatureImportanceBar]
+
+
+class PruningPoint(StrictModel):
+    n_leaves: int
+    score: float
+
+
+class PruningCurve(StrictModel):
+    """DESIGN.md's "Tuning curves" family, over cost-complexity pruning's own
+    `ccp_alpha` — resolved to leaf count, a more legible axis than the strength
+    itself. `chosen_n_leaves` is the real, deployed tree's own leaf count
+    (`ccp_alpha=0`, unpruned): `decision_tree` has no internal tuner (D-019's
+    `tuning="none"`), so unlike Ridge/Lasso's chosen point this curve's optimum is
+    never what the pipeline actually used — it is a diagnostic about what pruning
+    *would* do, not a claim about what was done."""
+
+    points: list[PruningPoint]
+    chosen_n_leaves: int
+    x_label: str
+
+
+class DecisionTreeCharts(StrictModel):
+    """Decision Tree's fixed set (FR-4.2, #103): a tree diagram, a feature-
+    importance bar chart, and a CV-error-vs-tree-size pruning curve."""
+
+    tree: DecisionTreeDiagram
+    importance: FeatureImportancePlot
+    pruning: PruningCurve
 
 
 def _design_matrix(pipeline: Pipeline, features: pd.DataFrame) -> np.ndarray:
@@ -926,4 +1022,144 @@ def basis_charts(
             ],
         ),
         residual=residual,
+    )
+
+
+def _count_internal_nodes(tree, node_index: int) -> int:
+    """Real (non-leaf) nodes in the subtree rooted at `node_index`, itself
+    included — what a truncation stub's "N more splits" count reports."""
+    left = tree.children_left[node_index]
+    if left == -1:
+        return 0
+    right = tree.children_right[node_index]
+    return 1 + _count_internal_nodes(tree, left) + _count_internal_nodes(tree, right)
+
+
+def _node_label(model, node_index: int) -> str:
+    tree = model.tree_
+    if isinstance(model, DecisionTreeRegressor):
+        return f"{tree.value[node_index, 0, 0]:.2f}"
+    predicted_class = model.classes_[np.argmax(tree.value[node_index, 0, :])]
+    return str(predicted_class)
+
+
+def _tree_diagram(model, feature_names: list[str]) -> DecisionTreeDiagram:
+    tree = model.tree_
+    nodes: list[TreeNode] = []
+    next_id = itertools.count()
+
+    def walk(node_index: int, parent_id: int | None, depth: int) -> None:
+        left, right = tree.children_left[node_index], tree.children_right[node_index]
+        is_leaf = bool(left == -1)
+        node_id = next(next_id)
+        nodes.append(
+            TreeNode(
+                id=node_id,
+                parent_id=parent_id,
+                depth=depth,
+                is_leaf=is_leaf,
+                split_feature=None if is_leaf else feature_names[tree.feature[node_index]],
+                split_threshold=None if is_leaf else float(tree.threshold[node_index]),
+                n_samples=int(tree.n_node_samples[node_index]),
+                predicted_value=_node_label(model, node_index),
+                truncated_splits=None,
+            )
+        )
+        if is_leaf:
+            return
+        if depth >= TREE_DEPTH_CAP:
+            # Each branch past the cap collapses to one stub — "every truncated
+            # branch gets one; a branch never just stops" — unless that branch was
+            # already a leaf right here, in which case nothing was truncated at all.
+            for child in (left, right):
+                if tree.children_left[child] == -1:
+                    walk(child, node_id, depth + 1)
+                else:
+                    nodes.append(
+                        TreeNode(
+                            id=next(next_id),
+                            parent_id=node_id,
+                            depth=depth + 1,
+                            is_leaf=False,
+                            split_feature=None,
+                            split_threshold=None,
+                            n_samples=int(tree.n_node_samples[child]),
+                            predicted_value="",
+                            truncated_splits=_count_internal_nodes(tree, child),
+                        )
+                    )
+            return
+        walk(left, node_id, depth + 1)
+        walk(right, node_id, depth + 1)
+
+    walk(0, None, 0)
+
+    def real_depth(node_index: int) -> int:
+        left = tree.children_left[node_index]
+        if left == -1:
+            return 0
+        return 1 + max(real_depth(left), real_depth(tree.children_right[node_index]))
+
+    total_depth = real_depth(0)
+    return DecisionTreeDiagram(
+        nodes=nodes, rendered_depth=min(TREE_DEPTH_CAP, total_depth), total_depth=total_depth
+    )
+
+
+def _feature_importance(model, feature_names: list[str]) -> FeatureImportancePlot:
+    importances = np.asarray(model.feature_importances_)
+    order = np.argsort(-importances)
+    bars = [
+        FeatureImportanceBar(feature=feature_names[i], value=float(importances[i])) for i in order
+    ]
+    return FeatureImportancePlot(bars=bars)
+
+
+def _pruning_curve(model, design: np.ndarray, target: np.ndarray) -> PruningCurve:
+    is_regressor = isinstance(model, DecisionTreeRegressor)
+    estimator_cls = DecisionTreeRegressor if is_regressor else DecisionTreeClassifier
+    task = "regression" if is_regressor else "classification"
+
+    alphas = estimator_cls(random_state=0).cost_complexity_pruning_path(design, target).ccp_alphas
+    # `cost_complexity_pruning_path` can hold anywhere from a couple of dozen to
+    # several hundred candidates — far more than a line chart needs to read as a
+    # curve. Evenly spaced across the path, always keeping its first (alpha=0, the
+    # tree `decision_tree` actually ships) and last.
+    if len(alphas) > PRUNING_CURVE_POINTS:
+        raw_indices = np.linspace(0, len(alphas) - 1, PRUNING_CURVE_POINTS)
+        alphas = alphas[np.unique(raw_indices.round().astype(int))]
+
+    points = []
+    for alpha in alphas:
+        fitted = estimator_cls(random_state=0, ccp_alpha=float(alpha)).fit(design, target)
+        score = cross_val_score(
+            estimator_cls(random_state=0, ccp_alpha=float(alpha)),
+            design,
+            target,
+            cv=5,
+            scoring=SCORING[task],
+        ).mean()
+        points.append(PruningPoint(n_leaves=fitted.get_n_leaves(), score=float(score)))
+
+    order = sorted(range(len(points)), key=lambda i: points[i].n_leaves)
+    return PruningCurve(
+        points=[points[i] for i in order],
+        chosen_n_leaves=model.get_n_leaves(),
+        x_label="Number of leaves",
+    )
+
+
+def decision_tree_charts(
+    pipeline: Pipeline, features: pd.DataFrame, target: np.ndarray, **_unused: object
+) -> DecisionTreeCharts:
+    """Decision Tree's fixed set (#103). `**_unused`: see `linear_regression_charts`."""
+    model = pipeline.named_steps["model"]
+    prepare = pipeline.named_steps["prepare"]
+    feature_names = list(prepare.get_feature_names_out())
+    design = np.asarray(prepare.transform(features))
+
+    return DecisionTreeCharts(
+        tree=_tree_diagram(model, feature_names),
+        importance=_feature_importance(model, feature_names),
+        pruning=_pruning_curve(model, design, target),
     )

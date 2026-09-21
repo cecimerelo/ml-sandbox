@@ -197,3 +197,48 @@ export interface BasisCharts {
   fitted_curve: FittedCurve;
   residual: ResidualPlot;
 }
+
+export interface TreeNode {
+  id: number;
+  parent_id: number | null;
+  depth: number;
+  is_leaf: boolean;
+  split_feature: string | null;
+  split_threshold: number | null;
+  n_samples: number;
+  predicted_value: string;
+  /** Set only on a synthetic truncation stub: how many real splits it collapses. */
+  truncated_splits: number | null;
+}
+
+export interface DecisionTreeDiagram {
+  nodes: TreeNode[];
+  rendered_depth: number;
+  total_depth: number;
+}
+
+export interface FeatureImportanceBar {
+  feature: string;
+  value: number;
+}
+
+export interface FeatureImportancePlot {
+  bars: FeatureImportanceBar[];
+}
+
+export interface PruningPoint {
+  n_leaves: number;
+  score: number;
+}
+
+export interface PruningCurve {
+  points: PruningPoint[];
+  chosen_n_leaves: number;
+  x_label: string;
+}
+
+export interface DecisionTreeCharts {
+  tree: DecisionTreeDiagram;
+  importance: FeatureImportancePlot;
+  pruning: PruningCurve;
+}

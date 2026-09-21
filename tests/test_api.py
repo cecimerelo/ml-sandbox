@@ -925,11 +925,25 @@ def test_basis_charts_reuse_the_already_fitted_pipeline(method):
     assert len(body["residual"]["points"]) > 0
 
 
-def test_charts_for_a_method_with_no_panel_yet_is_422():
-    job_id = train(["decision_tree"]).json()["job_id"]
+def test_decision_tree_charts_reuse_the_already_fitted_pipeline():
+    job_id = train_file("strong-signal-houses.csv", ["decision_tree"]).json()["job_id"]
     wait_until_done(job_id)
 
     response = method_charts(job_id, "decision_tree")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body["tree"]["nodes"]) > 0
+    assert body["tree"]["nodes"][0]["parent_id"] is None
+    assert len(body["importance"]["bars"]) > 0
+    assert body["pruning"]["chosen_n_leaves"] in [p["n_leaves"] for p in body["pruning"]["points"]]
+
+
+def test_charts_for_a_method_with_no_panel_yet_is_422():
+    job_id = train(["random_forest"]).json()["job_id"]
+    wait_until_done(job_id)
+
+    response = method_charts(job_id, "random_forest")
 
     assert response.status_code == 422
     assert response.json()["detail"]["reason"] == "no-charts-for-method"

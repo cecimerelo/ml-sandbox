@@ -548,3 +548,95 @@ def test_basis_residual_has_one_point_per_row(method):
     result = charts.basis_charts(pipeline, features, target)
 
     assert len(result.residual.points) == len(features)
+
+
+def _fit_decision_tree(
+    task: str = "classification", n_classes: int = 2
+) -> tuple[object, pd.DataFrame, np.ndarray]:
+    # Unconstrained (no max_depth) on noisy data — deep enough that its real depth
+    # reliably exceeds TREE_DEPTH_CAP, so truncation actually gets exercised.
+    rng = np.random.default_rng(0)
+    n = 300
+    features = pd.DataFrame(
+        {
+            "size_m2": rng.normal(100, 20, n),
+            "bedrooms": rng.integers(1, 5, n).astype(float),
+            "age_years": rng.normal(20, 8, n),
+        }
+    )
+    score = features["size_m2"] - 5 * features["bedrooms"] + features["age_years"]
+    if task == "regression":
+        target = score.to_numpy() + rng.normal(0, 20, n)
+    else:
+        edges = np.quantile(score, np.linspace(0, 1, n_classes + 1)[1:-1]) if n_classes > 1 else []
+        target = np.digitize(score + rng.normal(0, 20, n), edges).astype(str)
+    pipeline = methods.build("decision_tree", task, seed=0)
+    pipeline.fit(features, target)
+    return pipeline, features, target
+
+
+def test_tree_diagram_is_depth_capped_with_a_stub_per_truncated_branch():
+    pipeline, features, target = _fit_decision_tree()
+
+    result = charts.decision_tree_charts(pipeline, features, target)
+
+    assert result.tree.total_depth > charts.TREE_DEPTH_CAP
+    assert result.tree.rendered_depth == charts.TREE_DEPTH_CAP
+    assert all(n.depth <= charts.TREE_DEPTH_CAP + 1 for n in result.tree.nodes)
+    stubs = [n for n in result.tree.nodes if n.truncated_splits is not None]
+    assert len(stubs) > 0
+    assert all(n.depth == charts.TREE_DEPTH_CAP + 1 for n in stubs)
+
+
+def test_tree_diagram_root_has_no_parent_and_every_other_node_does():
+    pipeline, features, target = _fit_decision_tree()
+
+    result = charts.decision_tree_charts(pipeline, features, target)
+
+    root = result.tree.nodes[0]
+    assert root.parent_id is None
+    assert all(n.parent_id is not None for n in result.tree.nodes[1:])
+
+
+def test_tree_diagram_predicted_value_is_a_real_class_label():
+    pipeline, features, target = _fit_decision_tree(n_classes=3)
+
+    result = charts.decision_tree_charts(pipeline, features, target)
+
+    real_labels = {n.predicted_value for n in result.tree.nodes if n.truncated_splits is None}
+    assert real_labels <= {"0", "1", "2"}
+
+
+def test_feature_importance_sums_to_one_and_is_sorted_descending():
+    pipeline, features, target = _fit_decision_tree()
+
+    result = charts.decision_tree_charts(pipeline, features, target)
+
+    values = [bar.value for bar in result.importance.bars]
+    assert values == sorted(values, reverse=True)
+    assert sum(values) == pytest.approx(1.0)
+    assert len(result.importance.bars) == len(features.columns)
+
+
+def test_pruning_curve_chosen_leaves_matches_the_real_unpruned_tree():
+    pipeline, features, target = _fit_decision_tree()
+
+    result = charts.decision_tree_charts(pipeline, features, target)
+
+    model = pipeline.named_steps["model"]
+    assert result.pruning.chosen_n_leaves == model.get_n_leaves()
+    assert result.pruning.x_label == "Number of leaves"
+    leaves = [p.n_leaves for p in result.pruning.points]
+    assert leaves == sorted(leaves)
+
+
+def test_pruning_curve_regression_uses_r2_scale():
+    pipeline, features, target = _fit_decision_tree(task="regression")
+
+    result = charts.decision_tree_charts(pipeline, features, target)
+
+    assert len(result.pruning.points) > 1
+    # R2's own upper bound — not a hard guarantee for every possible fit, but a
+    # sane sanity check that this is really scored on the study's own regression
+    # metric, not some other unrelated scale.
+    assert all(p.score <= 1.0 for p in result.pruning.points)
