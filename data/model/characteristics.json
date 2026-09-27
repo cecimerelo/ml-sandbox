@@ -289,7 +289,7 @@
   },
   "svm_linear": {
     "method": "svm_linear",
-    "label": "Support Vector Classifier",
+    "label": "Support Vector Machine (linear)",
     "interpretability": {
       "word": "high",
       "step": 3
