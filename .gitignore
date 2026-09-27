@@ -20,8 +20,18 @@ __pycache__/
 # data/model/ is the exception: the packaged Layer 2 artifact + characteristics table
 # the deployed server actually loads at runtime (api.py's model_path()/characteristics_
 # path()) — committed so a deploy has something to serve without a separate upload step.
+#
+# The complete run's results, and the per-dataset outcomes computed from them, are
+# committed too: the Colab notebook reproduces every chart from them, and the benchmark
+# that produced them takes hours, so a reader cannot be asked to re-run it.
 data/*
 !data/model/
+!data/results/
+data/results/*
+!data/results/results-801f29e62585.parquet
+!data/results/outcomes.parquet
+!data/results/explainability.json
+!data/results/method_scores.parquet
 artifacts/
 
 # Secrets
