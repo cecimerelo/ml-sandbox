@@ -18,6 +18,7 @@ dependencies = [
     "scipy>=1.14",
     "ipykernel>=6.29",
     "jupyterlab>=4.2",
+    "nbformat>=4.2.0",
 ]
 
 [tool.poetry]
