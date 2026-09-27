@@ -365,11 +365,30 @@ gaps are MCAR, the most benign pattern, and **Layer 2 trains on the 0% results a
 while the fixed baseline's ordering pools all three — an asymmetry that favours the baseline,
 not one that could manufacture the tie.
 
-### Explainability
+### Explainability: the constraint is cheap, the recommender is not
 
-Requiring it costs about 0.11 regret (0.041 → 0.156 at `somewhat`, 0.146 at `critical`) and
-binds on 103 of 106 datasets, as F-003 said. The stricter level costing *less* than the looser
-one is not yet explained.
+F-003 read the hybrid's regret under a constraint as *the cost of explainability* — about 0.11.
+It is not. That figure mixes two things, and separating them changes the finding.
+
+| Level | Best allowed method's regret (unavoidable) | Hybrid's regret |
+|---|---|---|
+| `not important` | 0.000 | 0.041 |
+| `somewhat` | **0.027** | 0.156 |
+| `critical` | **0.061** | 0.146 |
+
+The unavoidable cost — how far the best permitted method sits below the best overall — is
+small and rises with strictness, as it should. The constraint still binds on 103 of 106
+datasets, because the best method is almost always opaque; it simply does not cost much.
+
+**Most of the hybrid's loss is Layer 2 choosing badly among the permitted methods**, two to six
+times the unavoidable cost. At `somewhat` it picks KNN 42 times and QDA or
+`polynomial_interactions` often enough that 4.7% of its picks never ran and are charged in
+full; at `critical` it picks the decision tree 71 times. That is why the stricter level looked
+*cheaper*: fewer options, fewer ways to choose wrong.
+
+Layer 2 learned to order the strong methods, where the training signal is — they are the ones
+that win — and not the simple ones. It is the clearest improvement available to the
+recommender.
 
 ### Not done
 
