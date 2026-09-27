@@ -111,6 +111,60 @@ def _regret(summary: DatasetScores, method: str) -> float:
     return summary.best_score if value is None else value
 
 
+def outcomes(
+    results: pd.DataFrame,
+    metafeatures: pd.DataFrame,
+    *,
+    seed: int,
+    missing_rate: float = 0.0,
+    strategy_options: dict | None = None,
+) -> pd.DataFrame:
+    """What every strategy chose on every held-out dataset, one row per pair.
+
+    The per-dataset grain `evaluate` averages away. Kept because the averages alone cannot
+    answer the questions a reader asks next — whether a tie is two strategies winning on
+    the same datasets or on different ones, or whether one strategy's regret is a steady
+    cost or a few disasters. Both strata come from the same pass: `discriminating` flags
+    the rows, and training never depended on it.
+    """
+    summaries = {s.dataset: s for s in summarise(results, missing_rate=missing_rate)}
+    tasks = dict(zip(metafeatures.dataset, metafeatures.task, strict=True))
+    all_datasets = set(summaries) & set(tasks)
+    options = strategy_options or {}
+
+    rows = []
+    for held_out in sorted(all_datasets):
+        summary = summaries[held_out]
+        features = _features_for(metafeatures, held_out)
+        task = "regression" if features.task == "regression" else "classification"
+        candidates = _candidates(task, summary)
+        split = strategies.build_split(results, metafeatures, all_datasets - {held_out})
+
+        for name, factory in strategies.STRATEGIES.items():
+            ranker = factory(split, seed=seed, **options.get(name, {}))
+            ranked = ranker(features, candidates)
+            if not ranked:
+                continue
+            rows.append(
+                {
+                    "dataset": held_out,
+                    "strategy": name,
+                    "choice": ranked[0],
+                    "hit": summary.is_hit(ranked[0]),
+                    "top_k_hit": any(summary.is_hit(method) for method in ranked[:TOP_K]),
+                    "regret": _regret(summary, ranked[0]),
+                    "discriminating": discriminating(summary),
+                }
+            )
+
+    return pd.DataFrame(
+        rows,
+        columns=[
+            "dataset", "strategy", "choice", "hit", "top_k_hit", "regret", "discriminating"
+        ],
+    )
+
+
 def evaluate(
     results: pd.DataFrame,
     metafeatures: pd.DataFrame,
@@ -127,51 +181,27 @@ def evaluate(
     learns from every dataset it has, including the easy ones, so removing them from
     training would measure a system nobody would build.
     """
-    summaries = {s.dataset: s for s in summarise(results, missing_rate=missing_rate)}
-    tasks = dict(zip(metafeatures.dataset, metafeatures.task, strict=True))
-    all_datasets = set(summaries) & set(tasks)
-    scored_datasets = (
-        {name for name in all_datasets if discriminating(summaries[name])}
-        if only_discriminating
-        else all_datasets
+    frame = outcomes(
+        results,
+        metafeatures,
+        seed=seed,
+        missing_rate=missing_rate,
+        strategy_options=strategy_options,
     )
-    options = strategy_options or {}
-
-    tallies: dict[str, list[tuple[bool, bool, float]]] = {
-        name: [] for name in strategies.STRATEGIES
-    }
-
-    for held_out in sorted(scored_datasets):
-        summary = summaries[held_out]
-        features = _features_for(metafeatures, held_out)
-        task = "regression" if features.task == "regression" else "classification"
-        candidates = _candidates(task, summary)
-        split = strategies.build_split(results, metafeatures, all_datasets - {held_out})
-
-        for name, factory in strategies.STRATEGIES.items():
-            ranker = factory(split, seed=seed, **options.get(name, {}))
-            ranked = ranker(features, candidates)
-            if not ranked:
-                continue
-            tallies[name].append(
-                (
-                    summary.is_hit(ranked[0]),
-                    any(summary.is_hit(method) for method in ranked[:TOP_K]),
-                    _regret(summary, ranked[0]),
-                )
-            )
+    if only_discriminating:
+        frame = frame[frame.discriminating]
 
     return [
         StrategyScore(
             strategy=name,
-            hit_rate=sum(hit for hit, _, _ in rows) / len(rows),
-            top_k_hit_rate=sum(top for _, top, _ in rows) / len(rows),
-            mean_regret=sum(regret for _, _, regret in rows) / len(rows),
+            hit_rate=rows.hit.mean(),
+            top_k_hit_rate=rows.top_k_hit.mean(),
+            mean_regret=rows.regret.mean(),
             datasets=len(rows),
             stratum="discriminating" if only_discriminating else "all",
         )
-        for name, rows in tallies.items()
-        if rows
+        for name in strategies.STRATEGIES
+        if len(rows := frame[frame.strategy == name])
     ]
 
 

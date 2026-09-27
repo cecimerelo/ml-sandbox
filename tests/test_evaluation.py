@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 
 from mlsandbox.baselines import DatasetScores, summarise
-from mlsandbox.evaluation import TOP_K, discriminating, evaluate
+from mlsandbox.evaluation import TOP_K, discriminating, evaluate, outcomes
 from mlsandbox.metafeatures import MetaFeatures
 
 FEATURES = dict(
@@ -127,3 +127,22 @@ def test_metafeatures_round_trip_through_the_table(collection):
     _, metafeatures = collection
     row = metafeatures.iloc[0]
     assert MetaFeatures(**{f: row[f] for f in MetaFeatures.model_fields})
+
+
+def test_outcomes_are_what_evaluate_averages(collection):
+    """The per-dataset rows and the headline rates cannot drift apart: one is the other,
+    averaged."""
+    frame = outcomes(*collection, seed=0)
+    for score in evaluate(*collection, seed=0):
+        rows = frame[frame.strategy == score.strategy]
+        assert score.datasets == len(rows)
+        assert score.hit_rate == pytest.approx(rows.hit.mean())
+        assert score.mean_regret == pytest.approx(rows.regret.mean())
+
+
+def test_outcomes_hold_one_row_per_dataset_and_strategy(collection):
+    from mlsandbox.strategies import STRATEGIES
+
+    frame = outcomes(*collection, seed=0)
+    assert not frame.duplicated(["dataset", "strategy"]).any()
+    assert len(frame) == len(collection[1]) * len(STRATEGIES)
