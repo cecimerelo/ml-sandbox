@@ -390,12 +390,13 @@ Layer 2 learned to order the strong methods, where the training signal is — th
 that win — and not the simple ones. It is the clearest improvement available to the
 recommender.
 
-### Not done
+### The served model
 
-The packaged model the application serves (`data/model/layer2.joblib`, 2026-09-05) predates
-the Ridge fix; the Ridge commit called for re-running `scripts/package_model.py` and that has
-not happened. It affects what the application recommends, not any figure above, which all come
-from the leave-one-dataset-out evaluation.
+The packaged model the application serves (`data/model/layer2.joblib`) dated from 2026-09-05,
+before the Ridge fix, which called for re-running `scripts/package_model.py`. It was re-packaged
+on 2026-09-27 from the same results as every figure above. None of those figures came from the
+packaged model — they come from the leave-one-dataset-out evaluation — so this changed what
+the application recommends, not what the study found.
 
 ---
 
