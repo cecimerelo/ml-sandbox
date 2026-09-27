@@ -322,7 +322,7 @@ is the honest size of what 51 datasets can resolve.
 | The 500–10k band | | 2 to 2, p = 1.000 |
 
 The learned strategy's **worst** miss is larger than the baseline's — a regret of 0.50 against
-0.28 — which is why its mean regret is higher while its hit rate is not.
+0.28 across all 106, 0.39 against 0.19 on the 51 — which is why its mean regret is higher while its hit rate is not.
 
 ### The fixed baseline is Random Forest
 
@@ -342,7 +342,7 @@ F-003 set heuristics against random by their point estimates. Paired:
 | Heuristics against random | 106 datasets | 51 datasets |
 |---|---|---|
 | Hit rate | 21 to 15, p = 0.41 | **9 to 1, p = 0.02** |
-| Top-3 | 22 to 13, p = 0.18 | 16 to 6, p = 0.053 |
+| Top-3 | 22 to 13, p = 0.18 | 16 to 6, p = 0.052 |
 | Regret | **62 to 43, p = 0.002** | **36 to 15, p = 0.001** |
 
 They lose less than random everywhere, but pick the winner more often **only where the choice
