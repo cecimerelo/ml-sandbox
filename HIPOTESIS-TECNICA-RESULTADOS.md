@@ -1,13 +1,14 @@
 # Trabajo Fin de Máster: hipótesis, técnica y resultados
 
 Este documento sigue los tres apartados que piden las instrucciones del TFM: la hipótesis que se
-quiere contrastar, la técnica elegida y por qué es adecuada, y los resultados y las
+quiere contrastar, la técnica elegida y por qué es adecuada, los resultados y las
 conclusiones. Todo el análisis se puede reproducir en el cuaderno
 [`notebooks/tfm_graficos.ipynb`](notebooks/tfm_graficos.ipynb), donde están los gráficos, las
 tablas y los contrastes estadísticos que se citan aquí. El cuaderno también puede abrirse
 directamente en Google Colab desde [este
 enlace](https://colab.research.google.com/github/cecimerelo/ml-sandbox/blob/main/notebooks/tfm_graficos.ipynb),
-y el resto del código del estudio está en el mismo repositorio.
+y el resto del código del estudio está en el mismo repositorio,
+[github.com/cecimerelo/ml-sandbox](https://github.com/cecimerelo/ml-sandbox).
 
 ## 1. Objetivo e hipótesis
 
