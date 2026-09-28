@@ -2027,3 +2027,44 @@ re-sending the dataframe across the process boundary) is paid once per method, o
 of the fit itself; not yet measured against the 60-second small-dataset tier — worth
 checking early once #4's sub-issues are scoped, since a tier that budget is meant to
 protect is also the tier this overhead eats into hardest.
+
+---
+
+## D-054 — Synthetic, deprecated and same-family datasets are excluded
+
+**Date:** 2026-09-28 · **Status:** accepted · **Affects:** [#8](https://github.com/cecimerelo/ml-sandbox/issues/8)
+
+**Context.** Three of the collection's exclusion rules have been applied since the
+collection was built, but no entry records them. Their only justification lives in the
+docstrings of `curation.py`, which cite D-007 — an entry about a pinned list of small
+OpenML datasets, made obsolete by D-013. This entry writes down, after the fact, what
+the code already does, so the thesis can cite a decision rather than a comment. The
+other rules have their own entries: the 500-feature cap and the image exclusion (D-004,
+from NFR-2), the 50–100,000 row bounds (D-016), and PMLB only below 500 rows (D-025).
+
+**Decision.** Exclude:
+
+- **Synthetic datasets** — PMLB's Feynman (119) and Strogatz (14) physics equations and
+  its BNG datasets (6), sampled from Bayesian networks fitted to smaller data. The study
+  is about choosing a method for real tabular data; Feynman and Strogatz are
+  symbolic-regression benchmarks, and a third of PMLB would let equation recovery
+  dominate it. BNG are PMLB's largest datasets and would crowd the large-row band while
+  describing a generator rather than a phenomenon.
+- **Datasets PMLB marks as deprecated** (`_deprecated_` prefix). Their maintainers have
+  withdrawn them.
+- **More than 2 datasets from one family** — one source described several ways, such as
+  `analcatdata_*`, `mfeat-*` or `fri_c*`. Without a cap, a band looks varied while
+  holding one kind of data.
+
+**Rejected.** *Keeping them and reporting results with and without.* It doubles every
+result table for datasets that answer a different question from the one the thesis asks.
+
+**Consequences.** In the built collection ([config/collection.json](config/collection.json))
+these rules removed 14 synthetic datasets, 17 deprecated ones and 18 family repeats (12
+`analcatdata`, 4 `mfeat`, 1 `heart-disease`, 1 `auto-insurance`). The rest had already
+fallen to earlier rules, mostly the 500-row limit on PMLB.
+
+Two weaknesses to declare in the thesis. First, the family is inferred from the
+dataset's name (`family_of`), a heuristic the code itself describes as meant to flag
+candidates for review rather than decide alone. Second, the cap of 2 is the build's
+setting (`curation.screen` defaults to 1), and nothing records why 2 was chosen over 1.
