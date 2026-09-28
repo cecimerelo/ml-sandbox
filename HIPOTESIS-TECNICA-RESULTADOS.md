@@ -120,8 +120,28 @@ regresión logística, LDA, QDA, Naive Bayes, KNN, regresión polinómica con y 
 splines, PCR, PLS, árbol de decisión, bagging, random forest, gradient boosting, SVM lineal, SVM
 con núcleo RBF y una red neuronal. En total son 38.820 evaluaciones.
 
-Para medir el rendimiento usé la *balanced accuracy* en clasificación, porque no premia a un
-modelo que predice siempre la clase mayoritaria, y el R² en regresión. Solo ajusté por
+La métrica decide cuál es el mejor método en cada dataset, y todo el estudio se apoya en esa
+respuesta, así que la elegí con dos condiciones: que no diera por bueno un modelo trivial y que
+permitiera promediar resultados entre datasets distintos.
+
+En clasificación usé la *balanced accuracy*, que es la media del *recall* de cada clase. La
+colección tiene datasets con clases muy desequilibradas, y en ellos la *accuracy* normal
+pondría en cabeza a un modelo que predice siempre la clase mayoritaria; justo donde más
+importa, el mejor método sería el equivocado. La *balanced accuracy* no tiene ese problema,
+sirve igual para problemas binarios y multiclase, va de 0 a 1 y, cuando las clases están
+equilibradas, coincide con la *accuracy*, así que no se pierde nada en los casos fáciles.
+Descarté el ROC-AUC porque necesita probabilidades, y obtenerlas de la SVM obliga a una
+validación cruzada interna que multiplica el coste del método más caro; en multiclase, además,
+hay que elegir cómo promediarlo. El F1-macro y el coeficiente de correlación de Matthews eran
+defendibles, pero más difíciles de explicar sin aportar nada en este caso.
+
+En regresión usé el R². Para decidir qué método gana dentro de un dataset la escala da igual,
+pero el *regret*, que se define más abajo, promedia diferencias de rendimiento entre datasets.
+Con el RMSE o el MAE eso supondría sumar errores medidos en unidades distintas, por ejemplo
+precios de viviendas con concentraciones químicas, y el resultado no significaría nada. El R²
+no depende de la escala y es además la métrica que usa ISLR. Un modelo muy malo puede tener un
+R² muy negativo y arrastrar cualquier media, así que lo acoté en 0: un método que lo hace peor
+que predecir siempre la media cuenta como si predijera la media. Solo ajusté por
 validación cruzada interna los hiperparámetros sin los que un método no está definido, como la
 penalización de Ridge o de Lasso. El resto de métodos usa los valores por defecto de la
 librería, que es también lo que hace ISLR.
