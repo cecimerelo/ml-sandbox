@@ -302,7 +302,7 @@
     },
     {
       "name": "svm_linear",
-      "label": "Support Vector Classifier",
+      "label": "Support Vector Machine (linear)",
       "family": "svm",
       "tasks": [
         "classification",

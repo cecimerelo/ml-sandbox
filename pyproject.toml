@@ -47,3 +47,8 @@ line-length = 100
 # pinned Python, B catches the bugbear class of mistakes. Enabled while the codebase
 # is small so it never turns into a large reformatting diff.
 select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.per-file-ignores]
+# The notebook's first cell pip-installs whatever is missing before importing it, so it
+# runs on Colab or any bare environment; the imports cannot come first.
+"notebooks/*.ipynb" = ["E402"]

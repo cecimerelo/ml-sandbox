@@ -160,6 +160,10 @@ three cannot tell a signal from three coin flips, and thirty could.
 
 **Date:** 2026-09-03 · **Run:** `results-801f29e62585.parquet`, **106 datasets, complete** · **Supersedes:** F-001, F-002
 
+> **Partly superseded by F-004.** Ridge was re-run with a wider alpha grid after this was
+> written, which moved several figures by up to 0.02 — and the fixed baseline below is Random
+> Forest, not Gradient Boosting, in this run as well as the later one. The conclusions stand.
+
 38,820 evaluations. 965 unscored (2.5%): QDA on singular covariances, Lasso timing out
 under `saga`, the 120 refusals `polynomial_interactions` was predicted to produce (D-046),
 and 28 Ridge timeouts.
@@ -272,10 +276,136 @@ measurement rather than a search.
 
 ---
 
+## F-004 — After the Ridge re-run: the same answer, and the questions F-003 left open
+
+**Date:** 2026-09-27 · **Run:** `results-801f29e62585.parquet`, 106 datasets, after Ridge's
+alpha grid was widened (2026-09-20) · **Supersedes in part:** F-003
+
+38,820 evaluations. 954 unscored (2.5%): 667 QDA errors on singular covariances, 150 Lasso
+timeouts, the 120 `polynomial_interactions` refusals (D-046) and 17 Ridge timeouts, down from
+28 now that Ridge has more alphas to choose from.
+
+### What changed, and what did not
+
+RidgeCV used scikit-learn's default of three alphas (0.1, 1, 10). It now searches 25, from
+0.001 to 1,000, and only Ridge was re-run. It improved on 10 of the 106 datasets — by 0.22 on
+one, by little on the rest. Because a hit means choosing a method the tie rule counts among the
+best, a better Ridge changes who counts as best on a handful of datasets, and the strategies'
+figures move with it.
+
+**The evaluation itself did not change.** Re-running it on the pre-fix copy of the parquet
+(`.before-ridge-alphas-widen`) reproduces every F-003 figure to the third decimal. The
+per-dataset outcomes are now exported (`scripts/export_outcomes.py` →
+`data/results/outcomes.parquet`, `method_scores.parquet`, `explainability.json`) and drive the
+thesis notebook, `notebooks/tfm_graficos.ipynb`.
+
+### Where the choice makes a difference (51 datasets)
+
+| Strategy | Hit | 95% CI | Top-3 | 95% CI | Regret |
+|---|---|---|---|---|---|
+| Learned (Layer 2) | **0.49** | 0.35–0.63 | **0.69** | 0.55–0.80 | 0.038 |
+| Single best method | 0.47 | 0.33–0.61 | 0.65 | 0.51–0.78 | **0.031** |
+| Heuristics (ISLR) | 0.18 | 0.08–0.29 | 0.49 | 0.35–0.63 | 0.112 |
+| Random choice | 0.02 | 0.00–0.06 | 0.29 | 0.18–0.43 | 0.325 |
+
+Bootstrap intervals over datasets, 2,000 resamples. Across all 106: hit 0.63 against 0.62.
+The interval F-003 asked for is now there, and it is wide — fourteen points either side — which
+is the honest size of what 51 datasets can resolve.
+
+### The tie holds, on every cut
+
+| Learned against fixed | 106 datasets | 51 datasets |
+|---|---|---|
+| Hit rate (McNemar exact) | 7 to 6, p = 1.000 | 4 to 3, p = 1.000 |
+| Top-3 | 5 to 1, p = 0.219 | 3 to 1, p = 0.625 |
+| Regret (Wilcoxon) | 21 to 19, p = 0.485 | 11 to 9, p = 0.546 |
+| The 500–10k band | | 2 to 2, p = 1.000 |
+
+The learned strategy's **worst** miss is larger than the baseline's — a regret of 0.50 against
+0.28 across all 106, 0.39 against 0.19 on the 51 — which is why its mean regret is higher while its hit rate is not.
+
+### The fixed baseline is Random Forest
+
+F-003 says *"always recommending Gradient Boosting"*. That came from the first 60-dataset
+pass and was already wrong for the complete run: the single-best strategy picks **Random
+Forest on all 106 held-out datasets**, before the Ridge fix and after it. Under the tie rule
+Random Forest is among the best on 66 datasets, Gradient Boosting on 62. The finding is
+unchanged — a fixed choice matches reasoned selection — but the name was not.
+
+It ranks by lowest mean shortfall from the best, not by how often a method wins. Here both
+criteria name the same method, so nothing turns on it, but it is what the code does.
+
+### The ISLR result, tested rather than eyeballed
+
+F-003 set heuristics against random by their point estimates. Paired:
+
+| Heuristics against random | 106 datasets | 51 datasets |
+|---|---|---|
+| Hit rate | 21 to 15, p = 0.41 | **9 to 1, p = 0.02** |
+| Top-3 | 22 to 13, p = 0.18 | 16 to 6, p = 0.052 |
+| Regret | **62 to 43, p = 0.002** | **36 to 15, p = 0.001** |
+
+They lose less than random everywhere, but pick the winner more often **only where the choice
+matters**; across all 106, random's hits from ties close the gap. Against the fixed baseline
+they lose on hit rate and regret in both strata (p < 0.001). *"They carry real signal"* holds;
+*"nine times better than choosing blind"* holds only on the narrowed stratum.
+
+### Missing data, finally looked at
+
+| Hit rate, all 106 | 0% | 5% | 25% |
+|---|---|---|---|
+| Learned (Layer 2) | 0.63 | 0.73 | 0.69 |
+| Single best method | 0.62 | 0.76 | 0.69 |
+| Heuristics (ISLR) | 0.32 | 0.30 | 0.29 |
+| Random choice | 0.26 | 0.30 | 0.27 |
+
+No paired comparison of learned against fixed is significant at either rate (all p ≥ 0.45). The
+tie survives incomplete data; at 5% the baseline is nominally ahead. Two caveats bound it: the
+gaps are MCAR, the most benign pattern, and **Layer 2 trains on the 0% results at every rate**
+while the fixed baseline's ordering pools all three — an asymmetry that favours the baseline,
+not one that could manufacture the tie.
+
+### Explainability: the constraint is cheap, the recommender is not
+
+F-003 read the hybrid's regret under a constraint as *the cost of explainability* — about 0.11.
+It is not. That figure mixes two things, and separating them changes the finding.
+
+| Level | Best allowed method's regret (unavoidable) | Hybrid's regret |
+|---|---|---|
+| `not important` | 0.000 | 0.041 |
+| `somewhat` | **0.027** | 0.156 |
+| `critical` | **0.061** | 0.146 |
+
+The unavoidable cost — how far the best permitted method sits below the best overall — is
+small and rises with strictness, as it should. The constraint still binds on 103 of 106
+datasets, because the best method is almost always opaque; it simply does not cost much.
+
+**Most of the hybrid's loss is Layer 2 choosing badly among the permitted methods**, two to six
+times the unavoidable cost. At `somewhat` it picks KNN 42 times and QDA or
+`polynomial_interactions` often enough that 4.7% of its picks never ran and are charged in
+full; at `critical` it picks the decision tree 71 times. That is why the stricter level looked
+*cheaper*: fewer options, fewer ways to choose wrong.
+
+Layer 2 learned to order the strong methods, where the training signal is — they are the ones
+that win — and not the simple ones. It is the clearest improvement available to the
+recommender.
+
+### The served model
+
+The packaged model the application serves (`data/model/layer2.joblib`) dated from 2026-09-05,
+before the Ridge fix, which called for re-running `scripts/package_model.py`. It was re-packaged
+on 2026-09-27 from the same results as every figure above. None of those figures came from the
+packaged model — they come from the leave-one-dataset-out evaluation — so this changed what
+the application recommends, not what the study found.
+
+---
+
 ## Not yet established
 
 **How stable the 29-dataset stratum is.** Small enough to want an interval rather than a
 point estimate. An earlier partial run put the same comparison 15 points elsewhere.
+*Addressed in F-004: bootstrap intervals on the 51-dataset stratum, about fourteen points
+either side.*
 
-**Anything about missing data.** Every figure above is at 0% missingness. The 5% and 25%
-variants were computed and have not been looked at.
+**Anything about missing data.** Every figure up to F-003 is at 0% missingness. *Addressed
+in F-004: the tie holds at 5% and 25%.*

@@ -599,7 +599,7 @@ METHODS: dict[str, Method] = {
         ),
         Method(
             name="svm_linear",
-            label="Support Vector Classifier",
+            label="Support Vector Machine (linear)",
             family="svm",
             tasks=BOTH,
             needs_scaling=True,

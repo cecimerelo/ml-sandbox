@@ -1,0 +1,19 @@
+{
+  "results": "results-801f29e62585.parquet",
+  "levels": [
+    {
+      "explainability": "somewhat",
+      "mean_regret": 0.15608280440109015,
+      "unconstrained_mean_regret": 0.041233286966716194,
+      "datasets_where_it_bound": 103,
+      "cost": 0.11484951743437397
+    },
+    {
+      "explainability": "critical",
+      "mean_regret": 0.1459158089833039,
+      "unconstrained_mean_regret": 0.041233286966716194,
+      "datasets_where_it_bound": 103,
+      "cost": 0.1046825220165877
+    }
+  ]
+}
