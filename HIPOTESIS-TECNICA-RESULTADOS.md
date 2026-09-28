@@ -48,18 +48,18 @@ pierde cuando no lo hace.
 
 ### Origen de los datos
 
-Los datos vienen de tres colecciones públicas muy usadas en la literatura:
-[OpenML-CC18](https://www.openml.org/s/99), de clasificación y con al menos 500 filas;
-[OpenML-CTR23](https://www.openml.org/s/353), de regresión y también con al menos 500 filas; y
-[PMLB](https://github.com/EpistasisLab/pmlb), que aporta datasets de ambos tipos con menos de
-500 filas. La idea era reunir datasets que cubrieran todos los casos que un usuario puede describir en el formulario de la
-aplicación.
+Los datos vienen de tres colecciones públicas muy usadas en la literatura.
+[OpenML-CC18](https://www.openml.org/s/99) es de clasificación y
+[OpenML-CTR23](https://www.openml.org/s/353) de regresión, las dos con al menos 500 filas por
+dataset. [PMLB](https://github.com/EpistasisLab/pmlb) aporta datasets de ambos tipos con menos
+de 500 filas. La idea era reunir datasets que cubrieran todos los casos que un usuario puede
+describir en el formulario de la aplicación.
 
 Un dataset es elegible si cumple todos estos criterios:
 
 - Tiene entre 50 y 100.000 filas. Por debajo de 50, cada partición de la validación cruzada
   de 5 particiones tendría menos de 10 filas y la puntuación dependería sobre todo de qué
-  filas cayeran en cada una; por encima de 100.000, un solo dataset consumiría más cómputo que
+  filas cayeran en cada una. Por encima de 100.000, un solo dataset consumiría más cómputo que
   toda la banda pequeña.
 - Tiene como mucho 500 predictores, el mismo límite que acepta la aplicación.
 - No está construido a partir de imágenes (MNIST, Fashion-MNIST, Devnagari-Script, CIFAR-10),
@@ -83,8 +83,8 @@ documento de requisitos de la aplicación ya declaraba antes de empezarlo, así 
 no puede haberse ajustado para favorecer a ningún método. El umbral de 500 filas es también la
 banda más baja del formulario de la aplicación, y coincide con el criterio de los propios
 autores de OpenML-CC18, que descartan como demasiado pequeño todo dataset por debajo de esa
-cifra ([generador de la colección](https://github.com/openml/benchmark-suites/blob/master/OpenML%20Benchmark%20generator.ipynb));
-por eso hace falta PMLB para cubrir esa banda. El resto son decisiones propias del estudio:
+cifra ([generador de la colección](https://github.com/openml/benchmark-suites/blob/master/OpenML%20Benchmark%20generator.ipynb)).
+Por eso hace falta PMLB para cubrir esa banda. El resto son decisiones propias del estudio:
 los límites de 50 y 100.000 filas, y la exclusión de datasets sintéticos, retirados o de una
 misma familia. Todas están justificadas en el registro de decisiones del repositorio
 ([`DECISIONS.md`](DECISIONS.md), entradas D-004, D-016, D-025 y D-054). La de las familias es
@@ -126,12 +126,12 @@ permitiera promediar resultados entre datasets distintos.
 
 En clasificación usé la *balanced accuracy*, que es la media del *recall* de cada clase. La
 colección tiene datasets con clases muy desequilibradas, y en ellos la *accuracy* normal
-pondría en cabeza a un modelo que predice siempre la clase mayoritaria; justo donde más
+pondría en cabeza a un modelo que predice siempre la clase mayoritaria, justo donde más
 importa, el mejor método sería el equivocado. La *balanced accuracy* no tiene ese problema,
 sirve igual para problemas binarios y multiclase, va de 0 a 1 y, cuando las clases están
 equilibradas, coincide con la *accuracy*, así que no se pierde nada en los casos fáciles.
 Descarté el ROC-AUC porque necesita probabilidades, y obtenerlas de la SVM obliga a una
-validación cruzada interna que multiplica el coste del método más caro; en multiclase, además,
+validación cruzada interna que multiplica el coste del método más caro. En multiclase, además,
 hay que elegir cómo promediarlo. El F1-macro y el coeficiente de correlación de Matthews eran
 defendibles, pero más difíciles de explicar sin aportar nada en este caso.
 
@@ -162,7 +162,7 @@ la referencia contra la que se juzga cualquier estrategia de selección.
 ### Estrategias comparadas
 
 Sobre ese ranking comparo cuatro formas de elegir método. La primera es la estrategia aprendida,
-Layer 2, que es la recomendación personalizada y el objeto del trabajo. Es un random forest que
+Layer 2, que es la recomendación personalizada y el objeto del trabajo. Es un *random forest* que
 predice cuánto rendimiento perderá cada método frente al mejor y recomienda los que menos
 pierden. Lo hace a partir de siete características del dataset: el tipo de tarea (regresión,
 clasificación binaria o multiclase), el número de filas, el número de predictores, la relación
@@ -181,9 +181,9 @@ comparación que de verdad decide la hipótesis, porque si la recomendación per
 supera, analizar el problema del usuario no aporta nada. La tercera son las heurísticas de ISLR,
 es decir, la primera capa de la aplicación. Son reglas fijas extraídas del libro que puntúan
 cada método según las características del problema. Por ejemplo, con pocas observaciones
-favorecen los métodos sencillos o regularizados, porque los flexibles acaban ajustando el ruido;
-cuando el número de predictores se acerca al de observaciones, favorecen la regularización, como
-Ridge o Lasso; y con muchas observaciones por predictor, favorecen los métodos flexibles, que ya
+favorecen los métodos sencillos o regularizados, porque los flexibles acaban ajustando el ruido.
+Cuando el número de predictores se acerca al de observaciones, favorecen la regularización, como
+Ridge o Lasso. Y con muchas observaciones por predictor favorecen los métodos flexibles, que ya
 tienen datos suficientes. Estas reglas no aprenden nada del benchmark. La cuarta estrategia
 elige al azar y sirve como límite inferior.
 
