@@ -28,6 +28,7 @@ Planning complete; implementation starting with the benchmark study.
 | Thesis notebook | [`notebooks/tfm_graficos.ipynb`](notebooks/tfm_graficos.ipynb) · [open in Colab](https://colab.research.google.com/github/cecimerelo/ml-sandbox/blob/main/notebooks/tfm_graficos.ipynb) |
 | Requirements | [`_bmad-output/planning-artifacts/prds/`](_bmad-output/planning-artifacts/prds/) |
 | UX design contract | [`_bmad-output/planning-artifacts/ux-designs/`](_bmad-output/planning-artifacts/ux-designs/) |
+| Training pipeline (where models are trained) | [`docs/training-pipeline.md`](docs/training-pipeline.md) |
 | Epic breakdown | [`_bmad-output/planning-artifacts/epics.md`](_bmad-output/planning-artifacts/epics.md) |
 | Work tracking | GitHub issues |
 
