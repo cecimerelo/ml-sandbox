@@ -3,6 +3,11 @@
 An explainable recommender for supervised learning methods, and the benchmark study
 behind it. Master's thesis (TFM).
 
+[![Open the thesis notebook in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/cecimerelo/ml-sandbox/blob/main/notebooks/tfm_graficos.ipynb)
+
+The thesis notebook reproduces every chart and statistical test from the committed results,
+and runs on Colab as is.
+
 Given a description of your problem — and optionally your own dataset — it suggests a
 method and explains *why* in terms of the tradeoffs that actually drive the choice,
 rather than returning a black-box answer. You can then train alternatives on your own
@@ -15,6 +20,8 @@ Planning complete; implementation starting with the benchmark study.
 | Artefact | Where |
 |---|---|
 | Thesis proposal | [`propuesta-tfm.md`](propuesta-tfm.md) |
+| Thesis document | [`HIPOTESIS-TECNICA-RESULTADOS.md`](HIPOTESIS-TECNICA-RESULTADOS.md) ([PDF](HIPOTESIS-TECNICA-RESULTADOS.pdf)) |
+| Thesis notebook | [`notebooks/tfm_graficos.ipynb`](notebooks/tfm_graficos.ipynb) · [open in Colab](https://colab.research.google.com/github/cecimerelo/ml-sandbox/blob/main/notebooks/tfm_graficos.ipynb) |
 | Requirements | [`_bmad-output/planning-artifacts/prds/`](_bmad-output/planning-artifacts/prds/) |
 | UX design contract | [`_bmad-output/planning-artifacts/ux-designs/`](_bmad-output/planning-artifacts/ux-designs/) |
 | Epic breakdown | [`_bmad-output/planning-artifacts/epics.md`](_bmad-output/planning-artifacts/epics.md) |
