@@ -8,6 +8,10 @@ behind it. Master's thesis (TFM).
 The thesis notebook reproduces every chart and statistical test from the committed results,
 and runs on Colab as is.
 
+**Try the app:** [ml-sandbox-7cn3.onrender.com](https://ml-sandbox-7cn3.onrender.com). It
+runs on Render's free plan, which sleeps when idle, so the first load can take about a
+minute.
+
 Given a description of your problem — and optionally your own dataset — it suggests a
 method and explains *why* in terms of the tradeoffs that actually drive the choice,
 rather than returning a black-box answer. You can then train alternatives on your own
@@ -24,6 +28,7 @@ Planning complete; implementation starting with the benchmark study.
 | Thesis notebook | [`notebooks/tfm_graficos.ipynb`](notebooks/tfm_graficos.ipynb) · [open in Colab](https://colab.research.google.com/github/cecimerelo/ml-sandbox/blob/main/notebooks/tfm_graficos.ipynb) |
 | Requirements | [`_bmad-output/planning-artifacts/prds/`](_bmad-output/planning-artifacts/prds/) |
 | UX design contract | [`_bmad-output/planning-artifacts/ux-designs/`](_bmad-output/planning-artifacts/ux-designs/) |
+| Training pipeline (where models are trained) | [`docs/training-pipeline.md`](docs/training-pipeline.md) |
 | Epic breakdown | [`_bmad-output/planning-artifacts/epics.md`](_bmad-output/planning-artifacts/epics.md) |
 | Work tracking | GitHub issues |
 

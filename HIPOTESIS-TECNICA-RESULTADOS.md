@@ -1,13 +1,19 @@
 # Trabajo Fin de Máster: hipótesis, técnica y resultados
 
 Este documento sigue los tres apartados que piden las instrucciones del TFM: la hipótesis que se
-quiere contrastar, la técnica elegida y por qué es adecuada, y los resultados y las
+quiere contrastar, la técnica elegida y por qué es adecuada, los resultados y las
 conclusiones. Todo el análisis se puede reproducir en el cuaderno
 [`notebooks/tfm_graficos.ipynb`](notebooks/tfm_graficos.ipynb), donde están los gráficos, las
 tablas y los contrastes estadísticos que se citan aquí. El cuaderno también puede abrirse
 directamente en Google Colab desde [este
 enlace](https://colab.research.google.com/github/cecimerelo/ml-sandbox/blob/main/notebooks/tfm_graficos.ipynb),
-y el resto del código del estudio está en el mismo repositorio.
+y el resto del código del estudio está en el mismo repositorio,
+[github.com/cecimerelo/ml-sandbox](https://github.com/cecimerelo/ml-sandbox).
+
+La aplicación, con el formulario, está desplegada en
+[ml-sandbox-7cn3.onrender.com](https://ml-sandbox-7cn3.onrender.com). Está en el plan gratuito
+de Render, que apaga el servicio cuando nadie lo usa, así que la primera carga puede tardar
+alrededor de un minuto.
 
 ## 1. Objetivo e hipótesis
 
@@ -30,7 +36,7 @@ características del problema, como el tamaño de la muestra, el número de pred
 variable respuesta, la presencia de valores faltantes o el balance de clases, predice qué
 métodos van a funcionar mejor.
 
-La hipótesis principal es que esta recomendación personalizada acierta el mejor método con más
+La **hipótesis principal** es que esta recomendación personalizada acierta el mejor método con más
 frecuencia que una recomendación fija, es decir, que recomendar siempre el mismo método sea cual
 sea el problema. Si no fuera así, estudiar el problema del usuario no aportaría nada y bastaría
 con recomendar siempre lo mismo. Como hipótesis secundaria planteo que las heurísticas de ISLR,
@@ -47,11 +53,48 @@ pierde cuando no lo hace.
 
 ### Origen de los datos
 
-Los datos vienen de tres colecciones públicas muy usadas en la literatura: OpenML-CC18, de
-clasificación y con al menos 500 filas; OpenML-CTR23, de regresión y también con al menos 500
-filas; y PMLB, que aporta datasets de ambos tipos con menos de 500 filas. La idea era reunir
-datasets que cubrieran todos los casos que un usuario puede describir en el formulario de la
-aplicación.
+Los datos vienen de tres colecciones públicas muy usadas en la literatura.
+[OpenML-CC18](https://www.openml.org/s/99) es de clasificación y
+[OpenML-CTR23](https://www.openml.org/s/353) de regresión, las dos con al menos 500 filas por
+dataset. [PMLB](https://github.com/EpistasisLab/pmlb) aporta datasets de ambos tipos con menos
+de 500 filas. La idea era reunir datasets que cubrieran todos los casos que un usuario puede
+describir en el formulario de la aplicación.
+
+Un dataset es elegible si cumple todos estos criterios:
+
+- Tiene entre 50 y 100.000 filas. Por debajo de 50, cada partición de la validación cruzada
+  de 5 particiones tendría menos de 10 filas y la puntuación dependería sobre todo de qué
+  filas cayeran en cada una. Por encima de 100.000, un solo dataset consumiría más cómputo que
+  toda la banda pequeña.
+- Tiene como mucho 500 predictores, el mismo límite que acepta la aplicación.
+- No está construido a partir de imágenes (MNIST, Fashion-MNIST, Devnagari-Script, CIFAR-10),
+  porque cada columna es un píxel y el estudio trata de datos tabulares.
+- Contiene datos medidos, no generados. Por eso quedan fuera los datasets sintéticos de PMLB:
+  las ecuaciones de física de Feynman y Strogatz y los datasets BNG, muestreados de redes
+  bayesianas.
+- Sus propios autores no lo han retirado. PMLB marca como obsoletos algunos datasets y esos no
+  entran.
+- Tiene completos los metadatos, incluido el número de filas.
+- Si viene de PMLB, tiene menos de 500 filas, porque esa colección solo se usa para cubrir la
+  banda que no cubren OpenML-CC18 ni OpenML-CTR23.
+
+Además, de cada familia de datasets (varias versiones de la misma fuente, como los
+`analcatdata_*` o los `mfeat-*`) entran como mucho dos, para que una banda no parezca variada
+cuando en realidad repite el mismo tipo de datos.
+
+Estos criterios no tienen todos el mismo origen, y conviene distinguirlos. El límite de 500
+predictores y la exclusión de imágenes no se fijaron para el estudio: son el alcance que el
+documento de requisitos de la aplicación ya declaraba antes de empezarlo, así que la selección
+no puede haberse ajustado para favorecer a ningún método. El umbral de 500 filas es también la
+banda más baja del formulario de la aplicación, y coincide con el criterio de los propios
+autores de OpenML-CC18, que descartan como demasiado pequeño todo dataset por debajo de esa
+cifra ([generador de la colección](https://github.com/openml/benchmark-suites/blob/master/OpenML%20Benchmark%20generator.ipynb)).
+Por eso hace falta PMLB para cubrir esa banda. El resto son decisiones propias del estudio:
+los límites de 50 y 100.000 filas, y la exclusión de datasets sintéticos, retirados o de una
+misma familia. Todas están justificadas en el registro de decisiones del repositorio
+([`DECISIONS.md`](DECISIONS.md), entradas D-004, D-016, D-025 y D-054). La de las familias es
+la más débil de todas: la familia se deduce del nombre del dataset, y el límite de dos no
+responde a ningún criterio externo.
 
 De 267 candidatos, 195 cumplían los criterios de elegibilidad y me quedé con 106, estratificados
 por tamaño y por tipo de tarea con el objetivo de tener 20 datasets en cada combinación. En las
@@ -82,8 +125,28 @@ regresión logística, LDA, QDA, Naive Bayes, KNN, regresión polinómica con y 
 splines, PCR, PLS, árbol de decisión, bagging, random forest, gradient boosting, SVM lineal, SVM
 con núcleo RBF y una red neuronal. En total son 38.820 evaluaciones.
 
-Para medir el rendimiento usé la *balanced accuracy* en clasificación, porque no premia a un
-modelo que predice siempre la clase mayoritaria, y el R² en regresión. Solo ajusté por
+La métrica decide cuál es el mejor método en cada dataset, y todo el estudio se apoya en esa
+respuesta, así que la elegí con dos condiciones: que no diera por bueno un modelo trivial y que
+permitiera promediar resultados entre datasets distintos.
+
+En clasificación usé la *balanced accuracy*, que es la media del *recall* de cada clase. La
+colección tiene datasets con clases muy desequilibradas, y en ellos la *accuracy* normal
+pondría en cabeza a un modelo que predice siempre la clase mayoritaria, justo donde más
+importa, el mejor método sería el equivocado. La *balanced accuracy* no tiene ese problema,
+sirve igual para problemas binarios y multiclase, va de 0 a 1 y, cuando las clases están
+equilibradas, coincide con la *accuracy*, así que no se pierde nada en los casos fáciles.
+Descarté el ROC-AUC porque necesita probabilidades, y obtenerlas de la SVM obliga a una
+validación cruzada interna que multiplica el coste del método más caro. En multiclase, además,
+hay que elegir cómo promediarlo. El F1-macro y el coeficiente de correlación de Matthews eran
+defendibles, pero más difíciles de explicar sin aportar nada en este caso.
+
+En regresión usé el R². Para decidir qué método gana dentro de un dataset la escala da igual,
+pero el *regret*, que se define más abajo, promedia diferencias de rendimiento entre datasets.
+Con el RMSE o el MAE eso supondría sumar errores medidos en unidades distintas, por ejemplo
+precios de viviendas con concentraciones químicas, y el resultado no significaría nada. El R²
+no depende de la escala y es además la métrica que usa ISLR. Un modelo muy malo puede tener un
+R² muy negativo y arrastrar cualquier media, así que lo acoté en 0: un método que lo hace peor
+que predecir siempre la media cuenta como si predijera la media. Solo ajusté por
 validación cruzada interna los hiperparámetros sin los que un método no está definido, como la
 penalización de Ridge o de Lasso. El resto de métodos usa los valores por defecto de la
 librería, que es también lo que hace ISLR.
@@ -104,7 +167,7 @@ la referencia contra la que se juzga cualquier estrategia de selección.
 ### Estrategias comparadas
 
 Sobre ese ranking comparo cuatro formas de elegir método. La primera es la estrategia aprendida,
-Layer 2, que es la recomendación personalizada y el objeto del trabajo. Es un random forest que
+Layer 2, que es la recomendación personalizada y el objeto del trabajo. Es un *random forest* que
 predice cuánto rendimiento perderá cada método frente al mejor y recomienda los que menos
 pierden. Lo hace a partir de siete características del dataset: el tipo de tarea (regresión,
 clasificación binaria o multiclase), el número de filas, el número de predictores, la relación
@@ -123,9 +186,9 @@ comparación que de verdad decide la hipótesis, porque si la recomendación per
 supera, analizar el problema del usuario no aporta nada. La tercera son las heurísticas de ISLR,
 es decir, la primera capa de la aplicación. Son reglas fijas extraídas del libro que puntúan
 cada método según las características del problema. Por ejemplo, con pocas observaciones
-favorecen los métodos sencillos o regularizados, porque los flexibles acaban ajustando el ruido;
-cuando el número de predictores se acerca al de observaciones, favorecen la regularización, como
-Ridge o Lasso; y con muchas observaciones por predictor, favorecen los métodos flexibles, que ya
+favorecen los métodos sencillos o regularizados, porque los flexibles acaban ajustando el ruido.
+Cuando el número de predictores se acerca al de observaciones, favorecen la regularización, como
+Ridge o Lasso. Y con muchas observaciones por predictor favorecen los métodos flexibles, que ya
 tienen datos suficientes. Estas reglas no aprenden nada del benchmark. La cuarta estrategia
 elige al azar y sirve como límite inferior.
 
