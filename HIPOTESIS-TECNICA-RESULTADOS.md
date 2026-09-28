@@ -77,6 +77,20 @@ Además, de cada familia de datasets (varias versiones de la misma fuente, como 
 `analcatdata_*` o los `mfeat-*`) entran como mucho dos, para que una banda no parezca variada
 cuando en realidad repite el mismo tipo de datos.
 
+Estos criterios no tienen todos el mismo origen, y conviene distinguirlos. El límite de 500
+predictores y la exclusión de imágenes no se fijaron para el estudio: son el alcance que el
+documento de requisitos de la aplicación ya declaraba antes de empezarlo, así que la selección
+no puede haberse ajustado para favorecer a ningún método. El umbral de 500 filas es también la
+banda más baja del formulario de la aplicación, y coincide con el criterio de los propios
+autores de OpenML-CC18, que descartan como demasiado pequeño todo dataset por debajo de esa
+cifra ([generador de la colección](https://github.com/openml/benchmark-suites/blob/master/OpenML%20Benchmark%20generator.ipynb));
+por eso hace falta PMLB para cubrir esa banda. El resto son decisiones propias del estudio:
+los límites de 50 y 100.000 filas, y la exclusión de datasets sintéticos, retirados o de una
+misma familia. Todas están justificadas en el registro de decisiones del repositorio
+([`DECISIONS.md`](DECISIONS.md), entradas D-004, D-016, D-025 y D-054). La de las familias es
+la más débil de todas: la familia se deduce del nombre del dataset, y el límite de dos no
+responde a ningún criterio externo.
+
 De 267 candidatos, 195 cumplían los criterios de elegibilidad y me quedé con 106, estratificados
 por tamaño y por tipo de tarea con el objetivo de tener 20 datasets en cada combinación. En las
 bandas de menos de 500 filas y de 500 a 10.000 filas el objetivo se cumplió exactamente, con 40
