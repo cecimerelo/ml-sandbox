@@ -55,6 +55,28 @@ Los datos vienen de tres colecciones públicas muy usadas en la literatura:
 500 filas. La idea era reunir datasets que cubrieran todos los casos que un usuario puede describir en el formulario de la
 aplicación.
 
+Un dataset es elegible si cumple todos estos criterios:
+
+- Tiene entre 50 y 100.000 filas. Por debajo de 50, cada partición de la validación cruzada
+  de 5 particiones tendría menos de 10 filas y la puntuación dependería sobre todo de qué
+  filas cayeran en cada una; por encima de 100.000, un solo dataset consumiría más cómputo que
+  toda la banda pequeña.
+- Tiene como mucho 500 predictores, el mismo límite que acepta la aplicación.
+- No está construido a partir de imágenes (MNIST, Fashion-MNIST, Devnagari-Script, CIFAR-10),
+  porque cada columna es un píxel y el estudio trata de datos tabulares.
+- Contiene datos medidos, no generados. Por eso quedan fuera los datasets sintéticos de PMLB:
+  las ecuaciones de física de Feynman y Strogatz y los datasets BNG, muestreados de redes
+  bayesianas.
+- Sus propios autores no lo han retirado. PMLB marca como obsoletos algunos datasets y esos no
+  entran.
+- Tiene completos los metadatos, incluido el número de filas.
+- Si viene de PMLB, tiene menos de 500 filas, porque esa colección solo se usa para cubrir la
+  banda que no cubren OpenML-CC18 ni OpenML-CTR23.
+
+Además, de cada familia de datasets (varias versiones de la misma fuente, como los
+`analcatdata_*` o los `mfeat-*`) entran como mucho dos, para que una banda no parezca variada
+cuando en realidad repite el mismo tipo de datos.
+
 De 267 candidatos, 195 cumplían los criterios de elegibilidad y me quedé con 106, estratificados
 por tamaño y por tipo de tarea con el objetivo de tener 20 datasets en cada combinación. En las
 bandas de menos de 500 filas y de 500 a 10.000 filas el objetivo se cumplió exactamente, con 40
