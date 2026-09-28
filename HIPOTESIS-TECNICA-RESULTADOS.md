@@ -31,7 +31,7 @@ características del problema, como el tamaño de la muestra, el número de pred
 variable respuesta, la presencia de valores faltantes o el balance de clases, predice qué
 métodos van a funcionar mejor.
 
-La hipótesis principal es que esta recomendación personalizada acierta el mejor método con más
+La **hipótesis principal** es que esta recomendación personalizada acierta el mejor método con más
 frecuencia que una recomendación fija, es decir, que recomendar siempre el mismo método sea cual
 sea el problema. Si no fuera así, estudiar el problema del usuario no aportaría nada y bastaría
 con recomendar siempre lo mismo. Como hipótesis secundaria planteo que las heurísticas de ISLR,
@@ -48,10 +48,11 @@ pierde cuando no lo hace.
 
 ### Origen de los datos
 
-Los datos vienen de tres colecciones públicas muy usadas en la literatura: OpenML-CC18, de
-clasificación y con al menos 500 filas; OpenML-CTR23, de regresión y también con al menos 500
-filas; y PMLB, que aporta datasets de ambos tipos con menos de 500 filas. La idea era reunir
-datasets que cubrieran todos los casos que un usuario puede describir en el formulario de la
+Los datos vienen de tres colecciones públicas muy usadas en la literatura:
+[OpenML-CC18](https://www.openml.org/s/99), de clasificación y con al menos 500 filas;
+[OpenML-CTR23](https://www.openml.org/s/353), de regresión y también con al menos 500 filas; y
+[PMLB](https://github.com/EpistasisLab/pmlb), que aporta datasets de ambos tipos con menos de
+500 filas. La idea era reunir datasets que cubrieran todos los casos que un usuario puede describir en el formulario de la
 aplicación.
 
 De 267 candidatos, 195 cumplían los criterios de elegibilidad y me quedé con 106, estratificados
