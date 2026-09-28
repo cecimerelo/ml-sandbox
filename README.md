@@ -8,6 +8,10 @@ behind it. Master's thesis (TFM).
 The thesis notebook reproduces every chart and statistical test from the committed results,
 and runs on Colab as is.
 
+**Try the app:** [ml-sandbox-7cn3.onrender.com](https://ml-sandbox-7cn3.onrender.com). It
+runs on Render's free plan, which sleeps when idle, so the first load can take about a
+minute.
+
 Given a description of your problem — and optionally your own dataset — it suggests a
 method and explains *why* in terms of the tradeoffs that actually drive the choice,
 rather than returning a black-box answer. You can then train alternatives on your own

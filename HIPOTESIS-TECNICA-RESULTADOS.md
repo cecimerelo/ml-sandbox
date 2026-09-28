@@ -10,6 +10,11 @@ enlace](https://colab.research.google.com/github/cecimerelo/ml-sandbox/blob/main
 y el resto del código del estudio está en el mismo repositorio,
 [github.com/cecimerelo/ml-sandbox](https://github.com/cecimerelo/ml-sandbox).
 
+La aplicación, con el formulario, está desplegada en
+[ml-sandbox-7cn3.onrender.com](https://ml-sandbox-7cn3.onrender.com). Está en el plan gratuito
+de Render, que apaga el servicio cuando nadie lo usa, así que la primera carga puede tardar
+alrededor de un minuto.
+
 ## 1. Objetivo e hipótesis
 
 Elegir qué método de aprendizaje supervisado usar para un problema concreto no es sencillo,
